@@ -102,11 +102,8 @@ class BarnesMaze(BaseEnvironment):
             Action.FORWARD,
             Action.TURN_LEFT,
             Action.TURN_RIGHT,
-            Action.INTERACT,  # Check hole
             Action.STAY
         ]
-        
-        self.action_names[Action.INTERACT] = "check_hole"
     
     def _create_platform(self):
         """Create the circular platform as a set of valid positions."""
@@ -159,10 +156,10 @@ class BarnesMaze(BaseEnvironment):
         wall_dist = self.platform_radius + 1  # Inner edge of wall
         
         landmarks = [
-            {'name': 'A', 'x': self.center_x + wall_dist, 'y': self.center_y, 'angle': 0},           # East
-            {'name': 'B', 'x': self.center_x, 'y': self.center_y + wall_dist, 'angle': np.pi/2},    # North
-            {'name': 'C', 'x': self.center_x - wall_dist, 'y': self.center_y, 'angle': np.pi},      # West
-            {'name': 'D', 'x': self.center_x, 'y': self.center_y - wall_dist, 'angle': 3*np.pi/2},  # South
+            {'name': '1', 'x': self.center_x + wall_dist, 'y': self.center_y, 'angle': 0},           # East
+            {'name': '2', 'x': self.center_x, 'y': self.center_y + wall_dist, 'angle': np.pi/2},    # North
+            {'name': '3', 'x': self.center_x - wall_dist, 'y': self.center_y, 'angle': np.pi},      # West
+            {'name': '4', 'x': self.center_x, 'y': self.center_y - wall_dist, 'angle': 3*np.pi/2},  # South
         ]
         return landmarks
     
@@ -243,39 +240,28 @@ class BarnesMaze(BaseEnvironment):
             
         elif action == Action.TURN_RIGHT:
             self.agent.angle = (self.agent.angle - 1) % 8
-            
-        elif action == Action.INTERACT:
-            # Check if on a hole
-            hole_idx = self._get_hole_at(self.agent.x, self.agent.y)
-            if hole_idx is not None:
-                self.hole_visits[hole_idx] += 1
-                self.holes_checked[hole_idx] = True
-                
-                if hole_idx == self.escape_hole_index:
-                    self.found_escape = True
-                    self._trial_reward += 1.0
-                    return 1.0  # Found escape!
-                else:
-                    return -0.2  # Wrong hole
-            return -0.05  # No hole here
-            
-        elif action == Action.STAY:
-            return -0.02  # Time in bright light
         
         # Update path length
         moved = abs(self.agent.x - old_x) + abs(self.agent.y - old_y)
         self._trial_path_length += moved
         
-        # Check if stepped onto escape hole
+        # Auto-enter hole when on it (check every step including STAY)
         hole_idx = self._get_hole_at(self.agent.x, self.agent.y)
-        if hole_idx == self.escape_hole_index and not self.found_escape:
-            # Give hint reward for finding it (still need INTERACT to escape)
-            return 0.1
+        if hole_idx is not None:
+            self.hole_visits[hole_idx] += 1
+            self.holes_checked[hole_idx] = True
+            
+            if hole_idx == self.escape_hole_index:
+                self.found_escape = True
+                self._trial_reward += 1.0
+                return 1.0  # Found escape!
+            else:
+                return -0.2  # Wrong hole
         
         return -0.01  # Time penalty (aversive light)
     
     def _check_success(self) -> bool:
-        """Success = found escape hole via INTERACT."""
+        """Success = stepped on escape hole."""
         return self.found_escape
     
     def _check_failure(self) -> bool:
@@ -393,7 +379,7 @@ class BarnesMaze(BaseEnvironment):
                     grid[dy][dx] = 'O'  # All holes look the same from afar
         
         # Draw landmarks with wall directly behind them (no gap)
-        landmark_chars = ['A', 'B', 'C', 'D']
+        landmark_chars = ['1', '2', '3', '4']
         # Directions from center for each landmark: E, N, W, S
         landmark_dirs = [(1, 0), (0, 1), (-1, 0), (0, -1)]
         for i, lm in enumerate(self.landmarks):

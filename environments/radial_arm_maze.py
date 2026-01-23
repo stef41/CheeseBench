@@ -109,15 +109,13 @@ class RadialArmMaze(NavigationEnvironment):
         self.wall_color = (120, 100, 80)
         self.reward_color = (255, 215, 0)
         
-        # Actions
+        # Actions (rewards collected automatically at arm ends)
         self.valid_actions = [
             Action.FORWARD,
             Action.TURN_LEFT,
             Action.TURN_RIGHT,
-            Action.INTERACT,
             Action.STAY
         ]
-        self.action_names[Action.INTERACT] = "collect_food"
         
         # Error tracking
         self.working_memory_errors = 0

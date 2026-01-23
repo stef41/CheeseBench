@@ -26,11 +26,11 @@ from environments import (
 # CONFIGURATION
 # =============================================================================
 
-OLLAMA_URL = "http://g107:11434/api/chat"
-OLLAMA_MODEL = "qwen2.5:72b"
+OLLAMA_URL = "http://localhost:11434/api/chat"
+OLLAMA_MODEL = "gemma3:4b"
 MAX_STEPS = 100
 NUM_TRIALS = 2
-TIMEOUT = 60
+TIMEOUT = 120
 
 # View modes to benchmark
 VIEW_MODES = [
@@ -46,29 +46,20 @@ VIEW_MODES = [
 SYSTEM_PROMPT = """You are an agent navigating an environment. Maximize reward through exploration.
 
 SYMBOLS:
-- Agent: ↑ ↗ → ↘ ↓ ↙ ← ↖ (arrow = facing direction) or ^ (in 2D grids)
-- Goals: G (goal), P (platform), T (target), * (reward)
-- Self: S (you, in water views)
-- Walls: # █ (solid)
-- Water: ~ ≈
-- Floors: . ░ ▒ ▓ (textures)
+- Agent: ↑ ↗ → ↘ ↓ ↙ ← ↖ (arrow = facing direction)
+- Goals: G (goal/target), P (platform), * (reward)
+- Walls: # █ 
+- Water: ~ 
+- Floors: . ░ (textures)
 - Objects: [=] (lever), [m] (magazine)
-- Holes: O (unknown hole), E (escape hole - only visible when adjacent and facing it)
-- Cues: 1-8 or A-D (landmarks for orientation)
+- Holes: O (hole), E (escape hole)
+- Landmarks: 1-4 (cardinal: E, N, W, S) or 1-8 (arms)
 - Shapes: ■ ● ▲ ◆ (stimuli)
-- Fog: ░ (area outside your field of view)
-
-NAVIGATION:
-- Arrow shows YOUR facing direction
-- FORWARD moves where arrow points
-- TURN_LEFT/TURN_RIGHT rotates 45°
-- To reach goal: turn until facing it, then FORWARD
 
 ACTIONS (ONE word):
-- FORWARD
+- FORWARD (move forward, or press lever/confirm choice)
 - TURN_LEFT
 - TURN_RIGHT
-- INTERACT (check holes, press levers)
 - STAY
 
 Reply with ONLY the action word."""
@@ -167,12 +158,15 @@ class LLMAgent:
         if len(self.history) > 201:
             self.history = [self.history[0]] + self.history[-200:]
         
+        # Build messages with system prompt at both start and end (fights recency bias)
+        messages = self.history + [{"role": "system", "content": SYSTEM_PROMPT}]
+        
         try:
             response = requests.post(
                 OLLAMA_URL,
                 json={
                     "model": self.model,
-                    "messages": self.history,
+                    "messages": messages,
                     "stream": False,
                     "options": {"temperature": 0.7}
                 },
@@ -289,7 +283,7 @@ def run_trial(env, agent, max_steps: int = MAX_STEPS, log_file=None) -> TrialRes
             log_file.write(f"\n--- Step {step+1} ---\n")
             log_file.write(f"Reward from prev step: {reward}\n")
             log_file.write(f"Observation:\n{obs}\n")
-            log_file.write(f"LLM Response: {agent.last_response[:200]}{'...' if len(agent.last_response) > 200 else ''}\n")
+            log_file.write(f"LLM Response: {agent.last_response}\n")
             log_file.write(f"Action: {action.name}\n")
             log_file.flush()
         

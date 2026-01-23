@@ -92,10 +92,10 @@ class DNMSTask(BaseEnvironment):
         
         # Actions
         self.valid_actions = [
+            Action.FORWARD,     # Confirm choice
             Action.TURN_LEFT,   # Choose left option
             Action.TURN_RIGHT,  # Choose right option
-            Action.INTERACT,    # Confirm choice / advance phase
-            Action.STAY         # Wait
+            Action.STAY         # Wait (auto-advances in sample phase)
         ]
         
         # Colors for visual stimuli
@@ -155,10 +155,9 @@ class DNMSTask(BaseEnvironment):
         reward = 0.0
         
         if self.phase == 'sample':
-            # Show sample, wait for interaction to proceed
-            if action == Action.INTERACT:
-                self.phase = 'delay'
-                self.delay_counter = self.delay_steps
+            # Show sample, any action advances to delay
+            self.phase = 'delay'
+            self.delay_counter = self.delay_steps
         
         elif self.phase == 'delay':
             # Delay period - just wait
@@ -167,12 +166,12 @@ class DNMSTask(BaseEnvironment):
                 self.phase = 'choice'
         
         elif self.phase == 'choice':
-            # Choose which stimulus (left/right)
+            # Choose which stimulus (left/right) then confirm with FORWARD
             if action == Action.TURN_LEFT:
                 self.choice_position = 0
             elif action == Action.TURN_RIGHT:
                 self.choice_position = 1
-            elif action == Action.INTERACT:
+            elif action == Action.FORWARD:
                 # Make the choice
                 self.phase = 'response'
                 self.total_responses += 1

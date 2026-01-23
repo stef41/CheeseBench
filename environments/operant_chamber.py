@@ -109,12 +109,12 @@ class OperantChamber(BaseEnvironment):
         
         # Actions - simpler for operant box
         self.valid_actions = [
+            Action.FORWARD,   # Press currently faced lever
             Action.TURN_LEFT,  # Face left lever
             Action.TURN_RIGHT,  # Face right lever
-            Action.INTERACT,  # Press lever
             Action.STAY
         ]
-        self.action_names[Action.INTERACT] = "press_lever"
+        self.action_names[Action.FORWARD] = "press_lever"
         self.action_names[Action.TURN_LEFT] = "look_left"
         self.action_names[Action.TURN_RIGHT] = "look_right"
         
@@ -251,10 +251,10 @@ class OperantChamber(BaseEnvironment):
                 self.facing_lever = self.num_levers - 1  # From center to right lever
             elif self.facing_lever < self.num_levers - 1:
                 self.facing_lever += 1
-        elif action == Action.INTERACT:
+        elif action == Action.FORWARD:
             # Press currently faced lever - only works if facing a lever
             if self.facing_lever == -1:
-                # Facing magazine/center - interact does nothing useful
+                # Facing magazine/center - pressing does nothing useful
                 reward = -0.05  # Small penalty for pressing nothing
             elif 0 <= self.facing_lever < self.num_levers:
                 self.lever_presses[self.facing_lever] += 1
