@@ -226,12 +226,9 @@ class DNMSTask(BaseEnvironment):
             img[180:200, 50:174] = (40, 40, 40)
             
         elif self.phase == 'delay':
-            # Blank screen during delay
-            # Show delay progress
-            progress = 1 - (self.delay_counter / self.delay_steps)
-            bar_width = int(150 * progress)
-            img[100:120, 37:37+bar_width] = (100, 100, 200)
-            img[100:120, 37:187] = np.maximum(img[100:120, 37:187], 30)
+            # Blank/dark screen during delay (realistic - no visual timer)
+            # Animals just wait in darkness during retention interval
+            pass  # Screen stays dark gray (background color)
             
         elif self.phase == 'choice':
             # Show choice stimuli
@@ -294,20 +291,9 @@ class DNMSTask(BaseEnvironment):
                         grid[center_y + dy][center_x + dx] = stim
             
         elif self.phase == 'delay':
-            # Show progress bar visually
-            progress = int((1 - self.delay_counter / self.delay_steps) * 20)
-            bar_y = center_y
-            for i in range(22):
-                bx = center_x - 11 + i
-                if 0 < bx < width - 1:
-                    if i == 0:
-                        grid[bar_y][bx] = '['
-                    elif i == 21:
-                        grid[bar_y][bx] = ']'
-                    elif i - 1 < progress:
-                        grid[bar_y][bx] = '█'
-                    else:
-                        grid[bar_y][bx] = '░'
+            # Blank screen during delay (realistic - no visual timer)
+            # Animals wait in empty chamber during retention interval
+            pass  # Screen stays empty
             
         elif self.phase == 'choice':
             left_x = width // 4
@@ -330,9 +316,9 @@ class DNMSTask(BaseEnvironment):
             
             # Show selection with arrow
             if self.choice_position == 0:
-                grid[center_y + 2][left_x] = '^'
+                grid[center_y + 2][left_x] = '↑'
             else:
-                grid[center_y + 2][right_x] = '^'
+                grid[center_y + 2][right_x] = '↑'
         
         elif self.phase == 'response':
             # Show result with symbol

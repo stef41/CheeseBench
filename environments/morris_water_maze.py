@@ -500,8 +500,8 @@ class MorrisWaterMaze(NavigationEnvironment):
         # Calculate platform visibility (only if near)
         platform_col = None
         if near_platform:
-            dx = self.platform_x - self.agent.x
-            dy = self.platform_y - self.agent.y
+            dx = self.goal_x - self.agent.x
+            dy = self.goal_y - self.agent.y
             rel_angle = math.atan2(dy, dx) - agent_angle_rad
             while rel_angle > np.pi: rel_angle -= 2*np.pi
             while rel_angle < -np.pi: rel_angle += 2*np.pi

@@ -808,6 +808,7 @@ class BaseEnvironment(ABC):
                              horizon: int = 130, y_min: int = 70, y_max: int = 154):
         """
         Render a goal marker in FPV based on relative position.
+        Only renders if goal is visible (not blocked by walls).
         
         Args:
             img: Image array to draw on
@@ -822,6 +823,7 @@ class BaseEnvironment(ABC):
             
         dx = goal_x - self.agent.x
         dy = goal_y - self.agent.y
+        dist_to_goal = np.sqrt(dx * dx + dy * dy)
         
         # Get agent angle
         if isinstance(self.agent.angle, int):
@@ -838,12 +840,17 @@ class BaseEnvironment(ABC):
             angle_to_goal += 2 * np.pi
         
         if abs(angle_to_goal) < fov / 2:
-            # Screen position: positive angle (left) -> smaller x (left on screen)
-            screen_x = int(112 - angle_to_goal / (fov / 2) * 100)
-            dist = np.sqrt(dx * dx + dy * dy)
-            size = max(3, int(30 / (dist + 1)))
+            # Check line-of-sight: cast ray toward goal and see if wall is closer
+            ray_angle = np.arctan2(dy, dx)  # Absolute angle to goal
+            wall_dist = self._cast_ray(ray_angle, max_dist=dist_to_goal + 1.0)
             
-            self._draw_shape(img, 'circle', screen_x, horizon, size, goal_color, y_min, y_max)
+            # Only render goal if no wall is blocking it
+            if wall_dist >= dist_to_goal - 0.5:
+                # Screen position: positive angle (left) -> smaller x (left on screen)
+                screen_x = int(112 - angle_to_goal / (fov / 2) * 100)
+                size = max(3, int(30 / (dist_to_goal + 1)))
+                
+                self._draw_shape(img, 'circle', screen_x, horizon, size, goal_color, y_min, y_max)
 
     def _render_ascii_2d_fpv(self, view_width: int = 35, view_height: int = 23, 
                               view_distance: float = 5.0, fov_degrees: float = 120.0) -> str:
@@ -1119,9 +1126,32 @@ class BaseEnvironment(ABC):
             if ch in '1234ABCD':
                 return ch
             
-            # If we got an important character, return it
-            important_chars = set('OoGP*[]=-~EABCDabcd')
-            if ch in important_chars or ch not in wall_chars:
+            # High-priority characters that should be preserved even when sampling 
+            # lands on adjacent floor/water tiles (goals, platforms, special objects)
+            # Includes: G=goal, P=platform, *=reward, O/o=holes, E=escape/exit,
+            #           !=warning/shock (ShuttleBox), X=wrong answer (DNMS)
+            high_priority_chars = set('GP*OoE!X')
+            # Other important characters (floor types, brackets, etc.)
+            important_chars = set('OoGP*[]=-~EABCDabcd!X')
+            
+            # If we got a high-priority character, return it immediately
+            if ch in high_priority_chars:
+                return ch
+            
+            # For floor-like characters (water, dots, spaces), check neighbors
+            # for high-priority chars that might have been missed due to rotation
+            floor_chars = set('.~` ')
+            if ch in floor_chars or ch not in wall_chars:
+                # Check immediate neighbors for high-priority targets
+                for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]:
+                    nr, nc = r + dr, c + dc
+                    if 0 <= nr < full_height and 0 <= nc < full_width:
+                        neighbor = padded[nr][nc]
+                        if neighbor in high_priority_chars:
+                            # Accept if reasonably close (handles rotation sampling)
+                            if abs(row - nr) < 0.9 and abs(col - nc) < 0.9:
+                                return neighbor
+                # No high-priority neighbor found, return original char
                 return ch
             
             # We got a wall - check immediate neighbors for important chars

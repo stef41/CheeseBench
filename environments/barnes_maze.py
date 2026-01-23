@@ -292,11 +292,30 @@ class BarnesMaze(BaseEnvironment):
     # ==================== Rendering ====================
     
     def _render_fpv(self) -> np.ndarray:
-        """Render first-person view."""
-        img = np.zeros((224, 224, 3), dtype=np.uint8)
-        img[:100, :] = (255, 255, 240)  # Bright ceiling
-        img[124:, :] = (220, 220, 220)  # Platform floor
-        return img
+        """Render first-person view using raycasting."""
+        def wall_color(dist):
+            # Barnes maze is open - walls are just the edge
+            shade = max(80, 255 - int(dist * 10))
+            return (shade, shade, int(shade * 0.9))
+        
+        def overlay(img, agent_angle, fov):
+            # Render escape hole (goal)
+            escape_hole = self.holes[self.escape_hole_index]
+            self._render_goal_in_fpv(img, escape_hole['x'], escape_hole['y'], (50, 200, 50),
+                                     fov, horizon=112, y_min=70, y_max=154)
+            # Render other holes as darker circles
+            for hole in self.holes:
+                if hole['index'] != self.escape_hole_index:
+                    self._render_goal_in_fpv(img, hole['x'], hole['y'], (80, 80, 80),
+                                             fov, horizon=112, y_min=70, y_max=154)
+        
+        return self._render_fpv_raycasting(
+            ceiling_color=(255, 255, 240),  # Bright (aversive light)
+            floor_color=(220, 220, 220),
+            wall_color_func=wall_color,
+            max_dist=15.0,
+            overlay_func=overlay
+        )
     
     def _render_topdown(self) -> np.ndarray:
         """Render top-down view.

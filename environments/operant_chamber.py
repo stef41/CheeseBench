@@ -432,7 +432,7 @@ class OperantChamber(BaseEnvironment):
         
         # Agent - use standard direction symbols
         # In operant chamber, agent faces the lever (north/up)
-        agent_str = "^"
+        agent_str = "↑"
         lines.append("#" + agent_str.center(width) + "#")
         
         lines.append("#" * (width + 2))

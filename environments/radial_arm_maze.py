@@ -303,11 +303,30 @@ class RadialArmMaze(NavigationEnvironment):
     # ==================== Rendering ====================
     
     def _render_fpv(self) -> np.ndarray:
-        """Render first-person view."""
-        img = np.zeros((224, 224, 3), dtype=np.uint8)
-        img[:80, :] = (150, 150, 150)  # Ceiling
-        img[144:, :] = self.floor_color  # Floor
-        return img
+        """Render first-person view using raycasting."""
+        def wall_color(dist):
+            shade = max(40, 255 - int(dist * 12))
+            return (int(shade * 0.47), int(shade * 0.39), int(shade * 0.31))
+        
+        def overlay(img, agent_angle, fov):
+            # Render goal (first rewarded arm end)
+            self._render_goal_in_fpv(img, self.goal_x, self.goal_y, self.reward_color,
+                                     fov, horizon=112, y_min=70, y_max=154)
+            # Render uncollected rewards
+            for arm_idx in self.rewarded_arms:
+                if not self.rewards_collected[arm_idx]:
+                    ex, ey = self.arm_ends[arm_idx]
+                    if (ex, ey) != (self.goal_x, self.goal_y):
+                        self._render_goal_in_fpv(img, ex, ey, (255, 200, 0),
+                                                 fov, horizon=112, y_min=70, y_max=154)
+        
+        return self._render_fpv_raycasting(
+            ceiling_color=(150, 150, 150),
+            floor_color=self.floor_color,
+            wall_color_func=wall_color,
+            max_dist=20.0,
+            overlay_func=overlay
+        )
     
     def _render_topdown(self) -> np.ndarray:
         """Render top-down view.
