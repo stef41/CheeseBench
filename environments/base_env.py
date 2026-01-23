@@ -366,6 +366,485 @@ class BaseEnvironment(ABC):
         """Render ASCII pseudo-3D FPV."""
         pass
     
+    # ==================== Shared 3D Rendering Helpers ====================
+    
+    @staticmethod
+    def wall_char(dist: float) -> str:
+        """Get wall character based on distance (shared shading scheme)."""
+        if dist < 1.5: return '█'
+        if dist < 3.0: return '▓'
+        if dist < 6.0: return '▒'
+        if dist < 10.0: return '░'
+        return '·'
+    
+    @staticmethod
+    def ceiling_char(depth: int, view_height: int) -> str:
+        """Get ceiling character based on depth from horizon."""
+        if depth > view_height // 3:
+            return ' '  # Far ceiling (dark)
+        elif depth > view_height // 6:
+            return '░'  # Mid ceiling
+        return '▒'  # Near ceiling
+    
+    @staticmethod
+    def floor_char(depth: int, view_height: int) -> str:
+        """Get floor character based on depth from horizon."""
+        if depth > view_height // 3:
+            return '░'  # Far floor
+        elif depth > view_height // 6:
+            return '▒'  # Mid floor
+        return '▓'  # Near floor
+    
+    def _render_3d_raycasting(self, width: int = 60, height: int = 28,
+                               fov: float = None, agent_angle: float = None,
+                               cast_ray_func=None, 
+                               overlay_func=None,
+                               ceiling_char_override: str = None,
+                               floor_char_override: str = None) -> str:
+        """
+        Shared raycasting-based 3D renderer.
+        
+        Args:
+            width: View width in chars
+            height: View height in chars  
+            fov: Field of view in radians (default π/2 = 90°)
+            agent_angle: Agent facing angle in radians
+            cast_ray_func: Function(ray_angle) -> distance to wall
+            overlay_func: Optional function(row, col, char, dist, wall_top, wall_bottom) -> char
+                          Called for each cell to allow custom overlays
+            ceiling_char_override: Override default ceiling character
+            floor_char_override: Override default floor character
+            
+        Returns:
+            ASCII string with frame border
+        """
+        import numpy as np
+        
+        if fov is None:
+            fov = np.pi / 2  # 90 degrees
+        if agent_angle is None:
+            agent_angle = self.agent.angle * (np.pi / 4) if isinstance(self.agent.angle, int) else self.agent.angle
+        if cast_ray_func is None:
+            cast_ray_func = getattr(self, '_cast_ray', lambda a: 10.0)
+        
+        lines = []
+        view_width = width - 2
+        view_height = height - 2
+        horizon = view_height // 2
+        
+        lines.append("╔" + "═" * view_width + "╗")
+        
+        # Cast rays for each column
+        column_data = []
+        for col in range(view_width):
+            ray_offset = (col / max(1, view_width - 1)) - 0.5
+            ray_angle = agent_angle - ray_offset * fov
+            
+            dist = cast_ray_func(ray_angle)
+            corrected_dist = dist * np.cos(ray_offset * fov)  # Fish-eye correction
+            
+            if corrected_dist < 0.5:
+                wall_height = view_height
+            else:
+                wall_height = min(view_height, int(view_height * 1.5 / (corrected_dist + 0.5)))
+            
+            wall_top = max(0, horizon - wall_height // 2)
+            wall_bottom = min(view_height, horizon + wall_height // 2)
+            
+            column_data.append((wall_top, wall_bottom, corrected_dist))
+        
+        # Render rows
+        for row in range(view_height):
+            row_chars = []
+            for col, (wall_top, wall_bottom, dist) in enumerate(column_data):
+                if row < wall_top:
+                    ceiling_depth = wall_top - row
+                    if ceiling_char_override:
+                        char = ceiling_char_override
+                    else:
+                        char = self.ceiling_char(ceiling_depth, view_height)
+                elif row >= wall_bottom:
+                    floor_depth = row - wall_bottom
+                    if floor_char_override:
+                        char = floor_char_override
+                    else:
+                        char = self.floor_char(floor_depth, view_height)
+                else:
+                    char = self.wall_char(dist)
+                
+                # Allow overlay customization
+                if overlay_func:
+                    char = overlay_func(row, col, char, dist, wall_top, wall_bottom)
+                
+                row_chars.append(char)
+            
+            lines.append("║" + ''.join(row_chars) + "║")
+        
+        lines.append("╚" + "═" * view_width + "╝")
+        
+        return '\n'.join(lines)
+
+    def _cast_ray(self, angle: float, max_dist: float = 20.0, step_size: float = 0.2) -> float:
+        """
+        Shared raycasting method for 3D rendering.
+        
+        Cast a ray from agent position at given angle and return distance to wall.
+        Uses _check_collision_at() for collision detection.
+        
+        Args:
+            angle: Ray angle in radians
+            max_dist: Maximum ray distance
+            step_size: Step size for ray marching
+            
+        Returns:
+            Distance to first collision (or max_dist if none)
+        """
+        import numpy as np
+        
+        dx = np.cos(angle)
+        dy = np.sin(angle)
+        x, y = float(self.agent.x), float(self.agent.y)
+        
+        steps = int(max_dist / step_size)
+        for step in range(steps):
+            t = step * step_size
+            rx = x + dx * t
+            ry = y + dy * t
+            
+            ix, iy = int(round(rx)), int(round(ry))
+            
+            if self._check_collision_at(ix, iy):
+                return max(0.1, t)
+        
+        return max_dist
+
+    # ==================== Shared 2D Topdown Rendering Helpers ====================
+
+    @staticmethod
+    def _draw_disk(img: np.ndarray, cx: int, cy: int, radius: int, 
+                   color: tuple, img_size: int = 224):
+        """Draw a filled circle (disk) on an image at (cx, cy)."""
+        r2 = radius * radius
+        for dx in range(-radius, radius + 1):
+            for dy in range(-radius, radius + 1):
+                if dx * dx + dy * dy <= r2:
+                    px, py = cx + dx, cy + dy
+                    if 0 <= px < img_size and 0 <= py < img_size:
+                        img[py, px] = color
+
+    @staticmethod
+    def _draw_line(img: np.ndarray, x1: int, y1: int, x2: int, y2: int, 
+                   color: tuple, thickness: int = 1, img_size: int = 224):
+        """Draw a line on the image using Bresenham-style stepping."""
+        steps = max(abs(x2 - x1), abs(y2 - y1), 1)
+        for i in range(steps + 1):
+            t = i / steps
+            x = int(x1 + t * (x2 - x1))
+            y = int(y1 + t * (y2 - y1))
+            half = thickness // 2
+            for dx in range(-half, half + 1):
+                for dy in range(-half, half + 1):
+                    px, py = x + dx, y + dy
+                    if 0 <= px < img_size and 0 <= py < img_size:
+                        img[py, px] = color
+
+    @staticmethod
+    def _draw_rect(img: np.ndarray, x1: int, y1: int, x2: int, y2: int, 
+                   color: tuple, filled: bool = True):
+        """Draw a rectangle on the image."""
+        x1, x2 = min(x1, x2), max(x1, x2)
+        y1, y2 = min(y1, y2), max(y1, y2)
+        x1, x2 = max(0, x1), min(img.shape[1], x2)
+        y1, y2 = max(0, y1), min(img.shape[0], y2)
+        if filled:
+            img[y1:y2, x1:x2] = color
+        else:
+            img[y1:y1+1, x1:x2] = color  # Top
+            img[y2-1:y2, x1:x2] = color  # Bottom
+            img[y1:y2, x1:x1+1] = color  # Left
+            img[y1:y2, x2-1:x2] = color  # Right
+
+    # ==================== Shared Movement Helpers ====================
+
+    def _move_continuous(self, action: Action, speed: float = 0.2, 
+                         turn_rate: float = np.pi / 4,
+                         x_bounds: tuple = None, y_bounds: tuple = None) -> bool:
+        """
+        Execute continuous (float-based) movement.
+        
+        Args:
+            action: The action to execute
+            speed: Forward movement speed per step
+            turn_rate: Rotation amount per turn (radians)
+            x_bounds: Optional (min, max) tuple for x clamping
+            y_bounds: Optional (min, max) tuple for y clamping
+            
+        Returns:
+            True if movement occurred, False otherwise
+        """
+        moved = False
+        
+        if action == Action.FORWARD:
+            self.agent.x += speed * np.cos(self.agent.angle)
+            self.agent.y += speed * np.sin(self.agent.angle)
+            moved = True
+            
+            # Apply bounds if specified
+            if x_bounds is not None:
+                self.agent.x = np.clip(self.agent.x, x_bounds[0], x_bounds[1])
+            if y_bounds is not None:
+                self.agent.y = np.clip(self.agent.y, y_bounds[0], y_bounds[1])
+                
+        elif action == Action.TURN_LEFT:
+            self.agent.angle += turn_rate
+            
+        elif action == Action.TURN_RIGHT:
+            self.agent.angle -= turn_rate
+        
+        # Normalize angle to [0, 2π)
+        self.agent.angle = self.agent.angle % (2 * np.pi)
+        
+        return moved
+
+    def _get_chamber(self, threshold: float = 0.0) -> int:
+        """
+        Get current chamber based on x position.
+        
+        Args:
+            threshold: X value that separates chambers (default 0)
+            
+        Returns:
+            0 for left chamber (x < threshold), 1 for right chamber
+        """
+        return 0 if self.agent.x < threshold else 1
+
+    def _distance_to(self, x: float, y: float) -> float:
+        """Calculate Euclidean distance from agent to a point."""
+        return np.sqrt((self.agent.x - x)**2 + (self.agent.y - y)**2)
+
+    def _render_topdown_base(self, img_size: int = 224, 
+                              floor_func=None, 
+                              overlay_func=None) -> np.ndarray:
+        """
+        Shared topdown renderer for grid-based environments.
+        
+        Args:
+            img_size: Output image size (default 224x224)
+            floor_func: Optional function(x, y) -> color for floor tiles
+            overlay_func: Optional function(img, scale, offset) to draw overlays
+            
+        Returns:
+            numpy array of shape (img_size, img_size, 3)
+        """
+        img = np.zeros((img_size, img_size, 3), dtype=np.uint8)
+        img[:] = (50, 50, 50)  # Background
+        
+        if not hasattr(self, 'grid_size'):
+            return img
+            
+        scale = img_size // self.grid_size
+        offset = (img_size - self.grid_size * scale) // 2
+        
+        # Draw floor
+        if hasattr(self, 'valid_positions'):
+            for (x, y) in self.valid_positions:
+                px = offset + x * scale
+                py = offset + (self.grid_size - 1 - y) * scale  # Flip Y
+                if floor_func:
+                    color = floor_func(x, y)
+                else:
+                    color = getattr(self, 'floor_color', (180, 180, 180))
+                if 0 <= px < img_size - scale and 0 <= py < img_size - scale:
+                    img[py:py+scale, px:px+scale] = color
+        
+        # Allow custom overlays (goals, rewards, holes, etc.)
+        if overlay_func:
+            overlay_func(img, scale, offset)
+        
+        # Draw agent
+        if hasattr(self, 'agent'):
+            ax = offset + self.agent.x * scale + scale // 2
+            ay = offset + (self.grid_size - 1 - self.agent.y) * scale + scale // 2
+            agent_color = (255, 100, 100)
+            self._draw_disk(img, ax, ay, scale // 2 - 1, agent_color, img_size)
+            
+            # Direction indicator
+            if isinstance(self.agent.angle, int):
+                from environments.base_env import DIR_VECTORS
+                dir_dx, dir_dy = DIR_VECTORS[self.agent.angle]
+                agent_rad = self.agent.angle * (np.pi / 4)
+            else:
+                dir_dx = np.cos(self.agent.angle)
+                dir_dy = np.sin(self.agent.angle)
+                agent_rad = self.agent.angle
+            
+            nose_x = int(ax + dir_dx * (scale // 2 + 2))
+            nose_y = int(ay - dir_dy * (scale // 2 + 2))  # Flip Y
+            self._draw_disk(img, nose_x, nose_y, 3, (200, 50, 50), img_size)
+        
+        return img
+
+    # ==================== Shared FPV Rendering Helpers ====================
+
+    @staticmethod
+    def _draw_shape(img: np.ndarray, shape: str, cx: int, cy: int, size: int, 
+                    color: tuple, y_min: int = 0, y_max: int = 224):
+        """
+        Draw a shape at position for FPV rendering.
+        
+        Args:
+            img: Image array to draw on
+            shape: 'circle', 'square', 'triangle', 'diamond', 'star'
+            cx, cy: Center position
+            size: Shape size in pixels
+            color: RGB color tuple
+            y_min, y_max: Y bounds for clipping
+        """
+        if shape == 'circle':
+            for dx in range(-size, size + 1):
+                for dy in range(-size, size + 1):
+                    if dx * dx + dy * dy <= size * size:
+                        px, py = cx + dx, cy + dy
+                        if 0 <= px < 224 and y_min <= py < y_max:
+                            img[py, px] = color
+        elif shape == 'square':
+            for dx in range(-size, size + 1):
+                for dy in range(-size, size + 1):
+                    px, py = cx + dx, cy + dy
+                    if 0 <= px < 224 and y_min <= py < y_max:
+                        img[py, px] = color
+        elif shape == 'triangle':
+            for dy in range(-size, size + 1):
+                width = int(size * (1 - abs(dy) / size)) if size > 0 else 0
+                for dx in range(-width, width + 1):
+                    px, py = cx + dx, cy + dy
+                    if 0 <= px < 224 and y_min <= py < y_max:
+                        img[py, px] = color
+        elif shape == 'diamond':
+            for dy in range(-size, size + 1):
+                width = size - abs(dy)
+                for dx in range(-width, width + 1):
+                    px, py = cx + dx, cy + dy
+                    if 0 <= px < 224 and y_min <= py < y_max:
+                        img[py, px] = color
+        elif shape == 'star':
+            for dy in range(-size, size + 1):
+                for dx in range(-size, size + 1):
+                    if abs(dx) <= 2 or abs(dy) <= 2 or abs(abs(dx) - abs(dy)) <= 2:
+                        px, py = cx + dx, cy + dy
+                        if 0 <= px < 224 and y_min <= py < y_max:
+                            img[py, px] = color
+
+    def _render_fpv_raycasting(self, img_size: int = 224,
+                                fov: float = None,
+                                num_rays: int = 224,
+                                ceiling_color: tuple = (150, 150, 150),
+                                floor_color: tuple = None,
+                                wall_color_func=None,
+                                max_dist: float = 15.0,
+                                horizon: int = 112,
+                                overlay_func=None) -> np.ndarray:
+        """
+        Shared raycasting-based FPV renderer for maze environments.
+        
+        Args:
+            img_size: Output image size (default 224)
+            fov: Field of view in radians (default π/2)
+            num_rays: Number of rays to cast (default 224)
+            ceiling_color: RGB tuple for ceiling
+            floor_color: RGB tuple for floor (uses self.floor_color if None)
+            wall_color_func: Optional function(distance) -> RGB for wall shading
+            max_dist: Maximum ray distance for wall rendering
+            horizon: Y position of horizon line
+            overlay_func: Optional function(img, agent_angle, fov) for goals/landmarks
+            
+        Returns:
+            numpy array of shape (img_size, img_size, 3)
+        """
+        img = np.zeros((img_size, img_size, 3), dtype=np.uint8)
+        
+        if fov is None:
+            fov = np.pi / 2
+        if floor_color is None:
+            floor_color = getattr(self, 'floor_color', (180, 180, 180))
+        
+        # Draw ceiling and floor
+        img[:horizon - 42, :] = ceiling_color
+        img[horizon + 42:, :] = floor_color
+        
+        # Get agent angle
+        if isinstance(self.agent.angle, int):
+            agent_angle = self.agent.angle * (np.pi / 4)
+        else:
+            agent_angle = self.agent.angle
+        
+        # Cast rays for walls
+        for i in range(num_rays):
+            ray_angle = agent_angle - fov / 2 + (i / num_rays) * fov
+            dist = self._cast_ray(ray_angle)
+            
+            if dist < max_dist:
+                wall_height = min(84, int(150 / (dist + 0.5)))
+                y_start = horizon - wall_height
+                y_end = horizon + wall_height
+                
+                if wall_color_func:
+                    wall_color = wall_color_func(dist)
+                else:
+                    # Default wall shading
+                    shade = max(50, 255 - int(dist * 20))
+                    wall_color = (int(shade * 0.4), int(shade * 0.3), int(shade * 0.25))
+                
+                img[y_start:y_end, i] = wall_color
+        
+        # Allow custom overlays (goals, landmarks)
+        if overlay_func:
+            overlay_func(img, agent_angle, fov)
+        
+        return img
+
+    def _render_goal_in_fpv(self, img: np.ndarray, goal_x: float, goal_y: float,
+                             goal_color: tuple, fov: float = None,
+                             horizon: int = 130, y_min: int = 70, y_max: int = 154):
+        """
+        Render a goal marker in FPV based on relative position.
+        
+        Args:
+            img: Image array to draw on
+            goal_x, goal_y: Goal world coordinates
+            goal_color: RGB color for goal
+            fov: Field of view in radians (default π/2)
+            horizon: Y position to draw goal at
+            y_min, y_max: Y bounds for clipping
+        """
+        if fov is None:
+            fov = np.pi / 2
+            
+        dx = goal_x - self.agent.x
+        dy = goal_y - self.agent.y
+        
+        # Get agent angle
+        if isinstance(self.agent.angle, int):
+            agent_angle = self.agent.angle * (np.pi / 4)
+        else:
+            agent_angle = self.agent.angle
+            
+        angle_to_goal = np.arctan2(dy, dx) - agent_angle
+        
+        # Normalize to [-π, π]
+        while angle_to_goal > np.pi:
+            angle_to_goal -= 2 * np.pi
+        while angle_to_goal < -np.pi:
+            angle_to_goal += 2 * np.pi
+        
+        if abs(angle_to_goal) < fov / 2:
+            # Screen position: positive angle (left) -> smaller x (left on screen)
+            screen_x = int(112 - angle_to_goal / (fov / 2) * 100)
+            dist = np.sqrt(dx * dx + dy * dy)
+            size = max(3, int(30 / (dist + 1)))
+            
+            self._draw_shape(img, 'circle', screen_x, horizon, size, goal_color, y_min, y_max)
+
     def _render_ascii_2d_fpv(self, view_width: int = 35, view_height: int = 23, 
                               view_distance: float = 5.0, fov_degrees: float = 120.0) -> str:
         """

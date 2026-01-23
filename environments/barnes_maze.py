@@ -66,8 +66,8 @@ class BarnesMaze(BaseEnvironment):
                 max_trial_steps=300,
                 success_criterion="find_escape_hole",
                 arena_size=14,
-                source_pmc="PMC6126525",
-                source_quote="The Barnes maze consists of a circular platform with 20 equidistant holes, 19 closed with plugs while the remaining hole leads to an escape shelter."
+                source_pmc="PMC3827415",
+                source_quote="The Barnes maze was originally developed by Carol Barnes for use with rats to assess spatial learning using a circular platform with escape holes around the perimeter."
             )
         
         super().__init__(config, view_mode)
@@ -399,60 +399,54 @@ class BarnesMaze(BaseEnvironment):
         
         return '\n'.join(''.join(row) for row in grid)
     
-    def _render_ascii_3d(self) -> str:
-        """Render ASCII pseudo-3D view from agent perspective."""
-        width, height = 40, 12
+    def _render_ascii_3d(self, width: int = 60, height: int = 28) -> str:
+        """Render ASCII pseudo-3D view from agent perspective on open platform."""
         lines = []
         
-        # Sky/ceiling (bright light)
-        lines.append('~' * width)
-        lines.append('~' * width)
+        # Header
+        lines.append(f"╔{'═' * (width-2)}╗")
         
-        # Horizon line with landmarks and walls
-        horizon = [' '] * width
+        view_height = height - 2  # Leave room for frame
+        horizon = view_height // 2  # Middle of screen
         
         # Agent direction in radians
         agent_rad = self.agent.angle * np.pi / 4
         fov = np.pi / 2  # 90 degree field of view
         
-        # Draw landmarks on horizon
-        for lm in self.landmarks:
-            dx = lm['x'] - self.agent.x
-            dy = lm['y'] - self.agent.y
-            angle = np.arctan2(dy, dx) - agent_rad
-            while angle > np.pi: angle -= 2*np.pi
-            while angle < -np.pi: angle += 2*np.pi
+        # Calculate distance to edge for each column
+        edge_data = []
+        for col in range(width - 2):
+            ray_offset = (col / (width - 3)) - 0.5  # -0.5 to 0.5
+            ray_angle = agent_rad - ray_offset * fov
             
-            if abs(angle) < fov/2:
-                screen_x = int(width/2 - angle / (fov/2) * (width/2 - 2))
-                if 0 <= screen_x < width:
-                    horizon[screen_x] = lm['name']
+            # Find where ray hits platform edge
+            cos_a, sin_a = np.cos(ray_angle), np.sin(ray_angle)
+            
+            # Ray: (agent.x + t*cos_a, agent.y + t*sin_a)
+            # Platform: (x - center_x)^2 + (y - center_y)^2 = r^2
+            # Solve for t
+            ax = self.agent.x - self.center_x
+            ay = self.agent.y - self.center_y
+            
+            a = 1  # cos^2 + sin^2
+            b = 2 * (ax * cos_a + ay * sin_a)
+            c = ax*ax + ay*ay - self.platform_radius**2
+            
+            discriminant = b*b - 4*a*c
+            if discriminant >= 0:
+                t1 = (-b + np.sqrt(discriminant)) / (2*a)
+                t2 = (-b - np.sqrt(discriminant)) / (2*a)
+                # We want the positive intersection in front of us
+                dist = max(0.5, min(t1, t2) if min(t1, t2) > 0 else max(t1, t2))
+            else:
+                dist = 15  # No intersection
+            
+            edge_data.append(dist * np.cos(ray_offset * fov))  # Fish-eye correction
         
-        # Draw walls on horizon (platform edge)
-        for i in range(36):
-            wall_angle = 2 * np.pi * i / 36
-            wall_r = self.platform_radius + 0.5
-            wx = self.center_x + wall_r * np.cos(wall_angle)
-            wy = self.center_y + wall_r * np.sin(wall_angle)
-            
-            dx = wx - self.agent.x
-            dy = wy - self.agent.y
-            dist = np.sqrt(dx*dx + dy*dy)
-            
-            rel_angle = np.arctan2(dy, dx) - agent_rad
-            while rel_angle > np.pi: rel_angle -= 2*np.pi
-            while rel_angle < -np.pi: rel_angle += 2*np.pi
-            
-            if abs(rel_angle) < fov/2 and dist < 8:
-                screen_x = int(width/2 - rel_angle / (fov/2) * (width/2 - 2))
-                if 0 <= screen_x < width and horizon[screen_x] == ' ':
-                    # Wall height based on distance
-                    horizon[screen_x] = '#' if dist < 4 else '.'
+        # Calculate visible objects (holes and landmarks)
+        visible_objects = {}  # col -> (char, distance)
         
-        lines.append(''.join(horizon))
-        
-        # Ground with visible holes
-        ground = ['.'] * width
+        # Check holes
         for hole in self.holes:
             dx = hole['x'] - self.agent.x
             dy = hole['y'] - self.agent.y
@@ -462,23 +456,78 @@ class BarnesMaze(BaseEnvironment):
             while rel_angle > np.pi: rel_angle -= 2*np.pi
             while rel_angle < -np.pi: rel_angle += 2*np.pi
             
-            if abs(rel_angle) < fov/2 and dist < 6:
-                screen_x = int(width/2 - rel_angle / (fov/2) * (width/2 - 2))
-                if 0 <= screen_x < width:
-                    # Only reveal escape hole when adjacent (touching)
-                    if hole['is_escape'] and dist <= 1.5:
-                        ground[screen_x] = 'E'
+            if abs(rel_angle) < fov/2 and dist < 12:
+                col = int((0.5 - rel_angle / fov) * (width - 3))
+                if 0 <= col < width - 2:
+                    # Show 'E' for escape hole only when close
+                    if hole['is_escape'] and dist <= 2.0:
+                        char = 'E'
                     else:
-                        ground[screen_x] = 'O'
+                        char = 'O'
+                    if col not in visible_objects or dist < visible_objects[col][1]:
+                        visible_objects[col] = (char, dist)
         
-        # Multiple ground rows
-        for row in range(6):
-            lines.append(''.join(ground))
+        # Check landmarks
+        for lm in self.landmarks:
+            dx = lm['x'] - self.agent.x
+            dy = lm['y'] - self.agent.y
+            dist = np.sqrt(dx*dx + dy*dy)
+            
+            rel_angle = np.arctan2(dy, dx) - agent_rad
+            while rel_angle > np.pi: rel_angle -= 2*np.pi
+            while rel_angle < -np.pi: rel_angle += 2*np.pi
+            
+            if abs(rel_angle) < fov/2:
+                col = int((0.5 - rel_angle / fov) * (width - 3))
+                if 0 <= col < width - 2:
+                    if col not in visible_objects or dist < visible_objects[col][1]:
+                        visible_objects[col] = (lm['name'], dist)
         
-        # Direction indicator at bottom
-        arrows = ['→', '↗', '↑', '↖', '←', '↙', '↓', '↘']
-        indicator = f"Facing: {arrows[self.agent.angle]}"
-        lines.append(indicator.center(width))
+        # Render each row
+        for row in range(view_height):
+            line = '║'
+            for col in range(width - 2):
+                edge_dist = edge_data[col]
+                
+                # Check for visible objects at ground level (horizon + a bit)
+                if col in visible_objects and horizon <= row <= horizon + 2:
+                    char, obj_dist = visible_objects[col]
+                    if obj_dist < edge_dist:
+                        line += char
+                        continue
+                
+                if row < horizon - 2:
+                    # Sky - bright/light
+                    sky_height = horizon - 2 - row
+                    if sky_height > view_height // 4:
+                        line += '~'  # High sky
+                    else:
+                        line += '░'  # Near horizon sky
+                elif row == horizon - 2 or row == horizon - 1:
+                    # Horizon line with edge markers
+                    if edge_dist < 3:
+                        line += '█'  # Close edge
+                    elif edge_dist < 6:
+                        line += '▓'  # Medium edge
+                    elif edge_dist < 10:
+                        line += '▒'  # Far edge
+                    else:
+                        line += '░'  # Very far/no edge
+                else:
+                    # Ground/floor
+                    floor_depth = row - horizon
+                    if floor_depth < view_height // 6:
+                        line += '·'  # Near floor
+                    elif floor_depth < view_height // 3:
+                        line += '.'  # Mid floor
+                    else:
+                        line += ','  # Far floor
+            
+            line += '║'
+            lines.append(line)
+        
+        # Footer
+        lines.append(f"╚{'═' * (width-2)}╝")
         
         return '\n'.join(lines)
 

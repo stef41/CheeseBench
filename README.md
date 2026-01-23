@@ -69,15 +69,15 @@ Reply with ONLY the action word. No explanations.
 
 | Environment | Cognitive Domain | Citation |
 |------------|-----------------|----------|
-| Morris Water Maze | Spatial Learning | [PMC12765891](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12765891/) |
-| T-Maze | Working Memory | [PMC3181652](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3181652/) |
-| Barnes Maze | Spatial Memory | [PMC4480627](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4480627/) |
-| Radial Arm Maze | Working/Reference Memory | [PMC2892270](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2892270/) |
-| Operant Chamber | Instrumental Learning | [PMC3181652](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3181652/) |
-| Shuttle Box | Avoidance Learning | [PMC4480627](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4480627/) |
-| Place Preference | Reward Association | [PMC2892270](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2892270/) |
-| Star Maze | Allocentric Navigation | [PMC3181652](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3181652/) |
-| DNMS Task | Recognition Memory | [PMC4480627](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4480627/) |
+| Morris Water Maze | Spatial Learning | [PMC2895266](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2895266/) - Vorhees & Williams |
+| T-Maze | Working Memory | [PMC3399492](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3399492/) - Deacon & Rawlins |
+| Barnes Maze | Spatial Memory | [PMC3827415](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3827415/) - Attar et al. |
+| Radial Arm Maze | Working/Reference Memory | [PMC4030456](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4030456/) - Levin et al. |
+| Operant Chamber | Instrumental Learning | [PMC2895266](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2895266/) - Vorhees & Williams |
+| Shuttle Box | Avoidance Learning | [PMC4692667](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4692667/) - Bhagya et al. |
+| Place Preference | Reward Association | [PMC6101638](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6101638/) - Tzschentke |
+| Star Maze | Allocentric Navigation | [PMC3399492](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3399492/) - Vorhees & Williams |
+| DNMS Task | Recognition Memory | [PMC3982138](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3982138/) - Buffalo et al. |
 
 ## View Modes
 

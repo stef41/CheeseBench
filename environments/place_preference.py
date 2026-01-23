@@ -131,23 +131,10 @@ class PlacePreference(BaseEnvironment):
         """Execute action and return reward."""
         reward = 0.0
         
-        # Movement
-        if action == Action.FORWARD:
-            self.agent.x += 0.2 * np.cos(self.agent.angle)
-            self.agent.y += 0.2 * np.sin(self.agent.angle)
-            # Clamp to arena
-            self.agent.x = np.clip(self.agent.x, -1.8, 1.8)
-            self.agent.y = np.clip(self.agent.y, -0.7, 0.7)
-        elif action == Action.TURN_LEFT:
-            self.agent.angle += np.pi / 4  # 45° per turn
-        elif action == Action.TURN_RIGHT:
-            self.agent.angle -= np.pi / 4  # 45° per turn
-        
-        self.agent.angle = self.agent.angle % (2 * np.pi)
-        
-        # Update current chamber
+        # Movement using shared helper
         old_chamber = self.current_chamber
-        self.current_chamber = 0 if self.agent.x < 0 else 1
+        self._move_continuous(action, speed=0.2, x_bounds=(-1.8, 1.8), y_bounds=(-0.7, 0.7))
+        self.current_chamber = self._get_chamber()
         
         # Track time
         self.time_in_chamber[self.current_chamber] += 1
@@ -213,86 +200,56 @@ class PlacePreference(BaseEnvironment):
                         img[y, x] = (floor_base * 0.7).astype(np.uint8)
         else:  # dots
             img[154:, :] = floor_base
+            dot_color = tuple((floor_base * 0.6).astype(np.uint8))
             for y in range(160, 220, 15):
                 for x in range(10, 220, 15):
-                    for dx in range(-3, 4):
-                        for dy in range(-3, 4):
-                            if dx**2 + dy**2 <= 9:
-                                px, py = x + dx, y + dy
-                                if 154 <= py < 224 and 0 <= px < 224:
-                                    img[py, px] = (floor_base * 0.6).astype(np.uint8)
+                    self._draw_disk(img, x, y, 3, dot_color)
         
         # Door to other chamber (center)
-        door_width = 50
-        img[90:154, 112-door_width//2:112+door_width//2] = (40, 40, 40)
+        self._draw_rect(img, 87, 90, 137, 154, (40, 40, 40))
         
-        # Phase indicator
+        # Phase indicator (using shared _draw_disk)
         if self.phase == 'conditioning' and self.current_chamber == self.conditioning_chamber:
-            # Reward indicator
-            for dx in range(-15, 16):
-                for dy in range(-15, 16):
-                    if dx**2 + dy**2 <= 225:
-                        px, py = 112 + dx, 40 + dy
-                        if 0 <= px < 224 and 0 <= py < 224:
-                            img[py, px] = (255, 215, 0)  # Gold for reward
+            self._draw_disk(img, 112, 40, 15, (255, 215, 0))  # Gold for reward
         
         return img
     
     def _render_topdown(self) -> np.ndarray:
-        """Render top-down view."""
+        """Render top-down view using shared helpers."""
         img = np.zeros((224, 224, 3), dtype=np.uint8)
         
-        # Left chamber
-        ch0 = self.chambers[0]
-        img[40:184, 20:107] = ch0['floor_color']
+        # Left/Right chambers
+        ch0, ch1 = self.chambers[0], self.chambers[1]
+        self._draw_rect(img, 20, 40, 107, 184, ch0['floor_color'])
+        self._draw_rect(img, 117, 40, 204, 184, ch1['floor_color'])
         
-        # Right chamber
-        ch1 = self.chambers[1]
-        img[40:184, 117:204] = ch1['floor_color']
-        
-        # Patterns
-        # Stripes in left chamber
+        # Patterns - stripes in left chamber
+        stripe_color = (int(ch0['floor_color'][0]*0.7), int(ch0['floor_color'][1]*0.7), int(ch0['floor_color'][2]*0.7))
         for x in range(20, 107, 12):
-            img[40:184, x:x+6] = (ch0['floor_color'][0]*0.7, ch0['floor_color'][1]*0.7, ch0['floor_color'][2]*0.7)
+            self._draw_rect(img, x, 40, x+6, 184, stripe_color)
         
         # Dots in right chamber
+        dot_color = (int(ch1['floor_color'][0]*0.6), int(ch1['floor_color'][1]*0.6), int(ch1['floor_color'][2]*0.6))
         for y in range(50, 180, 20):
             for x in range(127, 200, 20):
-                for dx in range(-4, 5):
-                    for dy in range(-4, 5):
-                        if dx**2 + dy**2 <= 16:
-                            px, py = x + dx, y + dy
-                            if 40 <= py < 184 and 117 <= px < 204:
-                                img[py, px] = (ch1['floor_color'][0]*0.6, ch1['floor_color'][1]*0.6, ch1['floor_color'][2]*0.6)
+                self._draw_disk(img, x, y, 4, dot_color)
         
-        # Door
-        img[90:134, 107:117] = (60, 60, 60)
-        
-        # Walls
-        img[38:40, 18:206] = (80, 80, 80)
-        img[184:186, 18:206] = (80, 80, 80)
-        img[38:186, 18:20] = (80, 80, 80)
-        img[38:186, 204:206] = (80, 80, 80)
+        # Door and walls
+        self._draw_rect(img, 107, 90, 117, 134, (60, 60, 60))
+        self._draw_rect(img, 18, 38, 206, 40, (80, 80, 80))  # Top
+        self._draw_rect(img, 18, 184, 206, 186, (80, 80, 80))  # Bottom
+        self._draw_rect(img, 18, 38, 20, 186, (80, 80, 80))  # Left
+        self._draw_rect(img, 204, 38, 206, 186, (80, 80, 80))  # Right
         
         # Conditioning chamber marker
         if self.phase == 'conditioning':
             marker_x = 63 if self.conditioning_chamber == 0 else 160
-            for dx in range(-8, 9):
-                for dy in range(-8, 9):
-                    if dx**2 + dy**2 <= 64:
-                        px, py = marker_x + dx, 55 + dy
-                        if 0 <= px < 224 and 0 <= py < 224:
-                            img[py, px] = (255, 215, 0)
+            self._draw_disk(img, marker_x, 55, 8, (255, 215, 0))
         
         # Agent
         agent_x = int(112 + self.agent.x * 50)
-        agent_y = int(112 - self.agent.y * 50)  # Flip Y: positive Y = UP on screen (lower pixel row)
-        for dx in range(-6, 7):
-            for dy in range(-6, 7):
-                if dx**2 + dy**2 <= 36:
-                    px, py = agent_x + dx, agent_y + dy
-                    if 0 <= px < 224 and 0 <= py < 224:
-                        img[py, px] = (0, 150, 255)
+        agent_y = int(112 - self.agent.y * 50)  # Flip Y
+        self._draw_disk(img, agent_x, agent_y, 6, (0, 150, 255))
         
         return img
     
@@ -337,37 +294,112 @@ class PlacePreference(BaseEnvironment):
         grid[agent_y][agent_x] = agent_char
         
         return '\n'.join(''.join(row) for row in grid)
-        
-        return '\n'.join(''.join(row) for row in grid)
     
-    def _render_ascii_3d(self, width: int = 60, height: int = 30) -> str:
-        """Render ASCII 3D view."""
+    def _render_ascii_3d(self, width: int = 60, height: int = 28) -> str:
+        """Render ASCII 3D view with raycasting-based perspective."""
         lines = []
+        view_width = width - 2
+        view_height = height - 2
+        
+        # Wall characters by distance
+        def wall_char(dist: float) -> str:
+            if dist < 1.5: return '█'
+            if dist < 3.0: return '▓'
+            if dist < 5.0: return '▒'
+            if dist < 8.0: return '░'
+            return '·'
+        
         chamber = self.chambers[self.current_chamber]
         pattern = chamber['floor_pattern']
         
         # Different ceiling texture per chamber (visual cue)
         ceiling_char = '░' if self.current_chamber == 0 else '▒'
         
-        lines.append(f"╔{'═' * (width-2)}╗")
+        # Chamber boundaries
+        if self.current_chamber == 0:  # Left chamber
+            wall_left = -self.chamber_width
+            wall_right = 0
+        else:  # Right chamber
+            wall_left = 0
+            wall_right = self.chamber_width
         
-        # 3D chamber view - no labels, just visual differences
-        for i in range(height - 5):
-            if i < 5:
-                lines.append(f"║{ceiling_char * (width-2)}║")
-            elif i < 10:
-                # Door
-                door = "░░░░░░░░░░"
-                pad = (width - 2 - len(door)) // 2
-                lines.append(f"║{' ' * pad}{door}{' ' * (width - 2 - pad - len(door))}║")
-            else:
-                # Floor with distinct pattern per chamber
-                if pattern == 'stripes':
-                    floor_line = '│ ' * ((width-2) // 2)  # Striped floor
+        wall_front = self.chamber_depth / 2
+        wall_back = -self.chamber_depth / 2
+        
+        fov = np.pi / 2
+        agent_angle = self.agent.angle
+        
+        # Cast rays
+        ray_distances = []
+        ray_hit_door = []
+        for col in range(view_width):
+            ray_offset = (col / view_width - 0.5) * fov
+            ray_angle = agent_angle + ray_offset
+            
+            dx = np.cos(ray_angle)
+            dy = np.sin(ray_angle)
+            
+            # Distance to front/back walls
+            if abs(dy) > 0.01:
+                if dy > 0:
+                    dist_y = (wall_front - self.agent.y) / dy
                 else:
-                    floor_line = '. ' * ((width-2) // 2)  # Dotted floor
-                lines.append(f"║{floor_line[:width-2]}║")
+                    dist_y = (wall_back - self.agent.y) / dy
+                dist_y = max(0.1, abs(dist_y))
+            else:
+                dist_y = 20
+            
+            # Distance to side walls / door
+            hit_door = False
+            if abs(dx) > 0.01:
+                if dx > 0:
+                    dist_x = (wall_right - self.agent.x) / dx
+                else:
+                    dist_x = (wall_left - self.agent.x) / dx
+                dist_x = max(0.1, abs(dist_x))
+                
+                # Check if hitting door at x=0
+                if (self.current_chamber == 0 and dx > 0) or (self.current_chamber == 1 and dx < 0):
+                    hit_y = self.agent.y + dy * dist_x
+                    if abs(hit_y) < 0.4:  # Door opening
+                        hit_door = True
+                        dist_x = 12
+            else:
+                dist_x = 20
+            
+            dist = min(dist_x, dist_y)
+            dist *= np.cos(ray_offset)  # Fish-eye correction
+            ray_distances.append(max(0.5, dist))
+            ray_hit_door.append(hit_door)
         
-        lines.append(f"╚{'═' * (width-2)}╝")
+        lines.append("╔" + "═" * view_width + "╗")
+        
+        for row in range(view_height):
+            row_chars = []
+            for col in range(view_width):
+                dist = ray_distances[col]
+                wall_height = int(view_height * 1.3 / (dist + 0.3))
+                half_wall = wall_height // 2
+                center = view_height // 2
+                
+                if row < center - half_wall:
+                    char = ceiling_char
+                elif row > center + half_wall:
+                    # Floor with distinct pattern
+                    if pattern == 'stripes':
+                        char = '│' if (col % 2 == 0) else ' '
+                    else:
+                        char = '.' if (col + row) % 3 == 0 else ' '
+                else:
+                    if ray_hit_door[col]:
+                        char = '░'  # Door opening
+                    else:
+                        char = wall_char(dist)
+                
+                row_chars.append(char)
+            
+            lines.append("║" + ''.join(row_chars) + "║")
+        
+        lines.append("╚" + "═" * view_width + "╝")
         
         return '\n'.join(lines)

@@ -168,28 +168,10 @@ class ShuttleBox(BaseEnvironment):
         # Update phase
         self._update_trial_phase()
         
-        # Movement
-        old_x = self.agent.x
-        
-        if action == Action.FORWARD:
-            dx = 0.3 * np.cos(self.agent.angle)
-            self.agent.x += dx
-            # Clamp to chambers
-            self.agent.x = np.clip(self.agent.x, -1.8, 1.8)
-        
-        elif action == Action.TURN_LEFT:
-            self.agent.angle += np.pi / 4  # 45° per turn
-        elif action == Action.TURN_RIGHT:
-            self.agent.angle -= np.pi / 4  # 45° per turn
-        
-        self.agent.angle = self.agent.angle % (2 * np.pi)
-        
-        # Check chamber transition
+        # Movement using shared helper
         old_chamber = self.current_chamber
-        if self.agent.x < 0:
-            self.current_chamber = 0
-        else:
-            self.current_chamber = 1
+        self._move_continuous(action, speed=0.3, x_bounds=(-1.8, 1.8))
+        self.current_chamber = self._get_chamber()
         
         # Did agent shuttle?
         if old_chamber != self.current_chamber:
@@ -262,18 +244,11 @@ class ShuttleBox(BaseEnvironment):
         img[70:154, :] = self.wall_color
         
         # Door/passage to other chamber
-        door_center = 112
-        door_half_width = 40
-        img[90:154, door_center-door_half_width:door_center+door_half_width] = self.door_color
+        self._draw_rect(img, 72, 90, 152, 154, self.door_color)
         
-        # Cue light (top center)
+        # Cue light (top center) using shared _draw_disk
         if self.cue_active:
-            for dx in range(-20, 21):
-                for dy in range(-15, 16):
-                    if dx**2 + dy**2 <= 300:
-                        px, py = 112 + dx, 40 + dy
-                        if 0 <= px < 224 and 0 <= py < 224:
-                            img[py, px] = self.cue_light_color
+            self._draw_disk(img, 112, 40, 17, self.cue_light_color)
         
         # Shock indicator (red flash on edges)
         if self.shock_active and self.current_chamber == self.shock_chamber:
@@ -283,67 +258,50 @@ class ShuttleBox(BaseEnvironment):
         # Chamber indicator
         text_y = 200
         if self.current_chamber == 0:
-            img[text_y:text_y+10, 10:50] = (150, 150, 150)  # Left indicator
+            self._draw_rect(img, 10, text_y, 50, text_y+10, (150, 150, 150))
         else:
-            img[text_y:text_y+10, 174:214] = (150, 150, 150)  # Right indicator
+            self._draw_rect(img, 174, text_y, 214, text_y+10, (150, 150, 150))
         
         return img
     
     def _render_topdown(self) -> np.ndarray:
-        """Render top-down view."""
+        """Render top-down view using shared helpers."""
         img = np.zeros((224, 224, 3), dtype=np.uint8)
         
         # Two chambers
         left_color = self.shock_floor_color if (self.shock_active and self.shock_chamber == 0) else self.floor_color
         right_color = self.shock_floor_color if (self.shock_active and self.shock_chamber == 1) else self.floor_color
         
-        # Left chamber
-        img[40:184, 20:105] = left_color
-        # Right chamber  
-        img[40:184, 119:204] = right_color
-        
-        # Door/passage
-        img[90:134, 105:119] = self.door_color
+        # Left/Right chambers and door (using _draw_rect)
+        self._draw_rect(img, 20, 40, 105, 184, left_color)
+        self._draw_rect(img, 119, 40, 204, 184, right_color)
+        self._draw_rect(img, 105, 90, 119, 134, self.door_color)
         
         # Walls (outlines)
-        img[38:40, 18:206] = self.wall_color  # Top
-        img[184:186, 18:206] = self.wall_color  # Bottom
-        img[38:186, 18:20] = self.wall_color  # Left
-        img[38:186, 204:206] = self.wall_color  # Right
+        self._draw_rect(img, 18, 38, 206, 40, self.wall_color)  # Top
+        self._draw_rect(img, 18, 184, 206, 186, self.wall_color)  # Bottom
+        self._draw_rect(img, 18, 38, 20, 186, self.wall_color)  # Left
+        self._draw_rect(img, 204, 38, 206, 186, self.wall_color)  # Right
         # Center divider (with door gap)
-        img[38:90, 105:107] = self.wall_color
-        img[134:186, 105:107] = self.wall_color
-        img[38:90, 117:119] = self.wall_color
-        img[134:186, 117:119] = self.wall_color
+        self._draw_rect(img, 105, 38, 107, 90, self.wall_color)
+        self._draw_rect(img, 105, 134, 107, 186, self.wall_color)
+        self._draw_rect(img, 117, 38, 119, 90, self.wall_color)
+        self._draw_rect(img, 117, 134, 119, 186, self.wall_color)
         
-        # Agent
+        # Agent (using _draw_disk)
         agent_screen_x = int(62 + (self.agent.x + 1.8) / 3.6 * 140)
-        agent_screen_y = int(112 - self.agent.y * 40)  # Flip Y: positive Y = UP on screen
-        for dx in range(-6, 7):
-            for dy in range(-6, 7):
-                if dx**2 + dy**2 <= 36:
-                    px, py = agent_screen_x + dx, agent_screen_y + dy
-                    if 0 <= px < 224 and 0 <= py < 224:
-                        img[py, px] = (0, 150, 255)
+        agent_screen_y = int(112 - self.agent.y * 40)  # Flip Y
+        self._draw_disk(img, agent_screen_x, agent_screen_y, 6, (0, 150, 255))
         
-        # Direction indicator (flip Y for sin component)
+        # Direction indicator
         dir_x = int(agent_screen_x + 10 * np.cos(self.agent.angle))
-        dir_y = int(agent_screen_y - 10 * np.sin(self.agent.angle))  # Flip Y
-        for dx in range(-2, 3):
-            for dy in range(-2, 3):
-                px, py = dir_x + dx, dir_y + dy
-                if 0 <= px < 224 and 0 <= py < 224:
-                    img[py, px] = (255, 255, 255)
+        dir_y = int(agent_screen_y - 10 * np.sin(self.agent.angle))
+        self._draw_disk(img, dir_x, dir_y, 2, (255, 255, 255))
         
         # Cue light indicator
         if self.cue_active:
             shock_x = 62 if self.shock_chamber == 0 else 161
-            for dx in range(-8, 9):
-                for dy in range(-8, 9):
-                    if dx**2 + dy**2 <= 64:
-                        px, py = shock_x + dx, 55 + dy
-                        if 0 <= px < 224 and 0 <= py < 224:
-                            img[py, px] = self.cue_light_color
+            self._draw_disk(img, shock_x, 55, 8, self.cue_light_color)
         
         return img
     
@@ -401,34 +359,113 @@ class ShuttleBox(BaseEnvironment):
         
         return '\n'.join(''.join(row) for row in grid)
     
-    def _render_ascii_3d(self, width: int = 60, height: int = 30) -> str:
-        """Render ASCII 3D view."""
+    def _render_ascii_3d(self, width: int = 60, height: int = 28) -> str:
+        """Render ASCII 3D view with raycasting-based perspective."""
         lines = []
+        view_width = width - 2
+        view_height = height - 2
         
-        # Different visual cues per chamber - no text labels
-        # Left chamber: ░ ceiling, Right chamber: ▒ ceiling
-        ceiling_char = '░' if self.current_chamber == 0 else '▒'
+        # Wall characters by distance
+        def wall_char(dist: float) -> str:
+            if dist < 1.5: return '█'
+            if dist < 3.0: return '▓'
+            if dist < 5.0: return '▒'
+            if dist < 8.0: return '░'
+            return '·'
         
-        lines.append(f"╔{'═' * (width-2)}╗")
+        # Chamber properties
+        chamber_half_width = self.chamber_width / 2
+        chamber_half_depth = self.chamber_depth / 2
         
-        # Chamber view - visual only
-        for i in range(height - 6):
-            if i < 5:
-                # Ceiling - different per chamber
-                lines.append(f"║{ceiling_char * (width-2)}║")
-            elif i < 10:
-                # Door area
-                door_chars = "▓▓▓▓▓▓▓▓▓▓"
-                padding = (width - 2 - len(door_chars)) // 2
-                lines.append(f"║{' ' * padding}{door_chars}{' ' * (width - 2 - padding - len(door_chars))}║")
-            else:
-                # Floor - shows shock visually with ▓▓▓ pattern
-                if self.shock_active and self.current_chamber == self.shock_chamber:
-                    floor_char = '▓'  # Electrified floor visual
+        # Agent in left chamber (x<0) or right chamber (x>0)
+        # Door passage at x=0
+        if self.current_chamber == 0:
+            wall_left = -self.chamber_width
+            wall_right = 0
+        else:
+            wall_left = 0
+            wall_right = self.chamber_width
+        
+        fov = np.pi / 2
+        agent_angle = self.agent.angle
+        
+        # Cast rays
+        ray_distances = []
+        ray_hit_door = []
+        for col in range(view_width):
+            ray_offset = (col / view_width - 0.5) * fov
+            ray_angle = agent_angle + ray_offset
+            
+            dx = np.cos(ray_angle)
+            dy = np.sin(ray_angle)
+            
+            # Distance to front/back walls
+            if abs(dy) > 0.01:
+                if dy > 0:
+                    dist_y = (chamber_half_depth - self.agent.y) / dy
                 else:
-                    floor_char = '░'
-                lines.append(f"║{floor_char * (width-2)}║")
+                    dist_y = (-chamber_half_depth - self.agent.y) / dy
+                dist_y = max(0.1, dist_y)
+            else:
+                dist_y = 20
+            
+            # Distance to side walls / door
+            hit_door = False
+            if abs(dx) > 0.01:
+                if dx > 0:
+                    dist_x = (wall_right - self.agent.x) / dx
+                else:
+                    dist_x = (wall_left - self.agent.x) / dx
+                dist_x = max(0.1, dist_x)
+                
+                # Check if hitting door (x=0 with door opening)
+                if (self.current_chamber == 0 and dx > 0) or (self.current_chamber == 1 and dx < 0):
+                    # Could be hitting door
+                    hit_y = self.agent.y + dy * dist_x
+                    if abs(hit_y) < self.door_width / 2:
+                        hit_door = True
+                        dist_x = 15  # See through door
+            else:
+                dist_x = 20
+            
+            dist = min(dist_x, dist_y)
+            dist *= np.cos(ray_offset)  # Fish-eye correction
+            ray_distances.append(max(0.5, dist))
+            ray_hit_door.append(hit_door)
         
-        lines.append(f"╚{'═' * (width-2)}╝")
+        # Visual cues
+        ceiling_char = '░' if self.current_chamber == 0 else '▒'
+        floor_char = '!' if self.shock_active and self.current_chamber == self.shock_chamber else '▓'
+        
+        lines.append("╔" + "═" * view_width + "╗")
+        
+        for row in range(view_height):
+            row_chars = []
+            for col in range(view_width):
+                dist = ray_distances[col]
+                wall_height = int(view_height * 1.3 / (dist + 0.3))
+                half_wall = wall_height // 2
+                center = view_height // 2
+                
+                if row < center - half_wall:
+                    char = ceiling_char
+                    # Cue light warning
+                    if self.cue_active and row < 3:
+                        char = '*'
+                elif row > center + half_wall:
+                    char = floor_char
+                else:
+                    # Wall or door
+                    if ray_hit_door[col]:
+                        char = '▒'  # Door opening visible
+                    else:
+                        char = wall_char(dist)
+                
+                row_chars.append(char)
+            
+            lines.append("║" + ''.join(row_chars) + "║")
+        
+        lines.append("╚" + "═" * view_width + "╝")
         
         return '\n'.join(lines)
+

@@ -1,3 +1,42 @@
-/__pycache__
-/quick_results.json
-/quick_test.py
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+*.egg
+dist/
+build/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# uv
+.uv/
+uv.lock
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Testing/Debug
+quick_results.json
+quick_test.py
+test_*.py
+debug_*.py
+
+# Generated assets
+*.mp4
+*.gif
+demo_views_preview.png
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb

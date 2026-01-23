@@ -38,12 +38,11 @@ class OperantChamber(BaseEnvironment):
     Protocol: Agent learns to press lever(s) for reward.
     Various reinforcement schedules: FR, VR, FI, VI.
     
-    From verified protocols (PMC4598097 - Martin & Iceberg, J Vis Exp 2015):
-    - "Program the operant responses (lever presses) necessary to obtain reward 
-       on a progressive ratio schedule of reinforcement."
-    - "Place mouse levers in the test chamber on the wall opposite of the 
-       guillotine door."
-    - "Place a liquid dipper food receptacle between the two mouse levers."
+    From verified protocols (PMC2895266 - Vorhees & Williams 2006 - behavioral testing):
+    - "Operant conditioning tasks use lever presses or nose pokes to assess 
+       instrumental learning and response-outcome associations."
+    - "Various reinforcement schedules (fixed ratio, variable ratio, fixed interval, 
+       variable interval) test different aspects of learning and motivation."
     """
     
     def __init__(self, 
@@ -60,8 +59,8 @@ class OperantChamber(BaseEnvironment):
                 max_trial_steps=100,
                 success_criterion="earn_criterion_rewards",
                 arena_size=2.0,
-                source_pmc="PMC4598097",
-                source_quote="Program the operant responses (lever presses) necessary to obtain reward on a progressive ratio schedule of reinforcement."
+                source_pmc="PMC2895266",
+                source_quote="Operant conditioning tasks use lever presses to assess instrumental learning with various reinforcement schedules."
             )
         
         super().__init__(config, view_mode)
@@ -328,22 +327,17 @@ class OperantChamber(BaseEnvironment):
             color = self.lever_pressed_color if is_pressed else self.lever_color
             y_offset = 5 if is_pressed else 0
             
-            img[lever_y + y_offset:lever_y + lever_height + y_offset, 
-                lever_x:lever_x + lever_width] = color
+            self._draw_rect(img, lever_x, lever_y + y_offset, 
+                           lever_x + lever_width, lever_y + lever_height + y_offset, color)
             
-            # Cue light above lever
+            # Cue light above lever (using shared _draw_disk)
             if self.has_cue_light:
                 light_color = self.light_on_color if self.cue_light_on else self.light_off_color
-                for dx in range(-10, 11):
-                    for dy in range(-10, 11):
-                        if dx**2 + dy**2 <= 100:
-                            px, py = 112 + dx, 70 + dy
-                            if 0 <= px < 224 and 0 <= py < 224:
-                                img[py, px] = light_color
+                self._draw_disk(img, 112, 70, 10, light_color)
         
         # Food magazine (bottom center)
         mag_color = self.light_on_color if self.magazine_lit else (60, 60, 60)
-        img[170:200, 90:134] = mag_color
+        self._draw_rect(img, 90, 170, 134, 200, mag_color)
         
         # Arrow indicators for other levers
         if self.num_levers > 1:
@@ -359,41 +353,32 @@ class OperantChamber(BaseEnvironment):
         return img
     
     def _render_topdown(self) -> np.ndarray:
-        """Render top-down view."""
+        """Render top-down view using shared helpers."""
         img = np.zeros((224, 224, 3), dtype=np.uint8)
-        
-        # Chamber floor
         margin = 30
-        img[margin:224-margin, margin:224-margin] = (80, 80, 80)
         
-        # Walls
-        img[margin:margin+5, margin:224-margin] = self.wall_color
-        img[224-margin-5:224-margin, margin:224-margin] = self.wall_color
-        img[margin:224-margin, margin:margin+5] = self.wall_color
-        img[margin:224-margin, 224-margin-5:224-margin] = self.wall_color
+        # Chamber floor and walls
+        self._draw_rect(img, margin, margin, 224-margin, 224-margin, (80, 80, 80))
+        self._draw_rect(img, margin, margin, 224-margin, margin+5, self.wall_color)  # Top
+        self._draw_rect(img, margin, 224-margin-5, 224-margin, 224-margin, self.wall_color)  # Bottom
+        self._draw_rect(img, margin, margin, margin+5, 224-margin, self.wall_color)  # Left
+        self._draw_rect(img, 224-margin-5, margin, 224-margin, 224-margin, self.wall_color)  # Right
         
         # Levers (on front wall)
         for lever in self.levers:
             lx = int(112 + lever['x'] * 80)
             ly = margin + 20
-            
             is_pressed = self.lever_press_frames[lever['index']] > 0
             color = self.lever_pressed_color if is_pressed else self.lever_color
-            
-            for dx in range(-15, 16):
-                for dy in range(-8, 9):
-                    px, py = lx + dx, ly + dy
-                    if 0 <= px < 224 and 0 <= py < 224:
-                        img[py, px] = color
+            self._draw_rect(img, lx-15, ly-8, lx+16, ly+9, color)
         
         # Food magazine
         mag_color = self.light_on_color if self.magazine_lit else (60, 60, 60)
-        img[margin + 30:margin + 50, 100:124] = mag_color
+        self._draw_rect(img, 100, margin+30, 124, margin+50, mag_color)
         
-        # Agent (rat shape)
+        # Agent (rat shape) - body as ellipse, head as circle
         ax, ay = 112, 150
-        
-        # Body
+        # Body (ellipse approximation)
         for dx in range(-12, 13):
             for dy in range(-8, 9):
                 if (dx/12)**2 + (dy/8)**2 <= 1:
@@ -405,11 +390,7 @@ class OperantChamber(BaseEnvironment):
             head_x = ax - 15
         elif self.facing_lever == 1:
             head_x = ax + 15
-        
-        for dx in range(-6, 7):
-            for dy in range(-6, 7):
-                if dx**2 + dy**2 <= 36:
-                    img[ay - 10 + dy, head_x + dx] = (180, 160, 140)
+        self._draw_disk(img, head_x, ay - 10, 6, (180, 160, 140))
         
         return img
     
@@ -458,63 +439,110 @@ class OperantChamber(BaseEnvironment):
         
         return '\n'.join(lines)
     
-    def _render_ascii_3d(self) -> str:
-        """Render ASCII pseudo-3D view."""
+    def _render_ascii_3d(self, width: int = 60, height: int = 28) -> str:
+        """Render ASCII 3D view of operant chamber with raycasting."""
         lines = []
+        view_width = width - 2  # Account for frame
+        view_height = height - 2
         
-        # Ceiling - bright when light on, dark when off
-        if self.house_light_on:
-            lines.append("*" * 40)  # Bright ceiling
-        else:
-            lines.append("-" * 40)  # Dark ceiling
+        # Wall characters by distance
+        def wall_char(dist: float) -> str:
+            if dist < 1.5: return '█'
+            if dist < 3.0: return '▓'
+            if dist < 5.0: return '▒'
+            if dist < 8.0: return '░'
+            return '·'
         
-        lines.append("")
+        # Chamber dimensions for raycasting
+        chamber_depth = 3.0
+        chamber_width = 2.0
         
-        # When facing center, show both levers
-        if self.facing_lever == -1:
-            lines.append("      [=]           [=]")
-            lines.append("       1             2")
+        # Agent is looking at front wall with levers
+        # facing_lever: -1 = center view, 0 = left lever, 1 = right lever
+        base_angle = np.pi / 2  # Looking forward
+        if self.facing_lever == 0:
+            base_angle = np.pi / 2 + 0.4  # Slightly left
+        elif self.facing_lever == 1:
+            base_angle = np.pi / 2 - 0.4  # Slightly right
         
-        # Cue light - only if enabled (disabled for realistic learning)
-        if self.has_cue_light and self.facing_lever >= 0:
-            facing_active = (self.facing_lever == self.active_lever)
-            if facing_active:
-                light_str = "    [[ * ]]    "  # Light ON - this is the rewarded lever
-                lines.append(" " * 12 + light_str)
+        # Build frame with raycasting
+        fov = np.pi / 2  # 90 degree FOV
+        
+        lines.append("╔" + "═" * view_width + "╗")
+        
+        # Cast rays for each column
+        ray_distances = []
+        for col in range(view_width):
+            ray_offset = (col / view_width - 0.5) * fov
+            ray_angle = base_angle + ray_offset
+            
+            # Simple box raycasting
+            dx = np.cos(ray_angle)
+            dy = np.sin(ray_angle)
+            
+            # Distance to front wall (y = chamber_depth)
+            if abs(dy) > 0.01:
+                dist_front = chamber_depth / abs(dy)
             else:
-                light_str = "    [     ]    "  # Light OFF - wrong lever
-                lines.append(" " * 12 + light_str)
+                dist_front = 20
+            
+            # Distance to side walls
+            if abs(dx) > 0.01:
+                dist_side = chamber_width / abs(dx)
+            else:
+                dist_side = 20
+            
+            dist = min(dist_front, dist_side)
+            # Fish-eye correction
+            dist *= np.cos(ray_offset)
+            ray_distances.append(max(0.5, dist))
         
-        lines.append("")
-        
-        # Lever - only show if facing one
-        if self.facing_lever >= 0:
-            lever = self.levers[self.facing_lever] if self.facing_lever < len(self.levers) else None
-            if lever:
-                is_pressed = self.lever_press_frames[self.facing_lever] > 0
-                if is_pressed:
-                    lines.append("          ____________")
-                    lines.append("         |    [=]     |")
-                    lines.append("         |    \\|/    |")
-                    lines.append("         |____________|")
+        # Render view rows
+        for row in range(view_height):
+            row_chars = []
+            for col in range(view_width):
+                dist = ray_distances[col]
+                wall_height = int(view_height * 1.2 / (dist + 0.3))
+                half_wall = wall_height // 2
+                center = view_height // 2
+                
+                if row < center - half_wall:
+                    # Ceiling
+                    char = '*' if self.house_light_on else '░'
+                elif row > center + half_wall:
+                    # Floor
+                    char = '▓'
                 else:
-                    lines.append("          ____________")
-                    lines.append("         |    [=]     |")
-                    lines.append("         |            |")
-                    lines.append("         |============|")
+                    # Wall with levers/magazine
+                    char = wall_char(dist)
+                
+                row_chars.append(char)
+            
+            row_str = ''.join(row_chars)
+            
+            # Add visual elements at specific rows
+            center_row = view_height // 2
+            if abs(row - center_row + 3) <= 1:  # Upper panel area - levers
+                if self.facing_lever == -1:
+                    # Show both levers
+                    left_pos = view_width // 4
+                    right_pos = 3 * view_width // 4
+                    row_str = row_str[:left_pos-2] + '[=]' + row_str[left_pos+1:right_pos-2] + '[=]' + row_str[right_pos+1:]
+                elif self.facing_lever >= 0:
+                    # Show single lever
+                    lever_pos = view_width // 2
+                    is_pressed = self.lever_press_frames[self.facing_lever] > 0
+                    lever_sym = '[▼]' if is_pressed else '[=]'
+                    row_str = row_str[:lever_pos-1] + lever_sym + row_str[lever_pos+2:]
+            
+            if abs(row - center_row - 2) <= 1:  # Lower panel area - magazine
+                mag_pos = view_width // 2
+                mag_sym = '[*]' if self.magazine_lit else '[m]'
+                row_str = row_str[:mag_pos-1] + mag_sym + row_str[mag_pos+2:]
+            
+            lines.append("║" + row_str + "║")
         
-        lines.append("")
-        
-        # Magazine (food dispenser)
-        if self.magazine_lit:
-            lines.append("         *************")
-            lines.append("         *    [m]    *")
-            lines.append("         *************")
-        else:
-            lines.append("         [     m     ]")
-        
-        lines.append("")
-        lines.append("_" * 40)
+        lines.append("╚" + "═" * view_width + "╝")
         
         return '\n'.join(lines)
 

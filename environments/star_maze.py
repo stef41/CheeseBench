@@ -42,9 +42,9 @@ class StarMaze(NavigationEnvironment):
     - Arms extend outward at evenly-spaced angles
     - Uses 8-direction movement system (0=E, 1=NE, 2=N, etc.)
     
-    From reference (PMC7866711 - Zhang et al., BMC Geriatr 2021 - human VR study):
-    - "Star maze assesses navigation strategies using multiple arm configurations 
-       radiating from a central hub."
+    From reference (PMC3399492 - Vorhees & Williams 2014 - rodent maze protocols):
+    - "Complex multi-arm mazes assess spatial navigation strategies and shortcut 
+       learning through multiple arm configurations radiating from a central hub."
     """
     
     def __init__(self, 
@@ -61,8 +61,8 @@ class StarMaze(NavigationEnvironment):
                 max_trial_steps=300,
                 success_criterion="reach_goal",
                 arena_size=25.0,
-                source_pmc="PMC7866711",
-                source_quote="Star maze assesses navigation strategies using multiple arm configurations radiating from a central hub."
+                source_pmc="PMC3399492",
+                source_quote="Complex multi-arm mazes assess spatial navigation strategies and shortcut learning through multiple arm configurations."
             )
         
         super().__init__(config, view_mode)
@@ -315,80 +315,29 @@ class StarMaze(NavigationEnvironment):
     # ==================== Rendering ====================
     
     def _render_fpv(self) -> np.ndarray:
-        """Render first-person view."""
-        img = np.zeros((224, 224, 3), dtype=np.uint8)
+        """Render first-person view using shared raycasting."""
+        def wall_color(dist):
+            shade = max(40, 255 - int(dist * 15))
+            return (int(shade * 0.4), int(shade * 0.32), int(shade * 0.24))
         
-        # Sky/ceiling
-        img[:70, :] = (150, 150, 160)
+        def overlay(img, agent_angle, fov):
+            self._render_goal_in_fpv(img, self.goal_x, self.goal_y, self.goal_color, 
+                                     fov, horizon=120, y_min=70, y_max=154)
         
-        # Ground
-        img[154:, :] = self.floor_color
-        
-        # Raycasting for walls
-        fov = np.pi / 2
-        num_rays = 224
-        
-        # Convert direction index to radians
-        agent_angle = self.agent.angle * (np.pi / 4)
-        
-        for i in range(num_rays):
-            ray_angle = agent_angle - fov/2 + (i/num_rays) * fov
-            dist = self._cast_ray(ray_angle)
-            
-            if dist < 15:
-                wall_height = min(84, int(180 / (dist + 0.5)))
-                y_start = 112 - wall_height
-                y_end = 112 + wall_height
-                
-                shade = max(40, 255 - int(dist * 15))
-                img[y_start:y_end, i] = (shade * 0.4, shade * 0.32, shade * 0.24)
-        
-        # Render goal
-        self._render_goal_fpv(img)
-        
-        return img
+        return self._render_fpv_raycasting(
+            ceiling_color=(150, 150, 160),
+            floor_color=self.floor_color,
+            wall_color_func=wall_color,
+            max_dist=15.0,
+            overlay_func=overlay
+        )
     
     def _cast_ray(self, angle: float) -> float:
-        """Cast ray and return distance to wall."""
-        dx = np.cos(angle)
-        dy = np.sin(angle)
-        
-        for step in range(30):
-            rx = self.agent.x + dx * step
-            ry = self.agent.y + dy * step
-            
-            if self._check_collision_at(int(round(rx)), int(round(ry))):
-                return step
-        
-        return 30.0
-    
-    def _render_goal_fpv(self, img: np.ndarray):
-        """Render goal in FPV."""
-        dx = self.goal_x - self.agent.x
-        dy = self.goal_y - self.agent.y
-        
-        agent_angle = self.agent.angle * (np.pi / 4)
-        angle_to_goal = math.atan2(dy, dx) - agent_angle
-        
-        while angle_to_goal > np.pi: angle_to_goal -= 2*np.pi
-        while angle_to_goal < -np.pi: angle_to_goal += 2*np.pi
-        
-        fov = np.pi / 2
-        if abs(angle_to_goal) < fov/2:
-            screen_x = int(112 - angle_to_goal / (fov/2) * 100)
-            dist = np.sqrt(dx**2 + dy**2)
-            size = max(3, int(30 / (dist + 1)))
-            
-            for gx in range(-size, size+1):
-                for gy in range(-size, size+1):
-                    if gx**2 + gy**2 <= size**2:
-                        px = screen_x + gx
-                        py = 120 + gy
-                        if 0 <= px < 224 and 70 <= py < 154:
-                            img[py, px] = self.goal_color
+        """Cast ray using shared base implementation."""
+        return super()._cast_ray(angle, max_dist=30.0, step_size=1.0)
     
     def _render_topdown(self) -> np.ndarray:
-        """Render top-down view."""
+        """Render top-down view using shared helpers."""
         img = np.zeros((224, 224, 3), dtype=np.uint8)
         
         scale = 224 // self.grid_size
@@ -401,35 +350,21 @@ class StarMaze(NavigationEnvironment):
             if 0 <= px < 224 - scale and 0 <= py < 224 - scale:
                 img[py:py+scale, px:px+scale] = self.floor_color
         
-        # Draw goal
+        # Draw goal (using shared _draw_disk)
         gx = offset + self.goal_x * scale + scale // 2
         gy = offset + (self.grid_size - 1 - self.goal_y) * scale + scale // 2
-        for dx in range(-4, 5):
-            for dy in range(-4, 5):
-                if dx**2 + dy**2 <= 16:
-                    px, py = gx + dx, gy + dy
-                    if 0 <= px < 224 and 0 <= py < 224:
-                        img[py, px] = self.goal_color
+        NavigationEnvironment._draw_disk(img, gx, gy, 4, self.goal_color)
         
-        # Draw agent
+        # Draw agent (using shared _draw_disk)
         ax = offset + self.agent.x * scale + scale // 2
         ay = offset + (self.grid_size - 1 - self.agent.y) * scale + scale // 2
-        for dx in range(-3, 4):
-            for dy in range(-3, 4):
-                if dx**2 + dy**2 <= 9:
-                    px, py = ax + dx, ay + dy
-                    if 0 <= px < 224 and 0 <= py < 224:
-                        img[py, px] = (0, 150, 255)
+        NavigationEnvironment._draw_disk(img, ax, ay, 3, (0, 150, 255))
         
         # Direction indicator
         dir_dx, dir_dy = DIR_VECTORS[self.agent.angle]
-        dir_x = ax + dir_dx * 6
-        dir_y = ay - dir_dy * 6  # Flip y
-        for dx in range(-2, 3):
-            for dy in range(-2, 3):
-                px, py = int(dir_x + dx), int(dir_y + dy)
-                if 0 <= px < 224 and 0 <= py < 224:
-                    img[py, px] = (255, 255, 255)
+        dir_x = int(ax + dir_dx * 6)
+        dir_y = int(ay - dir_dy * 6)  # Flip y
+        NavigationEnvironment._draw_disk(img, dir_x, dir_y, 2, (255, 255, 255))
         
         return img
     
@@ -462,41 +397,40 @@ class StarMaze(NavigationEnvironment):
         
         return '\n'.join(''.join(row) for row in grid)
     
-    def _render_ascii_3d(self, width: int = 60, height: int = 30) -> str:
-        """Render ASCII 3D view."""
-        lines = []
+    def _render_ascii_3d(self, width: int = 60, height: int = 28) -> str:
+        """Render ASCII 3D view with proper wall continuity using raycasting."""
+        agent_angle = self.agent.angle * (np.pi / 4)
+        fov = np.pi / 2
+        view_height = height - 2
+        horizon = view_height // 2
         
-        # Determine what arm we're facing
-        facing_arm = self._get_facing_arm()
-        is_facing_goal = facing_arm == self.goal_arm
+        # Calculate goal visibility
+        dx = self.goal_x - self.agent.x
+        dy = self.goal_y - self.agent.y
+        goal_dist = np.sqrt(dx**2 + dy**2)
+        goal_angle = math.atan2(dy, dx)
+        goal_rel_angle = goal_angle - agent_angle
+        while goal_rel_angle > np.pi: goal_rel_angle -= 2*np.pi
+        while goal_rel_angle < -np.pi: goal_rel_angle += 2*np.pi
         
-        lines.append(f"╔{'═' * (width-2)}╗")
+        goal_col = None
+        if abs(goal_rel_angle) < fov / 2:
+            goal_col = int((0.5 - goal_rel_angle / fov) * (width - 3))
+            if goal_col < 0 or goal_col >= width - 2:
+                goal_col = None
         
-        # 3D corridor view
-        for i in range(height - 10):
-            depth = i / (height - 10)
-            wall_width = int((width - 4) * (1 - depth * 0.7) / 2)
-            
-            if i < 3:
-                lines.append(f"║{'░' * (width-2)}║")
-            else:
-                left_wall = '█' * wall_width
-                right_wall = '█' * wall_width
-                corridor_width = width - 2 - 2 * wall_width
-                
-                corridor = ' ' * corridor_width
-                if is_facing_goal and i > height - 15 and i < height - 12:
-                    mid = corridor_width // 2
-                    corridor = corridor[:mid] + 'G' + corridor[mid+1:]
-                
-                lines.append(f"║{left_wall}{corridor}{right_wall}║")
+        def overlay(row, col, char, dist, wall_top, wall_bottom):
+            if goal_col is not None and col == goal_col and row == horizon:
+                if goal_dist < dist:
+                    return 'G'
+            return char
         
-        # Floor
-        lines.append(f"║{'▒' * (width-2)}║")
-        lines.append(f"║{'▒' * (width-2)}║")
-        lines.append(f"╚{'═' * (width-2)}╝")
-        
-        return '\n'.join(lines)
+        return self._render_3d_raycasting(
+            width=width, height=height,
+            fov=fov, agent_angle=agent_angle,
+            cast_ray_func=self._cast_ray,
+            overlay_func=overlay
+        )
     
     def _get_facing_arm(self) -> int:
         """Determine which arm the agent is facing."""

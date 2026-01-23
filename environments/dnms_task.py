@@ -257,40 +257,10 @@ class DNMSTask(BaseEnvironment):
         return img
     
     def _draw_stimulus(self, img: np.ndarray, stim_id: int, cx: int, cy: int, size: int):
-        """Draw a stimulus at position."""
+        """Draw a stimulus at position using shared shape helper."""
         color = self.stimulus_colors[stim_id % len(self.stimulus_colors)]
         shape = self.stimulus_shapes[stim_id % len(self.stimulus_shapes)]
-        
-        if shape == 'circle':
-            for dx in range(-size, size+1):
-                for dy in range(-size, size+1):
-                    if dx**2 + dy**2 <= size**2:
-                        px, py = cx + dx, cy + dy
-                        if 0 <= px < 224 and 0 <= py < 224:
-                            img[py, px] = color
-                            
-        elif shape == 'square':
-            x1, y1 = cx - size, cy - size
-            x2, y2 = cx + size, cy + size
-            x1, y1 = max(0, x1), max(0, y1)
-            x2, y2 = min(223, x2), min(223, y2)
-            img[y1:y2, x1:x2] = color
-            
-        elif shape == 'triangle':
-            for dy in range(-size, size+1):
-                width = int(size * (1 - abs(dy) / size))
-                for dx in range(-width, width+1):
-                    px, py = cx + dx, cy + dy
-                    if 0 <= px < 224 and 0 <= py < 224:
-                        img[py, px] = color
-                        
-        elif shape == 'diamond':
-            for dy in range(-size, size+1):
-                width = size - abs(dy)
-                for dx in range(-width, width+1):
-                    px, py = cx + dx, cy + dy
-                    if 0 <= px < 224 and 0 <= py < 224:
-                        img[py, px] = color
+        self._draw_shape(img, shape, cx, cy, size, color)
     
     def _render_topdown(self) -> np.ndarray:
         """Render top-down view (same as FPV for this task)."""
@@ -373,76 +343,132 @@ class DNMSTask(BaseEnvironment):
         
         return '\n'.join(''.join(row) for row in grid)
     
-    def _render_ascii_3d(self, width: int = 60, height: int = 30) -> str:
-        """Render ASCII 3D view."""
+    def _render_ascii_3d(self, width: int = 60, height: int = 28) -> str:
+        """Render ASCII 3D view with raycasting-based perspective."""
         lines = []
+        view_width = width - 2
+        view_height = height - 2
         
-        # Pure visual render - no text hints (like animal experiments)
+        # Wall characters by distance
+        def wall_char(dist: float) -> str:
+            if dist < 1.5: return '█'
+            if dist < 3.0: return '▓'
+            if dist < 5.0: return '▒'
+            if dist < 8.0: return '░'
+            return '·'
+        
+        # Symbols for stimuli
         symbols = ['●', '■', '▲', '◆']
         
-        # Simple border
-        lines.append("╔" + "═" * (width-2) + "╗")
+        # Chamber raycasting
+        chamber_depth = 4.0
+        chamber_width = 3.0
+        fov = np.pi / 2
         
-        if self.phase == 'sample':
-            # Show sample stimulus centered
-            stim_sym = symbols[self.sample_stimulus % len(symbols)] * 7
-            empty_rows = (height - 6) // 2
-            for _ in range(empty_rows):
-                lines.append(f"║{' ' * (width-2)}║")
-            lines.append(f"║{stim_sym:^{width-2}}║")
-            lines.append(f"║{stim_sym:^{width-2}}║")
-            lines.append(f"║{stim_sym:^{width-2}}║")
-            for _ in range(height - empty_rows - 5):
-                lines.append(f"║{' ' * (width-2)}║")
+        # Cast rays
+        ray_distances = []
+        for col in range(view_width):
+            ray_offset = (col / view_width - 0.5) * fov
+            ray_angle = np.pi / 2 + ray_offset  # Looking forward
             
-        elif self.phase == 'delay':
-            # Show progress bar only
-            progress = 1 - (self.delay_counter / self.delay_steps)
-            bar_len = width - 10
-            filled = int(bar_len * progress)
-            bar = '█' * filled + '░' * (bar_len - filled)
-            empty_rows = (height - 4) // 2
-            for _ in range(empty_rows):
-                lines.append(f"║{' ' * (width-2)}║")
-            lines.append(f"║{'[' + bar + ']':^{width-2}}║")
-            for _ in range(height - empty_rows - 3):
-                lines.append(f"║{' ' * (width-2)}║")
+            dx = np.cos(ray_angle)
+            dy = np.sin(ray_angle)
+            
+            if abs(dy) > 0.01:
+                dist_front = chamber_depth / abs(dy)
+            else:
+                dist_front = 20
+            
+            if abs(dx) > 0.01:
+                dist_side = chamber_width / abs(dx)
+            else:
+                dist_side = 20
+            
+            dist = min(dist_front, dist_side)
+            dist *= np.cos(ray_offset)  # Fish-eye correction
+            ray_distances.append(max(0.5, dist))
+        
+        lines.append("╔" + "═" * view_width + "╗")
+        
+        # Render view
+        for row in range(view_height):
+            row_chars = []
+            for col in range(view_width):
+                dist = ray_distances[col]
+                wall_height = int(view_height * 1.3 / (dist + 0.3))
+                half_wall = wall_height // 2
+                center = view_height // 2
                 
-        elif self.phase == 'choice':
-            # Show both stimuli side by side
-            left_sym = symbols[self.choice_stimuli[0] % len(symbols)] * 5
-            right_sym = symbols[self.choice_stimuli[1] % len(symbols)] * 5
+                if row < center - half_wall:
+                    char = '░'  # Ceiling
+                elif row > center + half_wall:
+                    char = '▓'  # Floor
+                else:
+                    char = wall_char(dist)  # Wall
+                
+                row_chars.append(char)
             
-            empty_rows = (height - 6) // 2
-            for _ in range(empty_rows):
-                lines.append(f"║{' ' * (width-2)}║")
+            row_str = ''.join(row_chars)
             
-            # Stimuli
-            half = (width - 2) // 2
-            lines.append(f"║{left_sym:^{half}}{right_sym:^{half}}║")
-            lines.append(f"║{left_sym:^{half}}{right_sym:^{half}}║")
-            lines.append(f"║{left_sym:^{half}}{right_sym:^{half}}║")
+            # Add phase-specific content
+            center_col = view_width // 2
+            center_row = view_height // 2
             
-            # Selection indicator (arrow under selected)
-            left_arrow = "^" if self.choice_position == 0 else " "
-            right_arrow = "^" if self.choice_position == 1 else " "
-            lines.append(f"║{left_arrow:^{half}}{right_arrow:^{half}}║")
+            if self.phase == 'sample':
+                # Show sample stimulus centered
+                stim_sym = symbols[self.sample_stimulus % len(symbols)]
+                if abs(row - center_row) <= 3:
+                    size = 5 - abs(row - center_row)
+                    stim_str = stim_sym * size
+                    start = center_col - len(stim_str) // 2
+                    if start >= 0 and start + len(stim_str) <= view_width:
+                        row_str = row_str[:start] + stim_str + row_str[start + len(stim_str):]
             
-            for _ in range(height - empty_rows - 6):
-                lines.append(f"║{' ' * (width-2)}║")
+            elif self.phase == 'delay':
+                # Show delay progress bar
+                if row == center_row:
+                    progress = 1 - (self.delay_counter / max(1, self.delay_steps))
+                    bar_len = 20
+                    filled = int(bar_len * progress)
+                    bar = '█' * filled + '░' * (bar_len - filled)
+                    start = center_col - bar_len // 2
+                    row_str = row_str[:start] + bar + row_str[start + bar_len:]
+            
+            elif self.phase == 'choice':
+                # Show two stimuli side by side
+                left_sym = symbols[self.choice_stimuli[0] % len(symbols)]
+                right_sym = symbols[self.choice_stimuli[1] % len(symbols)]
+                
+                if abs(row - center_row) <= 2:
+                    size = 3 - abs(row - center_row)
+                    left_pos = view_width // 4
+                    right_pos = 3 * view_width // 4
+                    
+                    # Highlight selected
+                    left_str = left_sym * size
+                    right_str = right_sym * size
+                    
+                    row_str = row_str[:left_pos - size//2] + left_str + row_str[left_pos + size//2 + size%2:]
+                    row_str = row_str[:right_pos - size//2] + right_str + row_str[right_pos + size//2 + size%2:]
+                
+                # Selection indicator
+                if row == center_row + 4:
+                    if self.choice_position == 0:
+                        row_str = row_str[:view_width//4 - 1] + '▼▼▼' + row_str[view_width//4 + 2:]
+                    elif self.choice_position == 1:
+                        row_str = row_str[:3*view_width//4 - 1] + '▼▼▼' + row_str[3*view_width//4 + 2:]
+            
+            elif self.phase == 'response':
+                # Show result
+                result_sym = '★' if self._trial_reward > 0 else '✗'
+                if abs(row - center_row) <= 2:
+                    size = 5 - abs(row - center_row)
+                    result_str = result_sym * size
+                    start = center_col - len(result_str) // 2
+                    row_str = row_str[:start] + result_str + row_str[start + len(result_str):]
+            
+            lines.append("║" + row_str + "║")
         
-        elif self.phase == 'response':
-            # Show result symbol only
-            result_sym = "★" if self._trial_reward > 0 else "✗"
-            empty_rows = (height - 4) // 2
-            for _ in range(empty_rows):
-                lines.append(f"║{' ' * (width-2)}║")
-            lines.append(f"║{result_sym:^{width-2}}║")
-            for _ in range(height - empty_rows - 3):
-                lines.append(f"║{' ' * (width-2)}║")
-        
-        lines.append("╚" + "═" * (width-2) + "╝")
-        
-        return '\n'.join(lines)
+        lines.append("╚" + "═" * view_width + "╝")
         
         return '\n'.join(lines)

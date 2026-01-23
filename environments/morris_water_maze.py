@@ -198,9 +198,7 @@ class MorrisWaterMaze(NavigationEnvironment):
         info = super().get_info()
         info['platform_quadrant'] = self.platform_quadrant
         info['goal_position'] = (self.goal_x, self.goal_y)
-        # Calculate distance to goal
-        dist = math.sqrt((self.agent.x - self.goal_x)**2 + (self.agent.y - self.goal_y)**2)
-        info['distance_to_goal'] = dist
+        info['distance_to_goal'] = self._distance_to(self.goal_x, self.goal_y)
         return info
     
     def _is_in_pool(self, x: int, y: int) -> bool:
@@ -255,11 +253,7 @@ class MorrisWaterMaze(NavigationEnvironment):
             return 1.0  # Escape reward
         
         return -0.01  # Time in water penalty
-    
-    def _distance_to_goal(self) -> float:
-        """Get Euclidean distance to platform."""
-        return math.sqrt((self.agent.x - self.goal_x)**2 + (self.agent.y - self.goal_y)**2)
-    
+
     # ==================== Rendering ====================
     
     def _render_fpv(self) -> np.ndarray:
@@ -294,43 +288,14 @@ class MorrisWaterMaze(NavigationEnvironment):
             fov = np.pi / 2
             if abs(rel_angle) < fov / 2:
                 # Calculate screen position
-                # Negate: positive rel_angle (left) -> smaller screen_x (left on screen)
                 screen_x = int(112 - (rel_angle / (fov/2)) * 100)
                 
                 # Distance affects size
                 dist = math.sqrt(dx**2 + dy**2)
                 size = max(5, int(40 / (dist + 1)))
                 
-                # Draw landmark shape
-                color = lm["color"]
-                y_pos = 60  # Height on screen
-                
-                if lm["shape"] == "triangle":
-                    for i in range(size):
-                        for j in range(-i, i+1):
-                            px, py = screen_x + j, y_pos + i
-                            if 0 <= px < 224 and 0 <= py < 112:
-                                img[py, px] = color
-                elif lm["shape"] == "circle":
-                    for i in range(-size, size+1):
-                        for j in range(-size, size+1):
-                            if i**2 + j**2 <= size**2:
-                                px, py = screen_x + j, y_pos + i
-                                if 0 <= px < 224 and 0 <= py < 112:
-                                    img[py, px] = color
-                elif lm["shape"] == "square":
-                    for i in range(-size, size+1):
-                        for j in range(-size, size+1):
-                            px, py = screen_x + j, y_pos + i
-                            if 0 <= px < 224 and 0 <= py < 112:
-                                img[py, px] = color
-                elif lm["shape"] == "star":
-                    for i in range(-size, size+1):
-                        for j in range(-size, size+1):
-                            if abs(i) <= 2 or abs(j) <= 2 or abs(abs(i) - abs(j)) <= 2:
-                                px, py = screen_x + j, y_pos + i
-                                if 0 <= px < 224 and 0 <= py < 112:
-                                    img[py, px] = color
+                # Draw landmark using shared helper
+                self._draw_shape(img, lm["shape"], screen_x, 60, size, lm["color"], 0, 112)
         
         # Pool wall on horizon
         for x in range(224):
@@ -369,17 +334,14 @@ class MorrisWaterMaze(NavigationEnvironment):
         return max(0.1, t)
     
     def _render_topdown(self) -> np.ndarray:
-        """Render top-down view."""
+        """Render top-down view using shared helpers."""
         img = np.zeros((224, 224, 3), dtype=np.uint8)
+        img[:] = (240, 240, 240)  # Background
         
-        # Background
-        img[:] = (240, 240, 240)
-        
-        # Scale factor: map grid to pixels
         scale = 10  # pixels per grid cell
         cx, cy = 112, 112  # center of image
         
-        # Draw pool (circle)
+        # Draw pool (circle) - this needs pixel-level iteration for the circle edge
         for x in range(224):
             for y in range(224):
                 gx = (x - cx) / scale
@@ -390,44 +352,29 @@ class MorrisWaterMaze(NavigationEnvironment):
                 elif dist < self.pool_radius + 0.5:
                     img[y, x] = self.wall_color
         
-        # Draw platform
+        # Draw platform (using shared _draw_disk)
         px = int(cx + self.goal_x * scale)
         py = int(cy + self.goal_y * scale)
         pr = int(scale // 2)
-        for x in range(max(0, px-pr), min(224, px+pr+1)):
-            for y in range(max(0, py-pr), min(224, py+pr+1)):
-                if (x-px)**2 + (y-py)**2 <= pr**2:
-                    img[y, x] = (200, 200, 200) if not self.goal_visible else (0, 200, 0)
+        platform_color = (0, 200, 0) if self.goal_visible else (200, 200, 200)
+        self._draw_disk(img, px, py, pr, platform_color)
         
-        # Draw landmarks
+        # Draw landmarks (using shared _draw_disk)
         for lm in self.landmarks:
             lx = int(cx + lm["gx"] * scale)
             ly = int(cy + lm["gy"] * scale)
-            for dx in range(-5, 6):
-                for dy in range(-5, 6):
-                    if 0 <= lx+dx < 224 and 0 <= ly+dy < 224:
-                        img[ly+dy, lx+dx] = lm["color"]
+            self._draw_disk(img, lx, ly, 5, lm["color"])
         
-        # Draw agent
+        # Draw agent (using shared _draw_disk)
         ax = int(cx + self.agent.x * scale)
         ay = int(cy + self.agent.y * scale)
+        self._draw_disk(img, ax, ay, 4, (255, 100, 100))
         
-        # Agent body
-        for dx in range(-4, 5):
-            for dy in range(-4, 5):
-                if dx**2 + dy**2 <= 16:
-                    if 0 <= ax+dx < 224 and 0 <= ay+dy < 224:
-                        img[ay+dy, ax+dx] = (255, 100, 100)
-        
-        # Agent direction indicator (convert discrete angle to radians)
-        # Screen Y increases DOWN, so negate sin to make North point UP
+        # Direction indicator
         agent_angle_rad = self.agent.angle * (math.pi / 4)
         nose_x = int(ax + 6 * math.cos(agent_angle_rad))
         nose_y = int(ay - 6 * math.sin(agent_angle_rad))
-        for dx in range(-2, 3):
-            for dy in range(-2, 3):
-                if 0 <= nose_x+dx < 224 and 0 <= nose_y+dy < 224:
-                    img[nose_y+dy, nose_x+dx] = (200, 50, 50)
+        self._draw_disk(img, nose_x, nose_y, 2, (200, 50, 50))
         
         return img
     
@@ -487,11 +434,15 @@ class MorrisWaterMaze(NavigationEnvironment):
         
         return '\n'.join([''.join(row) for row in grid])
     
-    def _render_ascii_3d(self) -> str:
-        """Render ASCII pseudo-3D first-person view."""
-        width, height = 60, 20
-        
+    def _render_ascii_3d(self, width: int = 60, height: int = 28) -> str:
+        """Render ASCII pseudo-3D first-person view of open water pool."""
         lines = []
+        
+        # Header
+        lines.append(f"╔{'═' * (width-2)}╗")
+        
+        view_height = height - 2  # Leave room for frame
+        horizon = view_height // 2  # Middle of screen
         
         # Calculate distance to platform
         dist_to_goal = self._distance_to_goal()
@@ -499,49 +450,113 @@ class MorrisWaterMaze(NavigationEnvironment):
         
         # Convert direction to radians
         agent_angle_rad = self.agent.angle * (math.pi / 4)
+        fov = np.pi / 2  # 90 degree FOV
         
-        # Sky
-        lines.append('=' * width)
-        for _ in range(5):
-            lines.append(' ' * width)
+        # Pool center
+        center_x, center_y = self.pool_center
         
-        # Render landmarks in view - 120 degree FOV
-        fov = np.pi * 2 / 3
-        landmark_positions = []
+        # Calculate distance to pool edge for each column
+        edge_data = []
+        for col in range(width - 2):
+            ray_offset = (col / (width - 3)) - 0.5
+            ray_angle = agent_angle_rad - ray_offset * fov
+            
+            cos_a, sin_a = math.cos(ray_angle), math.sin(ray_angle)
+            
+            # Calculate intersection with pool edge
+            ax = self.agent.x - center_x
+            ay = self.agent.y - center_y
+            
+            a = 1
+            b = 2 * (ax * cos_a + ay * sin_a)
+            c = ax*ax + ay*ay - self.pool_radius**2
+            
+            discriminant = b*b - 4*a*c
+            if discriminant >= 0:
+                t1 = (-b + math.sqrt(discriminant)) / (2*a)
+                t2 = (-b - math.sqrt(discriminant)) / (2*a)
+                dist = max(0.5, min(t1, t2) if min(t1, t2) > 0 else max(t1, t2))
+            else:
+                dist = 15
+            
+            edge_data.append(dist * math.cos(ray_offset * fov))
+        
+        # Calculate visible landmarks
+        landmark_cols = {}
         for lm in self.landmarks:
             dx = lm["gx"] - self.agent.x
             dy = lm["gy"] - self.agent.y
-            angle = math.atan2(dy, dx) - agent_angle_rad
-            while angle > np.pi: angle -= 2*np.pi
-            while angle < -np.pi: angle += 2*np.pi
+            dist = math.sqrt(dx**2 + dy**2)
             
-            if abs(angle) < fov/2:
-                # Negate angle: positive angle (left) -> smaller screen_x (left on screen)
-                screen_x = int(width/2 - angle / (fov/2) * (width/2 - 5))
-                dist = math.sqrt(dx**2 + dy**2)
-                landmark_positions.append((screen_x, lm["char"], dist))
+            rel_angle = math.atan2(dy, dx) - agent_angle_rad
+            while rel_angle > np.pi: rel_angle -= 2*np.pi
+            while rel_angle < -np.pi: rel_angle += 2*np.pi
+            
+            if abs(rel_angle) < fov / 2:
+                col = int((0.5 - rel_angle / fov) * (width - 3))
+                if 0 <= col < width - 2:
+                    landmark_cols[col] = (lm["char"], dist)
         
-        # Draw landmarks on horizon
-        horizon_line = list('~' * width)
-        for sx, char, dist in sorted(landmark_positions, key=lambda x: -x[2]):
-            if 0 <= sx < width:
-                horizon_line[sx] = char
-        lines.append(''.join(horizon_line))
+        # Calculate platform visibility (only if near)
+        platform_col = None
+        if near_platform:
+            dx = self.platform_x - self.agent.x
+            dy = self.platform_y - self.agent.y
+            rel_angle = math.atan2(dy, dx) - agent_angle_rad
+            while rel_angle > np.pi: rel_angle -= 2*np.pi
+            while rel_angle < -np.pi: rel_angle += 2*np.pi
+            
+            if abs(rel_angle) < fov / 2:
+                platform_col = int((0.5 - rel_angle / fov) * (width - 3))
         
-        # Water - show visual disturbance near platform
-        for i in range(height - 8):
-            if near_platform and i == height // 2 - 5:
-                water_line = list('~' * width)
-                mid = width // 2
-                for j in range(-2, 3):
-                    if 0 <= mid + j < width:
-                        water_line[mid + j] = '▓'
-                lines.append(''.join(water_line))
-            else:
-                density = '~' if i % 2 == 0 else '≈'
-                lines.append(density * width)
+        # Render each row
+        for row in range(view_height):
+            line = '║'
+            for col in range(width - 2):
+                edge_dist = edge_data[col]
+                
+                # Check for landmarks at horizon
+                if col in landmark_cols and row >= horizon - 3 and row <= horizon - 1:
+                    line += landmark_cols[col][0]
+                    continue
+                
+                # Check for platform visibility (at water level)
+                if platform_col is not None and col >= platform_col - 1 and col <= platform_col + 1:
+                    if row >= horizon and row <= horizon + 2:
+                        line += '▓'
+                        continue
+                
+                if row < horizon - 4:
+                    # Sky
+                    line += ' '
+                elif row < horizon - 1:
+                    # Near-horizon sky
+                    line += '░'
+                elif row == horizon - 1 or row == horizon:
+                    # Horizon with pool edge
+                    if edge_dist < 4:
+                        line += '█'  # Close wall
+                    elif edge_dist < 8:
+                        line += '▓'  # Medium wall
+                    elif edge_dist < 12:
+                        line += '▒'  # Far wall
+                    else:
+                        line += '~'  # Very far (water/horizon)
+                else:
+                    # Water
+                    water_depth = row - horizon
+                    if water_depth < view_height // 6:
+                        line += '≈' if (col + row) % 2 == 0 else '~'
+                    elif water_depth < view_height // 3:
+                        line += '~'
+                    else:
+                        line += '≈'
+            
+            line += '║'
+            lines.append(line)
         
-        lines.append('=' * width)
+        # Footer
+        lines.append(f"╚{'═' * (width-2)}╝")
         
         return '\n'.join(lines)
 

@@ -386,81 +386,52 @@ class RadialArmMaze(NavigationEnvironment):
         
         return '\n'.join(''.join(row) for row in grid)
     
-    def _render_ascii_3d(self) -> str:
-        """Render ASCII pseudo-3D view."""
-        width = 50
-        lines = []
-        
-        lines.append('=' * width)
-        
-        # Show arm numbers on horizon
+    def _render_ascii_3d(self, width: int = 60, height: int = 28) -> str:
+        """Render ASCII pseudo-3D view with proper wall continuity."""
+        agent_angle = self.agent.angle * math.pi / 4
         fov = math.pi / 2
-        horizon = [' '] * width
+        view_height = height - 2
+        horizon = view_height // 2
         
-        agent_angle = self.agent.angle * math.pi / 4  # Convert to radians
-        
+        # Calculate visible landmarks
+        landmark_cols = {}
         for lm in self.landmarks:
             dx = lm['x'] - self.agent.x
             dy = lm['y'] - self.agent.y
-            
             if dx == 0 and dy == 0:
                 continue
-                
-            angle = math.atan2(dy, dx) - agent_angle
-            while angle > math.pi: angle -= 2*math.pi
-            while angle < -math.pi: angle += 2*math.pi
+            lm_dist = math.sqrt(dx**2 + dy**2)
+            lm_angle = math.atan2(dy, dx)
+            lm_rel_angle = lm_angle - agent_angle
+            while lm_rel_angle > math.pi: lm_rel_angle -= 2*math.pi
+            while lm_rel_angle < -math.pi: lm_rel_angle += 2*math.pi
             
-            if abs(angle) < fov/2:
-                # Negative angle = RIGHT of center on screen (larger X)
-                # Positive angle = LEFT of center on screen (smaller X)
-                screen_x = int(width/2 - angle / (fov/2) * (width/2 - 3))
-                arm_idx = lm['arm_index']
-                
-                if 0 <= screen_x < width:
+            if abs(lm_rel_angle) < fov / 2:
+                lm_col = int((0.5 - lm_rel_angle / fov) * (width - 3))
+                if 0 <= lm_col < width - 2:
+                    arm_idx = lm['arm_index']
                     if arm_idx in self.rewarded_arms and not self.rewards_collected[arm_idx]:
-                        horizon[screen_x] = '*'
+                        landmark_cols[lm_col] = ('*', lm_dist)
                     else:
-                        horizon[screen_x] = lm['char']
+                        landmark_cols[lm_col] = (lm['char'], lm_dist)
         
-        lines.append(''.join(horizon))
+        def overlay(row, col, char, dist, wall_top, wall_bottom):
+            if col in landmark_cols and row == horizon:
+                lm_char, lm_dist = landmark_cols[col]
+                if lm_dist < dist:
+                    return lm_char
+            return char
         
-        # Walls
-        wall_chars = [' ', '░', '▒', '▓', '█']
-        for row in range(6):
-            line = []
-            for col in range(width):
-                ray_angle = agent_angle - fov/2 + (col/width) * fov
-                dist = self._cast_ray_simple(ray_angle)
-                
-                max_wall_row = min(5, int(6 / (dist + 0.5)))
-                
-                if row < 3 - max_wall_row or row >= 3 + max_wall_row:
-                    line.append(' ')
-                else:
-                    shade_idx = min(4, int(dist / 2))
-                    line.append(wall_chars[4 - shade_idx])
-            
-            lines.append(''.join(line))
-        
-        lines.append('_' * width)
-        
-        return '\n'.join(lines)
+        return self._render_3d_raycasting(
+            width=width, height=height,
+            fov=fov, agent_angle=agent_angle,
+            cast_ray_func=self._cast_ray_simple,
+            overlay_func=overlay
+        )
     
     def _cast_ray_simple(self, angle: float) -> float:
-        """Cast a ray and return distance to wall."""
-        cos_a, sin_a = math.cos(angle), math.sin(angle)
-        
-        for t in range(1, 20):
-            dist = t * 0.5
-            x = self.agent.x + dist * cos_a
-            y = self.agent.y + dist * sin_a
-            
-            # Check if outside valid area
-            ix, iy = int(round(x)), int(round(y))
-            if (ix, iy) not in self.valid_positions:
-                return dist
-        
-        return 10.0
+        """Cast ray using shared base implementation."""
+        return self._cast_ray(angle, max_dist=10.0, step_size=0.5)
 
 
 def create_radial_arm_maze(

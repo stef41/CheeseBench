@@ -262,86 +262,20 @@ class TMaze(NavigationEnvironment):
         return self.agent.angle * np.pi / 4
     
     def _render_fpv(self) -> np.ndarray:
-        """Render first-person view."""
-        img = np.zeros((224, 224, 3), dtype=np.uint8)
+        """Render first-person view using shared raycasting."""
+        def overlay(img, agent_angle, fov):
+            self._render_goal_in_fpv(img, self.goal_x, self.goal_y, self.goal_color, fov)
         
-        # Ceiling
-        img[:70, :] = (150, 150, 150)
-        
-        # Floor
-        img[154:, :] = self.floor_color
-        
-        # Render walls using raycasting
-        fov = np.pi / 2
-        num_rays = 224
-        agent_angle_rad = self._dir_to_radians()
-        
-        for i in range(num_rays):
-            ray_angle = agent_angle_rad - fov/2 + (i/num_rays) * fov
-            dist = self._cast_ray(ray_angle)
-            
-            if dist < 10:
-                # Wall height based on distance
-                wall_height = min(84, int(150 / (dist + 0.5)))
-                y_start = 112 - wall_height
-                y_end = 112 + wall_height
-                
-                # Shade by distance
-                shade = max(50, 255 - int(dist * 20))
-                wall_shade = (shade * 0.4, shade * 0.3, shade * 0.25)
-                
-                img[y_start:y_end, i] = wall_shade
-        
-        # Render goal if visible
-        self._render_goal_fpv(img)
-        
-        return img
+        return self._render_fpv_raycasting(
+            ceiling_color=(150, 150, 150),
+            floor_color=self.floor_color,
+            max_dist=10.0,
+            overlay_func=overlay
+        )
     
     def _cast_ray(self, angle: float) -> float:
-        """Cast ray and return distance to nearest wall."""
-        dx = np.cos(angle)
-        dy = np.sin(angle)
-        
-        x, y = self.agent.x, self.agent.y
-        
-        for step in range(100):
-            t = step * 0.1
-            rx = x + dx * t
-            ry = y + dy * t
-            
-            # Check if outside maze
-            in_stem = (abs(rx) < self.corridor_width/2 and 
-                       0 < ry < self.stem_length)
-            in_junction = (abs(rx) < self.arm_length and
-                           self.stem_length <= ry < self.stem_length + self.corridor_width)
-            
-            if not (in_stem or in_junction):
-                return t
-        
-        return 10.0
-    
-    def _render_goal_fpv(self, img: np.ndarray):
-        """Render goal in first-person view."""
-        dx = self.goal_x - self.agent.x
-        dy = self.goal_y - self.agent.y
-        agent_angle_rad = self._dir_to_radians()
-        angle_to_goal = math.atan2(dy, dx) - agent_angle_rad
-        
-        while angle_to_goal > np.pi: angle_to_goal -= 2*np.pi
-        while angle_to_goal < -np.pi: angle_to_goal += 2*np.pi
-        
-        fov = np.pi / 2
-        if abs(angle_to_goal) < fov/2:
-            # Negate: positive angle (left) -> smaller screen_x (left on screen)
-            screen_x = int(112 - angle_to_goal / (fov/2) * 100)
-            dist = np.sqrt(dx**2 + dy**2)
-            size = max(3, int(30 / (dist + 1)))
-            
-            for i in range(-size, size+1):
-                for j in range(-size, size+1):
-                    px, py = screen_x + j, 130 + i
-                    if 0 <= px < 224 and 0 <= py < 224:
-                        img[py, px] = self.goal_color
+        """Cast ray using shared base implementation."""
+        return super()._cast_ray(angle, max_dist=10.0, step_size=0.2)
     
     def _render_topdown(self) -> np.ndarray:
         """Render top-down view."""
@@ -357,69 +291,40 @@ class TMaze(NavigationEnvironment):
         x2 = int(cx + self.corridor_width/2 * scale)
         y1 = int(cy - 0 * scale)
         y2 = int(cy - self.stem_length * scale)
-        img[max(0,y2):min(224,y1), max(0,x1):min(224,x2)] = self.floor_color
+        self._draw_rect(img, x1, y2, x2, y1, self.floor_color)
         
         # Arms
         arm_y1 = int(cy - self.stem_length * scale)
         arm_y2 = int(cy - (self.stem_length + self.corridor_width) * scale)
         arm_x1 = int(cx - self.arm_length * scale)
         arm_x2 = int(cx + self.arm_length * scale)
-        img[max(0,arm_y2):min(224,arm_y1), max(0,arm_x1):min(224,arm_x2)] = self.floor_color
+        self._draw_rect(img, arm_x1, arm_y2, arm_x2, arm_y1, self.floor_color)
         
-        # Draw walls
+        # Draw walls (using shared _draw_line from base class)
         for wall in self.walls:
             wx1 = int(cx + wall['x1'] * scale)
             wy1 = int(cy - wall['y1'] * scale)
             wx2 = int(cx + wall['x2'] * scale)
             wy2 = int(cy - wall['y2'] * scale)
-            self._draw_line(img, wx1, wy1, wx2, wy2, self.wall_color, 3)
+            NavigationEnvironment._draw_line(img, wx1, wy1, wx2, wy2, self.wall_color, 3)
         
-        # Draw goal
+        # Draw goal (using shared _draw_disk from base class)
         gx = int(cx + self.goal_x * scale)
         gy = int(cy - self.goal_y * scale)
-        for dx in range(-8, 9):
-            for dy in range(-8, 9):
-                if dx**2 + dy**2 <= 64:
-                    px, py = gx + dx, gy + dy
-                    if 0 <= px < 224 and 0 <= py < 224:
-                        img[py, px] = self.goal_color
+        NavigationEnvironment._draw_disk(img, gx, gy, 8, self.goal_color)
         
         # Draw agent
         ax = int(cx + self.agent.x * scale)
         ay = int(cy - self.agent.y * scale)
-        
-        for dx in range(-5, 6):
-            for dy in range(-5, 6):
-                if dx**2 + dy**2 <= 25:
-                    px, py = ax + dx, ay + dy
-                    if 0 <= px < 224 and 0 <= py < 224:
-                        img[py, px] = (255, 100, 100)
+        NavigationEnvironment._draw_disk(img, ax, ay, 5, (255, 100, 100))
         
         # Direction indicator
         agent_angle_rad = self._dir_to_radians()
         nose_x = int(ax + 8 * np.cos(agent_angle_rad))
         nose_y = int(ay - 8 * np.sin(agent_angle_rad))
-        for dx in range(-3, 4):
-            for dy in range(-3, 4):
-                px, py = nose_x + dx, nose_y + dy
-                if 0 <= px < 224 and 0 <= py < 224:
-                    img[py, px] = (200, 50, 50)
+        NavigationEnvironment._draw_disk(img, nose_x, nose_y, 3, (200, 50, 50))
         
         return img
-    
-    def _draw_line(self, img: np.ndarray, x1: int, y1: int, x2: int, y2: int, 
-                   color: Tuple[int, int, int], thickness: int = 1):
-        """Draw a line on the image."""
-        steps = max(abs(x2 - x1), abs(y2 - y1), 1)
-        for i in range(steps + 1):
-            t = i / steps
-            x = int(x1 + t * (x2 - x1))
-            y = int(y1 + t * (y2 - y1))
-            for dx in range(-thickness//2, thickness//2 + 1):
-                for dy in range(-thickness//2, thickness//2 + 1):
-                    px, py = x + dx, y + dy
-                    if 0 <= px < 224 and 0 <= py < 224:
-                        img[py, px] = color
     
     def _render_ascii_2d(self) -> str:
         """Render ASCII top-down view - 1 world unit = 1 ASCII char."""
@@ -504,52 +409,41 @@ class TMaze(NavigationEnvironment):
         
         return '\n'.join([''.join(row) for row in grid])
     
-    def _render_ascii_3d(self) -> str:
-        """Render ASCII pseudo-3D view."""
-        width, height = 50, 15
-        lines = []
-        
-        # Determine if facing toward reward arm
-        facing_left = self.agent.angle == 4  # West
-        facing_right = self.agent.angle == 0  # East
-        
-        facing_reward = (facing_left and self.current_reward_arm == 'left') or \
-                        (facing_right and self.current_reward_arm == 'right')
-        
-        # Ceiling - no text hints
-        lines.append('=' * width)
-        lines.append(' ' * width)
-        
-        # Walls
-        fov = np.pi / 2
-        wall_chars = [' ', '░', '▒', '▓', '█']
+    def _render_ascii_3d(self, width: int = 60, height: int = 28) -> str:
+        """Render ASCII pseudo-3D view with proper wall continuity."""
         agent_angle_rad = self._dir_to_radians()
+        fov = np.pi / 2
+        view_height = height - 2
+        horizon = view_height // 2
         
-        for row in range(8):
-            line = []
-            for col in range(width):
-                ray_angle = agent_angle_rad - fov/2 + (col/width) * fov
-                dist = self._cast_ray(ray_angle)
-                
-                # Distance determines if we see wall at this height
-                max_wall_row = min(7, int(8 / (dist + 0.5)))
-                
-                if row < 4 - max_wall_row or row >= 4 + max_wall_row:
-                    # Show 'G' marker at end of corridor if facing reward arm
-                    if facing_reward and row == 4 and col == width // 2:
-                        line.append('G')
-                    else:
-                        line.append(' ')
-                else:
-                    shade_idx = min(4, int(dist / 2))
-                    line.append(wall_chars[4 - shade_idx])
-            
-            lines.append(''.join(line))
+        # Calculate goal visibility
+        dx = self.goal_x - self.agent.x
+        dy = self.goal_y - self.agent.y
+        goal_dist = np.sqrt(dx**2 + dy**2)
+        goal_angle = np.arctan2(dy, dx)
+        goal_rel_angle = goal_angle - agent_angle_rad
+        while goal_rel_angle > np.pi: goal_rel_angle -= 2*np.pi
+        while goal_rel_angle < -np.pi: goal_rel_angle += 2*np.pi
         
-        # Floor
-        lines.append('_' * width)
+        goal_col = None
+        if abs(goal_rel_angle) < fov / 2:
+            goal_col = int((0.5 - goal_rel_angle / fov) * (width - 3))
+            if goal_col < 0 or goal_col >= width - 2:
+                goal_col = None
         
-        return '\n'.join(lines)
+        def overlay(row, col, char, dist, wall_top, wall_bottom):
+            # Show goal marker if visible
+            if goal_col is not None and col == goal_col and row == horizon:
+                if goal_dist < dist:
+                    return 'G'
+            return char
+        
+        return self._render_3d_raycasting(
+            width=width, height=height,
+            fov=fov, agent_angle=agent_angle_rad,
+            cast_ray_func=self._cast_ray,
+            overlay_func=overlay
+        )
 
 
 def create_t_maze(
