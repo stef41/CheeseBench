@@ -1,0 +1,280 @@
+{
+  "benchmark_info": {
+    "name": "Behavioral Neuroscience VLM Benchmark",
+    "description": "Evaluation of Vision-Language Models on classical behavioral neuroscience paradigms",
+    "version": "1.0",
+    "protocol": "Unified - identical prompt for all tasks, no task-specific hints",
+    "data_source": "Extracted from PubMed Central research papers (2026)"
+  },
+  "environments": [
+    {
+      "name": "MorrisWaterMaze",
+      "description": "Circular water pool with hidden escape platform. Agent must use distal landmarks for spatial navigation.",
+      "cognitive_domain": "Spatial Learning & Memory",
+      "success_criterion": "Reach hidden platform",
+      "experimental_parameters": {
+        "trials_to_criterion": 15,
+        "sessions_to_criterion": 5,
+        "trials_per_session": 3,
+        "species": "C57BL/6 mice",
+        "n_papers": 39
+      },
+      "source": {
+        "pmc_id": "PMC2895266",
+        "url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2895266/",
+        "quote": "The MWM is a test of spatial learning for rodents that relies on distal cues to navigate from start locations around the perimeter of an open swimming arena to locate a submerged escape platform."
+      },
+      "original_paper": {
+        "authors": "Morris, R.G.M.",
+        "year": 1981,
+        "title": "Spatial localization does not require the presence of local cues",
+        "journal": "Learning and Motivation"
+      }
+    },
+    {
+      "name": "TMaze",
+      "description": "T-shaped maze for testing spatial working memory and alternation behavior.",
+      "cognitive_domain": "Spatial Working Memory",
+      "success_criterion": "Enter correct arm based on reward contingency",
+      "experimental_parameters": {
+        "trials_to_criterion": 20,
+        "sessions_to_criterion": 4,
+        "trials_per_session": 5,
+        "species": "NMRI mouse",
+        "n_papers": 12
+      },
+      "source": {
+        "pmc_id": "PMC3399492",
+        "url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3399492/",
+        "quote": "In the forced alternation task, each trial consists of a forced choice run followed by a free choice run. A mouse is subjected to 10 consecutive trials in a session per day."
+      },
+      "original_paper": {
+        "authors": "Tolman, E.C.",
+        "year": 1925,
+        "title": "Purpose and cognition: the determiners of animal learning",
+        "journal": "Psychological Review"
+      }
+    },
+    {
+      "name": "BarnesMaze",
+      "description": "Circular platform with holes around perimeter. Agent must find escape hole using spatial cues.",
+      "cognitive_domain": "Spatial Learning & Memory",
+      "success_criterion": "Find and enter escape hole",
+      "experimental_parameters": {
+        "trials_to_criterion": 20,
+        "sessions_to_criterion": 5,
+        "trials_per_session": 4,
+        "species": "mouse",
+        "n_papers": 14
+      },
+      "source": {
+        "pmc_id": "PMC6126525",
+        "url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6126525/",
+        "quote": "The Barnes maze consists of a circular platform with 20 equidistant holes, 19 closed with plugs while the remaining hole leads to an escape shelter."
+      },
+      "original_paper": {
+        "authors": "Barnes, C.A.",
+        "year": 1979,
+        "title": "Memory deficits associated with senescence",
+        "journal": "Journal of Comparative and Physiological Psychology"
+      }
+    },
+    {
+      "name": "RadialArmMaze",
+      "description": "Central platform with 8 radiating arms. Tests working memory (don't revisit) and reference memory (only some arms rewarded).",
+      "cognitive_domain": "Working & Reference Memory",
+      "success_criterion": "Collect all rewards without revisiting arms",
+      "experimental_parameters": {
+        "trials_to_criterion": 36,
+        "sessions_to_criterion": 6,
+        "trials_per_session": 6,
+        "species": "mouse",
+        "n_papers": 15
+      },
+      "source": {
+        "pmc_id": "PMC4030456",
+        "url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4030456/",
+        "quote": "Subjects are required to avoid arms previously used for escape during each testing day (working memory) as well as avoid fixed arms which never contain escape platforms (reference memory)."
+      },
+      "original_paper": {
+        "authors": "Olton, D.S. & Samuelson, R.J.",
+        "year": 1976,
+        "title": "Remembrance of places passed: Spatial memory in rats",
+        "journal": "Journal of Experimental Psychology: Animal Behavior Processes"
+      }
+    },
+    {
+      "name": "OperantChamber",
+      "description": "Skinner box with lever and food magazine. Tests instrumental conditioning and learning.",
+      "cognitive_domain": "Instrumental Learning",
+      "success_criterion": "Press lever to receive food reward",
+      "experimental_parameters": {
+        "trials_to_criterion": 50,
+        "sessions_to_criterion": 5,
+        "trials_per_session": 10,
+        "species": "mouse",
+        "n_papers": 15
+      },
+      "source": {
+        "pmc_id": "PMC4598097",
+        "url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4598097/",
+        "quote": "Program the operant responses (lever presses) necessary to obtain reward on a progressive ratio schedule of reinforcement."
+      },
+      "original_paper": {
+        "authors": "Skinner, B.F.",
+        "year": 1938,
+        "title": "The Behavior of Organisms",
+        "journal": "Appleton-Century-Crofts"
+      }
+    },
+    {
+      "name": "ShuttleBox",
+      "description": "Two-chamber apparatus for active avoidance learning. Agent must escape to other side when warning signal appears.",
+      "cognitive_domain": "Avoidance Learning",
+      "success_criterion": "Escape to safe chamber before shock onset",
+      "experimental_parameters": {
+        "trials_to_criterion": 90,
+        "sessions_to_criterion": 10,
+        "trials_per_session": 9,
+        "species": "Sprague Dawley rats",
+        "n_papers": 7
+      },
+      "source": {
+        "pmc_id": "PMC4692667",
+        "url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4692667/",
+        "quote": "A conditioned stimulus (CS) is contingently followed by an aversive unconditioned stimulus (US). Subjects learn to avoid the US by shuttling from one compartment to the other in response to the CS."
+      },
+      "original_paper": {
+        "authors": "Mowrer, O.H. & Lamoreaux, R.R.",
+        "year": 1946,
+        "title": "Fear as an intervening variable in avoidance conditioning",
+        "journal": "Journal of Comparative Psychology"
+      }
+    },
+    {
+      "name": "PlacePreference",
+      "description": "Two distinct chambers for conditioned place preference. Tests reward-context association learning.",
+      "cognitive_domain": "Reward Learning / Association",
+      "success_criterion": "Spend more time in reward-paired chamber during test",
+      "experimental_parameters": {
+        "trials_to_criterion": 6,
+        "sessions_to_criterion": 6,
+        "trials_per_session": 1,
+        "species": "mouse",
+        "n_papers": 15
+      },
+      "source": {
+        "pmc_id": "PMC6101638",
+        "url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6101638/",
+        "quote": "The procedure consists of three phases: Pre-Conditioning, Conditioning, and Post-Conditioning. Compartments have different floor textures and wall colors."
+      },
+      "original_paper": {
+        "authors": "Rossi, N.A. & Reid, L.D.",
+        "year": 1976,
+        "title": "Affective states associated with morphine injections",
+        "journal": "Physiological Psychology"
+      }
+    },
+    {
+      "name": "StarMaze",
+      "description": "Five-arm water maze with central pentagonal hub. Tests allocentric vs egocentric navigation strategies through sequential spatial choices.",
+      "cognitive_domain": "Allocentric Spatial Navigation / Temporal Order Memory",
+      "success_criterion": "Navigate from start arm to goal arm using optimal spatial path",
+      "experimental_parameters": {
+        "trials_to_criterion": 40,
+        "sessions_to_criterion": 10,
+        "trials_per_session": 4,
+        "pretraining_days": 1,
+        "probe_trial": true,
+        "species": "mouse",
+        "n_papers": 3
+      },
+      "protocol_phases": {
+        "day_0_pretraining": "Visible platform in goal arm, no distal cues, teaches escape behavior",
+        "day_1_to_10_training": "Hidden platform in goal arm, distal cues present, 4 trials per session",
+        "day_11_probe": "Start from novel arm to test allocentric vs egocentric strategy"
+      },
+      "source": {
+        "pmc_id": "PMC4112136",
+        "url": "https://academic.oup.com/ilarjournal/article/55/2/310/643871",
+        "quote": "The Star maze is run in three phases: Day 0 (pretraining) with visible platform, Day 1 (training) with hidden platform continuing for 10 sessions with four trials per session, Day 2 (probe) starting from a different arm."
+      },
+      "original_paper": {
+        "authors": "Rondi-Reig, L. et al.",
+        "year": 2006,
+        "title": "Impaired sequential egocentric and allocentric memories in forebrain-specific-NMDA receptor knock-out mice during a new task dissociating strategies of navigation",
+        "journal": "Journal of Neuroscience"
+      },
+      "key_references": [
+        {
+          "authors": "Vorhees, C.V. & Williams, M.T.",
+          "year": 2014,
+          "title": "Assessing Spatial Learning and Memory in Rodents",
+          "journal": "ILAR Journal",
+          "doi": "10.1093/ilar/ilu013"
+        },
+        {
+          "authors": "Fouquet, C. et al.",
+          "year": 2013,
+          "title": "Complementary roles of the hippocampus and the dorsomedial striatum during spatial and sequence-based navigation behavior",
+          "journal": "PLoS ONE"
+        },
+        {
+          "authors": "Fouquet, C. et al.",
+          "year": 2010,
+          "title": "A new approach for modeling episodic memory from rodents to humans: The temporal order memory",
+          "journal": "Behavioural Brain Research"
+        }
+      ]
+    },
+    {
+      "name": "DNMSTask",
+      "description": "Delayed non-match to sample task. Agent must remember sample stimulus and choose different one after delay.",
+      "cognitive_domain": "Recognition Memory",
+      "success_criterion": "Choose stimulus different from sample",
+      "experimental_parameters": {
+        "trials_to_criterion": 18,
+        "sessions_to_criterion": 3,
+        "trials_per_session": 6,
+        "species": "Long-Evans rat",
+        "n_papers": 4
+      },
+      "source": {
+        "pmc_id": "PMC3982138",
+        "url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3982138/",
+        "quote": "TUNL working memory task requires animals to non-match to a sample location after a delay. A correct response to the novel location leads to reward delivery."
+      },
+      "original_paper": {
+        "authors": "Mishkin, M. & Delacour, J.",
+        "year": 1975,
+        "title": "An analysis of short-term visual memory in the monkey",
+        "journal": "Journal of Experimental Psychology: Animal Behavior Processes"
+      }
+    }
+  ],
+  "view_modes": [
+    {
+      "name": "ASCII_2D",
+      "description": "Top-down 2D map view showing entire environment"
+    },
+    {
+      "name": "ASCII_2D_FPV",
+      "description": "First-person 2D view showing rotated perspective"
+    },
+    {
+      "name": "ASCII_3D",
+      "description": "Pseudo-3D ASCII rendering with depth perspective"
+    }
+  ],
+  "actions": [
+    {"name": "FORWARD", "description": "Move forward in facing direction"},
+    {"name": "TURN_LEFT", "description": "Rotate counter-clockwise"},
+    {"name": "TURN_RIGHT", "description": "Rotate clockwise"},
+    {"name": "INTERACT", "description": "Press lever, check hole, make choice"},
+    {"name": "STAY", "description": "Wait in current position"}
+  ],
+  "statistics": {
+    "total_papers_analyzed": 243,
+    "data_extraction_date": "2026-01-17"
+  }
+}
