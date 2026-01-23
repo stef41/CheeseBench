@@ -17,14 +17,14 @@ from environments import (
 
 URL = "http://localhost:11434/api/chat"
 MODELS = [
+    "qwen2.5:72b",
     "qwen3:32b",
-    "gpt-oss:120b",
     "deepseek-r1:32b",
 ]
 VIEW_MODES = [ViewMode.ASCII_2D, ViewMode.ASCII_2D_FPV, ViewMode.ASCII_3D]
 N_TRIALS = 2
-MAX_STEPS = 50
-TIMEOUT = 60  # longer timeout
+MAX_STEPS = 100
+TIMEOUT = 180  # longer timeout for large models
 
 PROMPT = """You are an agent in a behavioral experiment. Maximize reward.
 
@@ -47,7 +47,7 @@ def parse(t):
 def llm_step(model, hist, obs, rew=None):
     fb = f"[{'+' if rew and rew > 0 else ''}{rew:.1f}]\n" if rew and rew != 0 else ""
     hist.append({"role": "user", "content": f"{fb}{obs}\n\nAction:"})
-    if len(hist) > 6: hist = [hist[0]] + hist[-5:]
+    if len(hist) > 100: hist = [hist[0]] + hist[-99:]
     
     try:
         r = requests.post(URL, json={
