@@ -842,7 +842,7 @@ class BaseEnvironment(ABC):
         if abs(angle_to_goal) < fov / 2:
             # Check line-of-sight: cast ray toward goal and see if wall is closer
             ray_angle = np.arctan2(dy, dx)  # Absolute angle to goal
-            wall_dist = self._cast_ray(ray_angle, max_dist=dist_to_goal + 1.0)
+            wall_dist = self._cast_ray(ray_angle)  # Use default max_dist
             
             # Only render goal if no wall is blocking it
             if wall_dist >= dist_to_goal - 0.5:

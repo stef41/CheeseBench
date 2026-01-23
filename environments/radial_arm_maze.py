@@ -335,7 +335,7 @@ class RadialArmMaze(NavigationEnvironment):
         Screen row = 224 - y * scale (higher Y = lower row index = higher on screen)
         """
         img = np.zeros((224, 224, 3), dtype=np.uint8)
-        img[:] = (50, 50, 50)
+        img[:] = (50, 50, 50)  # Background (void)
         
         scale = 224 // self.grid_size
         max_screen_y = 224 - scale  # Highest valid screen Y
@@ -343,6 +343,15 @@ class RadialArmMaze(NavigationEnvironment):
         # Helper to convert world Y to screen Y (flip Y-axis)
         def screen_y(y):
             return max_screen_y - y * scale
+        
+        # Draw walls around valid positions first
+        for (x, y) in self.valid_positions:
+            for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]:
+                nx, ny = x + dx, y + dy
+                if (nx, ny) not in self.valid_positions and 0 <= nx < self.grid_size and 0 <= ny < self.grid_size:
+                    px, py = nx * scale, screen_y(ny)
+                    if 0 <= px < 224 - scale and 0 <= py < 224 - scale:
+                        img[py:py+scale, px:px+scale] = self.wall_color
         
         # Draw valid positions
         for (x, y) in self.valid_positions:

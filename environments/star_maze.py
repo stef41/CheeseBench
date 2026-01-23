@@ -339,9 +339,20 @@ class StarMaze(NavigationEnvironment):
     def _render_topdown(self) -> np.ndarray:
         """Render top-down view using shared helpers."""
         img = np.zeros((224, 224, 3), dtype=np.uint8)
+        img[:] = (30, 30, 30)  # Background (void)
         
         scale = 224 // self.grid_size
         offset = (224 - self.grid_size * scale) // 2
+        
+        # Draw walls around valid positions first
+        for (x, y) in self.valid_positions:
+            for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]:
+                nx, ny = x + dx, y + dy
+                if (nx, ny) not in self.valid_positions and 0 <= nx < self.grid_size and 0 <= ny < self.grid_size:
+                    px = offset + nx * scale
+                    py = offset + (self.grid_size - 1 - ny) * scale
+                    if 0 <= px < 224 - scale and 0 <= py < 224 - scale:
+                        img[py:py+scale, px:px+scale] = self.wall_color
         
         # Draw floor (valid positions)
         for (x, y) in self.valid_positions:
