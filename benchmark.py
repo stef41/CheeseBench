@@ -12,7 +12,7 @@ import random
 import time
 import requests
 from dataclasses import dataclass, field
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 from datetime import datetime
 
 sys.path.insert(0, '.')
@@ -27,10 +27,13 @@ from environments import (
 # =============================================================================
 
 OLLAMA_URL = "http://localhost:11434/api/chat"
-OLLAMA_MODEL = "gemma3:4b"
-MAX_STEPS = 100
+OLLAMA_MODEL = "gpt-oss:120b"
+MAX_STEPS = 200
 NUM_TRIALS = 2
 TIMEOUT = 120
+MAX_ACTIONS_PER_CALL = 8  # Maximum number of actions to generate per LLM call
+SAVE_THINKING_IN_HISTORY = False  # Include short thinking in conversation history
+SAVE_ACTIONS_IN_HISTORY = False  # Include actions taken in conversation history
 
 # View modes to benchmark
 VIEW_MODES = [
@@ -43,26 +46,28 @@ VIEW_MODES = [
 # UNIVERSAL SYSTEM PROMPT - IDENTICAL FOR ALL TASKS
 # =============================================================================
 
-SYSTEM_PROMPT = """You are an agent navigating an environment. Maximize reward through exploration.
+SYSTEM_PROMPT = f"""You are an agent navigating an environment. Maximize cumulative reward.
 
 SYMBOLS:
-- Agent: ↑ ↗ → ↘ ↓ ↙ ← ↖ (arrow = facing direction)
-- Goals: G (goal/target), P (platform), * (reward)
-- Walls: # █ 
-- Water: ~ 
-- Floors: . ░ (textures)
-- Objects: [=] (lever), [m] (magazine)
-- Holes: O (hole), E (escape hole)
-- Landmarks: 1-4 (cardinal: E, N, W, S) or 1-8 (arms)
-- Shapes: ■ ● ▲ ◆ (stimuli)
+- Agent: ↑ ↗ → ↘ ↓ ↙ ← ↖ (8 directions, 45° apart)
+- Goals: G P * (goal, platform, coin)
+- Walls: # █ (BLOCKED)
+- Water/Floors: ~ . ░ (TRAVERSABLE)
+- Objects: [=] lever, [m] magazine
+- Targets: ? E (unknown, revealed)
+- Landmarks: 1-4
 
-ACTIONS (ONE word):
-- FORWARD (move forward, or press lever/confirm choice)
-- TURN_LEFT
-- TURN_RIGHT
-- STAY
+ACTIONS (egocentric, relative to your facing direction):
+- FORWARD: move in facing direction
+- ROTATE_LEFT: turn 45° left
+- ROTATE_RIGHT: turn 45° right
+- STAY: do nothing
 
-Reply with ONLY the action word."""
+You see your last 20 observations. Use [Your learnings: ...] (300 char max) for insights beyond recent history.
+
+Respond in this format:
+LEARNINGS: <high-level patterns, rules discovered, or long-term knowledge. Don't repeat recent observations. Write "unchanged" if nothing new>
+ACTIONS: <up to {MAX_ACTIONS_PER_CALL} comma-separated actions, e.g. FORWARD, FORWARD, ROTATE_LEFT>"""
 
 
 # =============================================================================
@@ -121,7 +126,7 @@ class RandomAgent:
     """Baseline random agent"""
     
     def __init__(self):
-        self.actions = [Action.FORWARD, Action.TURN_LEFT, Action.TURN_RIGHT, Action.STAY, Action.INTERACT]
+        self.actions = [Action.FORWARD, Action.ROTATE_LEFT, Action.ROTATE_RIGHT, Action.STAY, Action.INTERACT]
     
     def reset(self):
         pass
@@ -137,29 +142,61 @@ class LLMAgent:
         self.model = model
         self.history = []
         self.last_response = ""  # Store last LLM response for logging
+        self.notes = ""  # Working memory: understanding + hypotheses
+        self.action_queue = []  # Queue of pending actions
+        self.pending_observations = []  # Observations to show on next LLM call
     
     def reset(self):
         self.history = [{"role": "system", "content": SYSTEM_PROMPT}]
         self.last_response = ""
+        self.notes = ""
+        self.action_queue = []
+        self.pending_observations = []  # List of (observation, reward, action_that_led_here)
     
-    def get_action(self, observation: str, reward: float = None) -> Action:
-        # Build user message
-        feedback = ""
-        if reward is not None:
-            if reward > 0:
-                feedback = f"[+{reward:.1f} reward]\n"
-            elif reward < 0:
-                feedback = f"[{reward:.1f} penalty]\n"
+    def add_observation(self, observation: str, reward: float = None, action: Action = None):
+        """Add an observation to be shown on next LLM call."""
+        self.pending_observations.append((observation, reward, action))
+    
+    def get_actions(self, observation: str, reward: float = None, k: int = MAX_ACTIONS_PER_CALL) -> List[Action]:
+        """Get k actions from LLM. Returns list of actions."""
+        # Add current observation to pending (no action led to first obs)
+        self.pending_observations.append((observation, reward, None))
         
-        user_msg = f"{feedback}{observation}\n\nAction:"
+        # Build user message from all pending observations
+        msg_parts = []
+        
+        # Include current learnings at the start
+        if self.notes:
+            msg_parts.append(f"[Your learnings: {self.notes}]")
+        
+        # Add all pending observations with rewards and actions
+        for i, (obs, rew, act) in enumerate(self.pending_observations):
+            # Show action that led to this observation (if any)
+            if act is not None:
+                msg_parts.append(f"[After {act.name}]")
+            if rew is not None:
+                if rew > 0:
+                    msg_parts.append(f"[Step {i+1}: +{rew:.1f} reward - GOOD!]")
+                elif rew < 0:
+                    msg_parts.append(f"[Step {i+1}: {rew:.1f} penalty]")
+                else:
+                    msg_parts.append(f"[Step {i+1}: 0 reward]")
+            msg_parts.append(obs)
+        
+        msg_parts.append(f"\nProvide up to {k} actions to execute in sequence.")
+        
+        user_msg = "\n".join(msg_parts)
         self.history.append({"role": "user", "content": user_msg})
         
-        # Keep history bounded (100 steps = 200 messages + system prompt)
-        if len(self.history) > 201:
-            self.history = [self.history[0]] + self.history[-200:]
+        # Clear pending observations
+        self.pending_observations = []
         
-        # Build messages with system prompt at both start and end (fights recency bias)
-        messages = self.history + [{"role": "system", "content": SYSTEM_PROMPT}]
+        # Keep history bounded (20 observations = 40 messages + system prompt)
+        if len(self.history) > 41:
+            self.history = [self.history[0]] + self.history[-40:]
+        
+        # Just use history (system prompt already at start)
+        messages = self.history
         
         try:
             response = requests.post(
@@ -168,53 +205,97 @@ class LLMAgent:
                     "model": self.model,
                     "messages": messages,
                     "stream": False,
-                    "options": {"temperature": 0.7}
                 },
                 timeout=TIMEOUT
             )
             
             if response.status_code == 200:
                 msg = response.json().get('message', {})
-                # Thinking models use 'thinking' field, others use 'content'
-                content = msg.get('content', '') or msg.get('thinking', '') or ''
-                self.last_response = content  # Store for logging
-                self.history.append({"role": "assistant", "content": content[:100]})
-                return self._parse_action(content)
+                content = msg.get('content', '') or ''
+                thinking = msg.get('thinking', '') or ''
+                
+                # Parse and update learnings (working memory)
+                import re
+                notes_match = re.search(r'LEARNINGS:\s*(.+?)(?:ACTIONS?:|$)', content, re.IGNORECASE | re.DOTALL)
+                if notes_match:
+                    new_notes = notes_match.group(1).strip()[:300]
+                    if new_notes.lower() not in ('unchanged', 'same', 'no change', 'none'):
+                        self.notes = new_notes
+                
+                # For logging
+                if thinking:
+                    self.last_response = f"[THINKING: {thinking[:500]}...]\n{content}"
+                else:
+                    self.last_response = content if content else "[EMPTY RESPONSE]"
+                
+                # For history
+                history_parts = []
+                if SAVE_THINKING_IN_HISTORY and thinking:
+                    short_thinking = thinking[:150].split('.')[0] + '.'
+                    history_parts.append(f"Thinking: {short_thinking}")
+                history_parts.append(f"LEARNINGS: {self.notes}" if self.notes else "LEARNINGS: (none)")
+                if SAVE_ACTIONS_IN_HISTORY:
+                    actions_match = re.search(r'ACTIONS?:\s*(.+)', content, re.IGNORECASE)
+                    if actions_match:
+                        history_parts.append(f"ACTIONS: {actions_match.group(1).strip()}")
+                self.history.append({"role": "assistant", "content": "\n".join(history_parts)})
+                
+                # Parse multiple actions
+                return self._parse_actions(content, k)
         except Exception as e:
             self.last_response = f"[ERROR: {e}]"
         
         # Remove failed user message
         if self.history and self.history[-1]['role'] == 'user':
             self.history.pop()
-        return Action.FORWARD
+        return [Action.FORWARD] * k
     
-    def _parse_action(self, text: str) -> Action:
-        text = text.lower()
-        # Check end of response first
-        end = text[-80:] if len(text) > 80 else text
+    def _parse_actions(self, text: str, k: int) -> List[Action]:
+        """Parse up to k actions from response."""
+        import re
+        actions = []
         
-        if 'forward' in end:
+        # Look for ACTIONS: line
+        actions_match = re.search(r'ACTIONS?:\s*(.+)', text, re.IGNORECASE)
+        if actions_match:
+            actions_str = actions_match.group(1)
+            # Split by comma or whitespace
+            action_words = re.split(r'[,\s]+', actions_str)
+            for word in action_words:
+                action = self._word_to_action(word.strip())
+                if action:
+                    actions.append(action)
+                if len(actions) >= k:
+                    break
+        
+        # Fallback: look for action words anywhere
+        if len(actions) == 0:
+            action_pattern = r'\b(forward|rotate_left|rotate_right|stay)\b'
+            matches = re.findall(action_pattern, text, re.IGNORECASE)
+            for match in matches:
+                if len(actions) >= k:
+                    break
+                action = self._word_to_action(match)
+                if action:
+                    actions.append(action)
+        
+        # If still no actions, default to single FORWARD
+        if len(actions) == 0:
+            actions.append(Action.FORWARD)
+        
+        return actions[:k]
+    
+    def _word_to_action(self, word: str) -> Optional[Action]:
+        word = word.lower().replace(' ', '_').replace('-', '_')
+        if 'forward' in word:
             return Action.FORWARD
-        if 'turn_left' in end or 'left' in end:
-            return Action.TURN_LEFT
-        if 'turn_right' in end or 'right' in end:
-            return Action.TURN_RIGHT
-        if 'interact' in end:
-            return Action.INTERACT
-        if 'stay' in end:
+        if 'rotate_left' in word or 'left' == word:
+            return Action.ROTATE_LEFT
+        if 'rotate_right' in word or 'right' == word:
+            return Action.ROTATE_RIGHT
+        if 'stay' in word:
             return Action.STAY
-        
-        # Full text fallback
-        if 'forward' in text:
-            return Action.FORWARD
-        if 'left' in text:
-            return Action.TURN_LEFT
-        if 'right' in text:
-            return Action.TURN_RIGHT
-        if 'interact' in text:
-            return Action.INTERACT
-        
-        return Action.FORWARD
+        return None
 
 
 # =============================================================================
@@ -266,41 +347,92 @@ def create_environments(view_mode: ViewMode) -> List[tuple]:
 # BENCHMARK RUNNER
 # =============================================================================
 
-def run_trial(env, agent, max_steps: int = MAX_STEPS, log_file=None) -> TrialResult:
-    """Run single trial with unified protocol"""
+def run_trial(env, agent, max_steps: int = MAX_STEPS, log_file=None, last_reward=None, k: int = MAX_ACTIONS_PER_CALL) -> Tuple[TrialResult, float]:
+    """Run single trial with unified protocol. Returns (result, final_reward) for continuity."""
     result = TrialResult()
-    agent.reset()
+    # Don't reset agent - continuous stream from LLM perspective
     
     obs = env.reset()
-    reward = None
+    reward = last_reward  # Carry over reward from previous trial
     initial_trial = env.session.current_trial
     
-    for step in range(max_steps):
-        action = agent.get_action(obs, reward)
-        
-        # Log LLM trace if logging enabled and agent is LLM
-        if log_file and hasattr(agent, 'last_response') and agent.last_response:
-            log_file.write(f"\n--- Step {step+1} ---\n")
-            log_file.write(f"Reward from prev step: {reward}\n")
-            log_file.write(f"Observation:\n{obs}\n")
-            log_file.write(f"LLM Response: {agent.last_response}\n")
-            log_file.write(f"Action: {action.name}\n")
-            log_file.flush()
-        
-        obs, reward = env.step(action)
-        
-        result.steps += 1
-        result.reward += reward
-        result.actions.append(action.name)
-        
-        # Check if trial completed (trial number changed or session done)
-        if env.is_done or env.session.current_trial != initial_trial:
-            # Check last trial result
-            if env.session.trial_results:
-                result.success = env.session.trial_results[-1].success
-            break
+    step = 0
+    while step < max_steps:
+        # For LLM agent, get k actions at once
+        if hasattr(agent, 'get_actions'):
+            # Collect observations that will be shown to LLM (for logging)
+            # pending_observations are 3-tuples (obs, reward, action), add current as (obs, reward, None)
+            observations_for_llm = list(agent.pending_observations) + [(obs, reward, None)]
+            
+            actions = agent.get_actions(obs, reward, k)
+            
+            # Log the LLM call with all observations it saw
+            if log_file and hasattr(agent, 'last_response') and agent.last_response:
+                log_file.write(f"\n--- LLM Call (steps {step+1}-{step+len(actions)}) ---\n")
+                if hasattr(agent, 'notes') and agent.notes:
+                    log_file.write(f"Agent learnings: {agent.notes}\n")
+                log_file.write(f"Observations shown to LLM ({len(observations_for_llm)}):\n")
+                for idx, (o, r, a) in enumerate(observations_for_llm):
+                    r_str = f"reward={r:.2f}" if r is not None else "no reward"
+                    a_str = f"after {a.name}" if a is not None else "initial"
+                    log_file.write(f"  [Obs {idx+1}, {a_str}, {r_str}]\n{o}\n")
+                log_file.write(f"LLM Response: {agent.last_response}\n")
+                log_file.write(f"Actions: {[a.name for a in actions]}\n")
+                log_file.flush()
+            
+            # Execute each action, collecting observations for next call
+            trial_done = False
+            for i, action in enumerate(actions):
+                obs, reward = env.step(action)
+                
+                result.steps += 1
+                result.reward += reward
+                result.actions.append(action.name)
+                step += 1
+                
+                # Log each step result
+                if log_file:
+                    log_file.write(f"  Step {step}: {action.name} -> reward={reward:.2f}\n")
+                    log_file.flush()
+                
+                # Check if trial completed
+                if env.is_done or env.session.current_trial != initial_trial:
+                    if env.session.trial_results:
+                        result.success = env.session.trial_results[-1].success
+                    if log_file:
+                        # Log the final observation that led to trial end
+                        log_file.write(f"  Final observation after {action.name}:\n{obs}\n")
+                        if result.success:
+                            log_file.write(f"Result: SUCCESS in {result.steps} steps\n")
+                        else:
+                            log_file.write(f"Result: FAILED after {result.steps} steps\n")
+                        log_file.flush()
+                    trial_done = True
+                    break
+                
+                # Add intermediate observation for next LLM call (except last action)
+                if i < len(actions) - 1:
+                    agent.add_observation(obs, reward, action)
+            
+            if trial_done:
+                break
+        else:
+            # Random agent - single action at a time
+            action = agent.get_action(obs, reward)
+            obs, reward = env.step(action)
+            
+            result.steps += 1
+            result.reward += reward
+            result.actions.append(action.name)
+            step += 1
+            
+            # Check if trial completed
+            if env.is_done or env.session.current_trial != initial_trial:
+                if env.session.trial_results:
+                    result.success = env.session.trial_results[-1].success
+                break
     
-    return result
+    return result, reward  # Return final reward for next trial
 
 
 def run_benchmark(num_trials: int = NUM_TRIALS, verbose: bool = True) -> Dict:
@@ -323,6 +455,7 @@ def run_benchmark(num_trials: int = NUM_TRIALS, verbose: bool = True) -> Dict:
     log_file.write(f"LLM Benchmark Traces - {datetime.now().isoformat()}\n")
     log_file.write(f"Model: {OLLAMA_MODEL}\n")
     log_file.write("="*60 + "\n")
+    log_file.flush()
     
     for view_mode in VIEW_MODES:
         mode_name = view_mode.name
@@ -355,11 +488,15 @@ def run_benchmark(num_trials: int = NUM_TRIALS, verbose: bool = True) -> Dict:
                 )
                 
                 for trial in range(num_trials):
+                    # Reset agent only on first trial of each environment
+                    if trial == 0:
+                        agent.reset()
+                        last_reward = None
                     # Only log LLM trials
                     trial_log = log_file if agent_name == "LLM" else None
                     if trial_log:
                         log_file.write(f"\n--- Trial {trial+1}/{num_trials} ---\n")
-                    trial_result = run_trial(env, agent, log_file=trial_log)
+                    trial_result, last_reward = run_trial(env, agent, log_file=trial_log, last_reward=last_reward)
                     benchmark_result.trials.append(trial_result)
                     if trial_log:
                         log_file.write(f"Result: {'SUCCESS' if trial_result.success else 'FAIL'} in {trial_result.steps} steps\n")

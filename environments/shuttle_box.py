@@ -110,8 +110,8 @@ class ShuttleBox(BaseEnvironment):
         # Actions
         self.valid_actions = [
             Action.FORWARD,  # Move toward door
-            Action.TURN_LEFT,
-            Action.TURN_RIGHT,
+            Action.ROTATE_LEFT,
+            Action.ROTATE_RIGHT,
             Action.STAY
         ]
     
@@ -169,8 +169,9 @@ class ShuttleBox(BaseEnvironment):
         self._update_trial_phase()
         
         # Movement using shared helper
+        # y_bounds added to constrain movement within chamber depth
         old_chamber = self.current_chamber
-        self._move_continuous(action, speed=0.3, x_bounds=(-1.8, 1.8))
+        self._move_continuous(action, speed=0.3, x_bounds=(-1.8, 1.8), y_bounds=(-0.6, 0.6))
         self.current_chamber = self._get_chamber()
         
         # Did agent shuttle?
@@ -290,7 +291,7 @@ class ShuttleBox(BaseEnvironment):
         
         # Agent (using _draw_disk)
         agent_screen_x = int(62 + (self.agent.x + 1.8) / 3.6 * 140)
-        agent_screen_y = int(112 - self.agent.y * 40)  # Flip Y
+        agent_screen_y = int(112 - self.agent.y * 120)  # Scale for y_bounds ±0.6
         self._draw_disk(img, agent_screen_x, agent_screen_y, 6, (0, 150, 255))
         
         # Direction indicator
@@ -346,8 +347,11 @@ class ShuttleBox(BaseEnvironment):
         
         # Agent position
         agent_x = int((self.agent.x + 1.8) / 3.6 * (ch_right - ch_left - 2)) + ch_left + 1
-        agent_y = int(height / 2)
+        # Scale y to match y_bounds=(-0.6, 0.6) to visual rows
+        usable_height = ch_bot - ch_top - 2
+        agent_y = int(height // 2 - self.agent.y / 0.6 * (usable_height // 2))
         agent_x = max(ch_left + 1, min(ch_right - 1, agent_x))
+        agent_y = max(ch_top + 1, min(ch_bot - 1, agent_y))
         
         # Agent direction - 8 directions for finer angle gradation
         # Standard mapping: 0=E(→), 1=NE(↗), 2=N(↑), 3=NW(↖), 4=W(←), 5=SW(↙), 6=S(↓), 7=SE(↘)

@@ -26,7 +26,7 @@ from .base_env import (
 class RadialArmMazeConfig(EnvironmentConfig):
     """Radial Arm Maze specific configuration."""
     num_arms: int = 8
-    arm_length: int = 6  # Integer cells
+    arm_length: int = 8  # Integer cells
     rewarded_arms: List[int] = field(default_factory=lambda: [0, 2, 4, 6])
 
 
@@ -72,7 +72,7 @@ class RadialArmMaze(NavigationEnvironment):
         
         # Maze geometry (integer grid)
         self.num_arms = int(config.extra_params.get('num_arms', 8))
-        self.arm_length = int(config.extra_params.get('arm_length', 6))
+        self.arm_length = int(config.extra_params.get('arm_length', 8))
         self.center_radius = 2  # Integer radius for center
         
         # Grid size (needs to fit center + arms in all directions)
@@ -112,8 +112,8 @@ class RadialArmMaze(NavigationEnvironment):
         # Actions (rewards collected automatically at arm ends)
         self.valid_actions = [
             Action.FORWARD,
-            Action.TURN_LEFT,
-            Action.TURN_RIGHT,
+            Action.ROTATE_LEFT,
+            Action.ROTATE_RIGHT,
             Action.STAY
         ]
         
@@ -126,6 +126,7 @@ class RadialArmMaze(NavigationEnvironment):
         
         Layout: Central hub with 8 equal-width arms radiating outward.
         All arms are 3 cells wide for consistency.
+        Diagonal arms are normalized so all arms have equal euclidean distance from center.
         """
         # Create center platform (large enough to connect all arms)
         # Use a square center that spans all arm connections
@@ -133,15 +134,29 @@ class RadialArmMaze(NavigationEnvironment):
             for dy in range(-self.center_radius, self.center_radius + 1):
                 self.valid_positions.add((self.center_x + dx, self.center_y + dy))
         
+        # Calculate normalized total distances for arm ends
+        cardinal_distance = self.center_radius + self.arm_length  # e.g., 2 + 8 = 10
+        diagonal_total_steps = int(round(cardinal_distance / np.sqrt(2)))  # e.g., 7
+        
         # Create 8 arms - all 3 cells wide
         for arm_idx in range(self.num_arms):
             dx, dy = DIR_VECTORS[arm_idx]
             is_diagonal = (arm_idx % 2 == 1)
             
-            for dist in range(1, self.arm_length + 1):
+            # Determine how many steps this arm extends
+            if is_diagonal:
+                # Diagonal arm: extends from center_radius+1 to diagonal_total_steps
+                start_step = self.center_radius + 1
+                end_step = diagonal_total_steps
+            else:
+                # Cardinal arm: extends from center_radius+1 to cardinal_distance
+                start_step = self.center_radius + 1
+                end_step = cardinal_distance
+            
+            for step in range(start_step, end_step + 1):
                 # Center line of arm
-                cx = self.center_x + dx * (self.center_radius + dist)
-                cy = self.center_y + dy * (self.center_radius + dist)
+                cx = self.center_x + dx * step
+                cy = self.center_y + dy * step
                 self.valid_positions.add((cx, cy))
                 
                 if not is_diagonal:
@@ -168,12 +183,30 @@ class RadialArmMaze(NavigationEnvironment):
                         self.valid_positions.add((cx, cy + 1))
     
     def _compute_arm_ends(self) -> List[Tuple[int, int]]:
-        """Compute the end position of each arm."""
+        """Compute the end position of each arm.
+        
+        For diagonal arms, we normalize the TOTAL distance so all arms have
+        the same physical (euclidean) distance from center.
+        """
         ends = []
+        cardinal_distance = self.center_radius + self.arm_length  # e.g., 2 + 8 = 10
+        
         for arm_idx in range(self.num_arms):
             dx, dy = DIR_VECTORS[arm_idx]
-            x = self.center_x + dx * (self.center_radius + self.arm_length)
-            y = self.center_y + dy * (self.center_radius + self.arm_length)
+            is_diagonal = (arm_idx % 2 == 1)
+            
+            if is_diagonal:
+                # Diagonal arms: normalize total distance
+                # Each diagonal step has euclidean length sqrt(2)
+                # So we need: total_steps * sqrt(2) = cardinal_distance
+                # Therefore: total_steps = cardinal_distance / sqrt(2)
+                total_steps = int(round(cardinal_distance / np.sqrt(2)))
+                x = self.center_x + dx * total_steps
+                y = self.center_y + dy * total_steps
+            else:
+                # Cardinal arms: use full distance
+                x = self.center_x + dx * cardinal_distance
+                y = self.center_y + dy * cardinal_distance
             ends.append((x, y))
         return ends
     
@@ -286,6 +319,13 @@ class RadialArmMaze(NavigationEnvironment):
         """No automatic failure."""
         return False
     
+    def _get_char_under_agent(self) -> str:
+        """Return landmark character if agent is standing on a landmark."""
+        for landmark in self.landmarks:
+            if landmark['x'] == self.agent.x and landmark['y'] == self.agent.y:
+                return landmark['char']
+        return '.'  # Default to floor
+
     def get_info(self) -> Dict[str, Any]:
         """Get current state info including memory errors."""
         base_info = super().get_info()

@@ -100,8 +100,8 @@ class BarnesMaze(BaseEnvironment):
         # Valid actions
         self.valid_actions = [
             Action.FORWARD,
-            Action.TURN_LEFT,
-            Action.TURN_RIGHT,
+            Action.ROTATE_LEFT,
+            Action.ROTATE_RIGHT,
             Action.STAY
         ]
     
@@ -235,10 +235,10 @@ class BarnesMaze(BaseEnvironment):
             else:
                 return -0.1  # Hit wall/edge
                 
-        elif action == Action.TURN_LEFT:
+        elif action == Action.ROTATE_LEFT:
             self.agent.angle = (self.agent.angle + 1) % 8
             
-        elif action == Action.TURN_RIGHT:
+        elif action == Action.ROTATE_RIGHT:
             self.agent.angle = (self.agent.angle - 1) % 8
         
         # Update path length
@@ -376,7 +376,7 @@ class BarnesMaze(BaseEnvironment):
                 if hole['is_escape'] and self._can_see_escape_hole(hole['x'], hole['y']):
                     grid[dy][dx] = 'E'  # Escape hole visible!
                 else:
-                    grid[dy][dx] = 'O'  # All holes look the same from afar
+                    grid[dy][dx] = '?'  # All holes look the same from afar
         
         # Draw landmarks with wall directly behind them (no gap)
         landmark_chars = ['1', '2', '3', '4']
@@ -468,7 +468,7 @@ class BarnesMaze(BaseEnvironment):
                     if hole['is_escape'] and dist <= 2.0:
                         char = 'E'
                     else:
-                        char = 'O'
+                        char = '?'
                     if col not in visible_objects or dist < visible_objects[col][1]:
                         visible_objects[col] = (char, dist)
         

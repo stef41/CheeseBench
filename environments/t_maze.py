@@ -99,8 +99,8 @@ class TMaze(NavigationEnvironment):
         # Valid actions
         self.valid_actions = [
             Action.FORWARD,
-            Action.TURN_LEFT,
-            Action.TURN_RIGHT,
+            Action.ROTATE_LEFT,
+            Action.ROTATE_RIGHT,
             Action.STAY
         ]
     

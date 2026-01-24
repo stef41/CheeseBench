@@ -102,8 +102,8 @@ class PlacePreference(BaseEnvironment):
         # Actions
         self.valid_actions = [
             Action.FORWARD,
-            Action.TURN_LEFT,
-            Action.TURN_RIGHT,
+            Action.ROTATE_LEFT,
+            Action.ROTATE_RIGHT,
             Action.STAY
         ]
     
@@ -132,8 +132,9 @@ class PlacePreference(BaseEnvironment):
         reward = 0.0
         
         # Movement using shared helper
+        # y_bounds increased to allow full vertical movement in the chamber
         old_chamber = self.current_chamber
-        self._move_continuous(action, speed=0.2, x_bounds=(-1.8, 1.8), y_bounds=(-0.7, 0.7))
+        self._move_continuous(action, speed=0.2, x_bounds=(-1.8, 1.8), y_bounds=(-1.2, 1.2))
         self.current_chamber = self._get_chamber()
         
         # Track time
@@ -246,9 +247,9 @@ class PlacePreference(BaseEnvironment):
             marker_x = 63 if self.conditioning_chamber == 0 else 160
             self._draw_disk(img, marker_x, 55, 8, (255, 215, 0))
         
-        # Agent
+        # Agent - scale to match y_bounds=(-1.2, 1.2)
         agent_x = int(112 + self.agent.x * 50)
-        agent_y = int(112 - self.agent.y * 50)  # Flip Y
+        agent_y = int(112 - self.agent.y * 60)  # Scaled for y_bounds ±1.2
         self._draw_disk(img, agent_x, agent_y, 6, (0, 150, 255))
         
         return img
@@ -282,7 +283,9 @@ class PlacePreference(BaseEnvironment):
         
         # Agent
         agent_x = int(ch_left + 1 + (self.agent.x + 1.8) / 3.6 * (ch_right - ch_left - 2))
-        agent_y = int(height // 2 - self.agent.y * 5)  # Flip Y: positive Y = UP on screen (lower row)
+        # Scale y to match y_bounds=(-1.2, 1.2) to visual rows (ch_top+1 to ch_bot-1)
+        usable_height = ch_bot - ch_top - 2  # rows available for agent
+        agent_y = int(height // 2 - self.agent.y / 1.2 * (usable_height // 2))
         agent_x = max(ch_left + 1, min(ch_right - 1, agent_x))
         agent_y = max(ch_top + 1, min(ch_bot - 1, agent_y))
         

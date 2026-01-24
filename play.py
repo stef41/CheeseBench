@@ -105,16 +105,16 @@ KEY_ACTIONS = {
     'W': Action.FORWARD,
     's': Action.STAY,
     'S': Action.STAY,
-    'a': Action.TURN_LEFT,
-    'A': Action.TURN_LEFT,
-    'd': Action.TURN_RIGHT,
-    'D': Action.TURN_RIGHT,
+    'a': Action.ROTATE_LEFT,
+    'A': Action.ROTATE_LEFT,
+    'd': Action.ROTATE_RIGHT,
+    'D': Action.ROTATE_RIGHT,
     
     # Arrow keys
     'UP': Action.FORWARD,
     'DOWN': Action.STAY,
-    'LEFT': Action.TURN_LEFT,
-    'RIGHT': Action.TURN_RIGHT,
+    'LEFT': Action.ROTATE_LEFT,
+    'RIGHT': Action.ROTATE_RIGHT,
     
     # Other actions
     'e': Action.INTERACT,

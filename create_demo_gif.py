@@ -35,8 +35,8 @@ def generate_exploration_actions():
     We visit arms in order: Start(2) -> Center -> 0(E) -> 4(S) -> 1(N) -> 3(SW/GOAL)
     
     Direction indices: 0=E, 1=NE, 2=N, 3=NW, 4=W, 5=SW, 6=S, 7=SE
-    TURN_LEFT: angle = (angle + 1) % 8
-    TURN_RIGHT: angle = (angle - 1) % 8
+    ROTATE_LEFT: angle = (angle + 1) % 8
+    ROTATE_RIGHT: angle = (angle - 1) % 8
     """
     actions = []
     
@@ -51,10 +51,10 @@ def generate_exploration_actions():
     
     # ========== Phase 2: Explore Arm 0 (E) ==========
     # From 7, turn left to 0: one turn
-    add(Action.TURN_LEFT, 1)  # angle = 0 (E)
+    add(Action.ROTATE_LEFT, 1)  # angle = 0 (E)
     add(Action.FORWARD, 12)   # Go East to arm end
     add(Action.STAY, 2)
-    add(Action.TURN_LEFT, 4)  # Turn around: 0 -> 4 (W)
+    add(Action.ROTATE_LEFT, 4)  # Turn around: 0 -> 4 (W)
     add(Action.FORWARD, 12)   # Return to center
     add(Action.STAY, 2)
     # angle = 4 (W)
@@ -62,10 +62,10 @@ def generate_exploration_actions():
     # ========== Phase 3: Explore Arm 4 (S) ==========
     # From 4, turn right to 6: 4 -> 3 -> 2 -> 1 -> 0 -> 7 -> 6 (six turns)
     # Or turn left: 4 -> 5 -> 6 (two turns)
-    add(Action.TURN_LEFT, 2)  # angle = 6 (S)
+    add(Action.ROTATE_LEFT, 2)  # angle = 6 (S)
     add(Action.FORWARD, 12)   # Go South to arm end
     add(Action.STAY, 2)
-    add(Action.TURN_LEFT, 4)  # Turn around: 6 -> 2 (N)
+    add(Action.ROTATE_LEFT, 4)  # Turn around: 6 -> 2 (N)
     add(Action.FORWARD, 12)   # Return to center
     add(Action.STAY, 2)
     # angle = 2 (N)
@@ -74,20 +74,20 @@ def generate_exploration_actions():
     # Already facing N (2)!
     add(Action.FORWARD, 12)   # Go North to arm end
     add(Action.STAY, 2)
-    add(Action.TURN_RIGHT, 4) # Turn around: 2 -> 6 (S)
+    add(Action.ROTATE_RIGHT, 4) # Turn around: 2 -> 6 (S)
     add(Action.FORWARD, 12)   # Return to center  
     add(Action.STAY, 2)
     # angle = 6 (S)
     
     # ========== Phase 5: Go to Arm 3 (SW) - THE GOAL ==========
     # From 6, turn right to 5: one turn
-    add(Action.TURN_RIGHT, 1)  # angle = 5 (SW)
+    add(Action.ROTATE_RIGHT, 1)  # angle = 5 (SW)
     add(Action.FORWARD, 15)    # Go SW to goal!
     
     # ========== Celebration! ==========
     add(Action.STAY, 5)
-    add(Action.TURN_LEFT, 8)   # Full spin
-    add(Action.TURN_RIGHT, 8)  # Spin back
+    add(Action.ROTATE_LEFT, 8)   # Full spin
+    add(Action.ROTATE_RIGHT, 8)  # Spin back
     add(Action.STAY, 5)
     
     return actions

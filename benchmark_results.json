@@ -1,0 +1,1250 @@
+{
+  "timestamp": "2026-01-24T04:02:38.341819",
+  "model": "gpt-oss:120b",
+  "num_trials": 2,
+  "system_prompt": "You are an agent navigating an environment. Maximize cumulative reward.\n\nSYMBOLS:\n- Agent: \u2191 \u2197 \u2192 \u2198 \u2193 \u2199 \u2190 \u2196 (8 directions, 45\u00b0 apart)\n- Goals: G P * (goal, platform, coin)\n- Walls: # \u2588 (BLOCKED)\n- Water/Floors: ~ . \u2591 (TRAVERSABLE)\n- Objects: [=] lever, [m] magazine\n- Targets: ? E (unknown, revealed)\n- Landmarks: 1-4\n\nACTIONS (egocentric, relative to your facing direction):\n- FORWARD: move in facing direction\n- ROTATE_LEFT: turn 45\u00b0 left\n- ROTATE_RIGHT: turn 45\u00b0 right\n- STAY: do nothing\n\nYou see your last 20 observations. Use [Your learnings: ...] (300 char max) for insights beyond recent history.\n\nRespond in this format:\nLEARNINGS: <high-level patterns, rules discovered, or long-term knowledge. Don't repeat recent observations. Write \"unchanged\" if nothing new>\nACTIONS: <up to 8 comma-separated actions, e.g. FORWARD, FORWARD, ROTATE_LEFT>",
+  "results": [
+    {
+      "env_name": "MorrisWaterMaze",
+      "view_mode": "ASCII_2D",
+      "agent_type": "Random",
+      "success_rate": 0.5,
+      "avg_steps": 120.0,
+      "successes": 1,
+      "total_trials": 2,
+      "source_pmc": "PMC2895266",
+      "source_quote": "The MWM is a test of spatial learning for rodents that relies on distal cues to navigate from start locations around the perimeter of an open swimming arena to locate a submerged escape platform.",
+      "trials": [
+        {
+          "steps": 40,
+          "reward": 0.6099999999999999,
+          "success": true
+        },
+        {
+          "steps": 200,
+          "reward": -2.2799999999999954,
+          "success": false
+        }
+      ]
+    },
+    {
+      "env_name": "MorrisWaterMaze",
+      "view_mode": "ASCII_2D",
+      "agent_type": "LLM",
+      "success_rate": 1.0,
+      "avg_steps": 26.5,
+      "successes": 2,
+      "total_trials": 2,
+      "source_pmc": "PMC2895266",
+      "source_quote": "The MWM is a test of spatial learning for rodents that relies on distal cues to navigate from start locations around the perimeter of an open swimming arena to locate a submerged escape platform.",
+      "trials": [
+        {
+          "steps": 1,
+          "reward": 1.0,
+          "success": true
+        },
+        {
+          "steps": 52,
+          "reward": -0.1900000000000006,
+          "success": true
+        }
+      ]
+    },
+    {
+      "env_name": "TMaze",
+      "view_mode": "ASCII_2D",
+      "agent_type": "Random",
+      "success_rate": 1.0,
+      "avg_steps": 113.0,
+      "successes": 2,
+      "total_trials": 2,
+      "source_pmc": "PMC3399492",
+      "source_quote": "In the forced alternation task, each trial consists of a forced choice run followed by a free choice run. A mouse is subjected to 10 consecutive trials in a session per day.",
+      "trials": [
+        {
+          "steps": 121,
+          "reward": -1.4599999999999955,
+          "success": true
+        },
+        {
+          "steps": 105,
+          "reward": -1.389999999999997,
+          "success": true
+        }
+      ]
+    },
+    {
+      "env_name": "TMaze",
+      "view_mode": "ASCII_2D",
+      "agent_type": "LLM",
+      "success_rate": 1.0,
+      "avg_steps": 8.0,
+      "successes": 2,
+      "total_trials": 2,
+      "source_pmc": "PMC3399492",
+      "source_quote": "In the forced alternation task, each trial consists of a forced choice run followed by a free choice run. A mouse is subjected to 10 consecutive trials in a session per day.",
+      "trials": [
+        {
+          "steps": 9,
+          "reward": 0.74,
+          "success": true
+        },
+        {
+          "steps": 7,
+          "reward": 0.94,
+          "success": true
+        }
+      ]
+    },
+    {
+      "env_name": "BarnesMaze",
+      "view_mode": "ASCII_2D",
+      "agent_type": "Random",
+      "success_rate": 0.0,
+      "avg_steps": 200.0,
+      "successes": 0,
+      "total_trials": 2,
+      "source_pmc": "PMC6126525",
+      "source_quote": "The Barnes maze consists of a circular platform with 20 equidistant holes, 19 closed with plugs while the remaining hole leads to an escape shelter.",
+      "trials": [
+        {
+          "steps": 200,
+          "reward": -8.559999999999969,
+          "success": false
+        },
+        {
+          "steps": 200,
+          "reward": -5.099999999999972,
+          "success": false
+        }
+      ]
+    },
+    {
+      "env_name": "BarnesMaze",
+      "view_mode": "ASCII_2D",
+      "agent_type": "LLM",
+      "success_rate": 1.0,
+      "avg_steps": 30.0,
+      "successes": 2,
+      "total_trials": 2,
+      "source_pmc": "PMC6126525",
+      "source_quote": "The Barnes maze consists of a circular platform with 20 equidistant holes, 19 closed with plugs while the remaining hole leads to an escape shelter.",
+      "trials": [
+        {
+          "steps": 54,
+          "reward": -1.0299999999999994,
+          "success": true
+        },
+        {
+          "steps": 6,
+          "reward": 0.95,
+          "success": true
+        }
+      ]
+    },
+    {
+      "env_name": "RadialArmMaze",
+      "view_mode": "ASCII_2D",
+      "agent_type": "Random",
+      "success_rate": 0.0,
+      "avg_steps": 200.0,
+      "successes": 0,
+      "total_trials": 2,
+      "source_pmc": "PMC4030456",
+      "source_quote": "Subjects are required to avoid arms previously used for escape during each testing day (working memory) as well as avoid fixed arms which never contain escape platforms (reference memory).",
+      "trials": [
+        {
+          "steps": 200,
+          "reward": -4.339999999999981,
+          "success": false
+        },
+        {
+          "steps": 200,
+          "reward": -4.51999999999998,
+          "success": false
+        }
+      ]
+    },
+    {
+      "env_name": "RadialArmMaze",
+      "view_mode": "ASCII_2D",
+      "agent_type": "LLM",
+      "success_rate": 0.0,
+      "avg_steps": 201.0,
+      "successes": 0,
+      "total_trials": 2,
+      "source_pmc": "PMC4030456",
+      "source_quote": "Subjects are required to avoid arms previously used for escape during each testing day (working memory) as well as avoid fixed arms which never contain escape platforms (reference memory).",
+      "trials": [
+        {
+          "steps": 200,
+          "reward": -2.0699999999999905,
+          "success": false
+        },
+        {
+          "steps": 202,
+          "reward": -3.1699999999999853,
+          "success": false
+        }
+      ]
+    },
+    {
+      "env_name": "OperantChamber",
+      "view_mode": "ASCII_2D",
+      "agent_type": "Random",
+      "success_rate": 0.0,
+      "avg_steps": 100.0,
+      "successes": 0,
+      "total_trials": 2,
+      "source_pmc": "PMC4598097",
+      "source_quote": "Program the operant responses (lever presses) necessary to obtain reward on a progressive ratio schedule of reinforcement.",
+      "trials": [
+        {
+          "steps": 100,
+          "reward": 3.7700000000000022,
+          "success": false
+        },
+        {
+          "steps": 100,
+          "reward": 1.6800000000000002,
+          "success": false
+        }
+      ]
+    },
+    {
+      "env_name": "OperantChamber",
+      "view_mode": "ASCII_2D",
+      "agent_type": "LLM",
+      "success_rate": 1.0,
+      "avg_steps": 30.0,
+      "successes": 2,
+      "total_trials": 2,
+      "source_pmc": "PMC4598097",
+      "source_quote": "Program the operant responses (lever presses) necessary to obtain reward on a progressive ratio schedule of reinforcement.",
+      "trials": [
+        {
+          "steps": 40,
+          "reward": 7.91,
+          "success": true
+        },
+        {
+          "steps": 20,
+          "reward": 8.599999999999998,
+          "success": true
+        }
+      ]
+    },
+    {
+      "env_name": "ShuttleBox",
+      "view_mode": "ASCII_2D",
+      "agent_type": "Random",
+      "success_rate": 0.0,
+      "avg_steps": 17.0,
+      "successes": 0,
+      "total_trials": 2,
+      "source_pmc": "PMC4692667",
+      "source_quote": "A conditioned stimulus (CS) is contingently followed by an aversive unconditioned stimulus (US). Subjects learn to avoid the US by shuttling from one compartment to the other in response to the CS.",
+      "trials": [
+        {
+          "steps": 20,
+          "reward": -5.0,
+          "success": false
+        },
+        {
+          "steps": 14,
+          "reward": -1.5,
+          "success": false
+        }
+      ]
+    },
+    {
+      "env_name": "ShuttleBox",
+      "view_mode": "ASCII_2D",
+      "agent_type": "LLM",
+      "success_rate": 0.5,
+      "avg_steps": 12.5,
+      "successes": 1,
+      "total_trials": 2,
+      "source_pmc": "PMC4692667",
+      "source_quote": "A conditioned stimulus (CS) is contingently followed by an aversive unconditioned stimulus (US). Subjects learn to avoid the US by shuttling from one compartment to the other in response to the CS.",
+      "trials": [
+        {
+          "steps": 5,
+          "reward": 1.0,
+          "success": true
+        },
+        {
+          "steps": 20,
+          "reward": 0.0,
+          "success": false
+        }
+      ]
+    },
+    {
+      "env_name": "PlacePreference",
+      "view_mode": "ASCII_2D",
+      "agent_type": "Random",
+      "success_rate": 0.0,
+      "avg_steps": 200.0,
+      "successes": 0,
+      "total_trials": 2,
+      "source_pmc": "PMC6101638",
+      "source_quote": "The procedure consists of three phases: Pre-Conditioning, Conditioning, and Post-Conditioning. Compartments have different floor textures and wall colors.",
+      "trials": [
+        {
+          "steps": 200,
+          "reward": 6.099999999999994,
+          "success": false
+        },
+        {
+          "steps": 200,
+          "reward": 2.1000000000000005,
+          "success": false
+        }
+      ]
+    },
+    {
+      "env_name": "PlacePreference",
+      "view_mode": "ASCII_2D",
+      "agent_type": "LLM",
+      "success_rate": 0.0,
+      "avg_steps": 205.5,
+      "successes": 0,
+      "total_trials": 2,
+      "source_pmc": "PMC6101638",
+      "source_quote": "The procedure consists of three phases: Pre-Conditioning, Conditioning, and Post-Conditioning. Compartments have different floor textures and wall colors.",
+      "trials": [
+        {
+          "steps": 206,
+          "reward": 20.50000000000002,
+          "success": false
+        },
+        {
+          "steps": 205,
+          "reward": 20.40000000000002,
+          "success": false
+        }
+      ]
+    },
+    {
+      "env_name": "StarMaze",
+      "view_mode": "ASCII_2D",
+      "agent_type": "Random",
+      "success_rate": 0.0,
+      "avg_steps": 200.0,
+      "successes": 0,
+      "total_trials": 2,
+      "source_pmc": "PMC7866711",
+      "source_quote": "Star maze assesses navigation strategies using multiple arm configurations radiating from a central hub.",
+      "trials": [
+        {
+          "steps": 200,
+          "reward": -3.079999999999985,
+          "success": false
+        },
+        {
+          "steps": 200,
+          "reward": -3.979999999999979,
+          "success": false
+        }
+      ]
+    },
+    {
+      "env_name": "StarMaze",
+      "view_mode": "ASCII_2D",
+      "agent_type": "LLM",
+      "success_rate": 1.0,
+      "avg_steps": 38.5,
+      "successes": 2,
+      "total_trials": 2,
+      "source_pmc": "PMC7866711",
+      "source_quote": "Star maze assesses navigation strategies using multiple arm configurations radiating from a central hub.",
+      "trials": [
+        {
+          "steps": 34,
+          "reward": 0.21999999999999986,
+          "success": true
+        },
+        {
+          "steps": 43,
+          "reward": -1.04,
+          "success": true
+        }
+      ]
+    },
+    {
+      "env_name": "DNMSTask",
+      "view_mode": "ASCII_2D",
+      "agent_type": "Random",
+      "success_rate": 0.5,
+      "avg_steps": 12.5,
+      "successes": 1,
+      "total_trials": 2,
+      "source_pmc": "PMC3982138",
+      "source_quote": "TUNL working memory task requires animals to non-match to a sample location after a delay. A correct response to the novel location leads to reward delivery.",
+      "trials": [
+        {
+          "steps": 12,
+          "reward": -0.5,
+          "success": false
+        },
+        {
+          "steps": 13,
+          "reward": 1.0,
+          "success": true
+        }
+      ]
+    },
+    {
+      "env_name": "DNMSTask",
+      "view_mode": "ASCII_2D",
+      "agent_type": "LLM",
+      "success_rate": 0.0,
+      "avg_steps": 12.0,
+      "successes": 0,
+      "total_trials": 2,
+      "source_pmc": "PMC3982138",
+      "source_quote": "TUNL working memory task requires animals to non-match to a sample location after a delay. A correct response to the novel location leads to reward delivery.",
+      "trials": [
+        {
+          "steps": 12,
+          "reward": -0.5,
+          "success": false
+        },
+        {
+          "steps": 12,
+          "reward": -0.5,
+          "success": false
+        }
+      ]
+    },
+    {
+      "env_name": "MorrisWaterMaze",
+      "view_mode": "ASCII_2D_FPV",
+      "agent_type": "Random",
+      "success_rate": 0.0,
+      "avg_steps": 200.0,
+      "successes": 0,
+      "total_trials": 2,
+      "source_pmc": "PMC2895266",
+      "source_quote": "The MWM is a test of spatial learning for rodents that relies on distal cues to navigate from start locations around the perimeter of an open swimming arena to locate a submerged escape platform.",
+      "trials": [
+        {
+          "steps": 200,
+          "reward": -2.239999999999996,
+          "success": false
+        },
+        {
+          "steps": 200,
+          "reward": -2.639999999999992,
+          "success": false
+        }
+      ]
+    },
+    {
+      "env_name": "MorrisWaterMaze",
+      "view_mode": "ASCII_2D_FPV",
+      "agent_type": "LLM",
+      "success_rate": 0.5,
+      "avg_steps": 103.5,
+      "successes": 1,
+      "total_trials": 2,
+      "source_pmc": "PMC2895266",
+      "source_quote": "The MWM is a test of spatial learning for rodents that relies on distal cues to navigate from start locations around the perimeter of an open swimming arena to locate a submerged escape platform.",
+      "trials": [
+        {
+          "steps": 206,
+          "reward": -7.659999999999975,
+          "success": false
+        },
+        {
+          "steps": 1,
+          "reward": 1.0,
+          "success": true
+        }
+      ]
+    },
+    {
+      "env_name": "TMaze",
+      "view_mode": "ASCII_2D_FPV",
+      "agent_type": "Random",
+      "success_rate": 0.5,
+      "avg_steps": 145.5,
+      "successes": 1,
+      "total_trials": 2,
+      "source_pmc": "PMC3399492",
+      "source_quote": "In the forced alternation task, each trial consists of a forced choice run followed by a free choice run. A mouse is subjected to 10 consecutive trials in a session per day.",
+      "trials": [
+        {
+          "steps": 200,
+          "reward": -12.979999999999988,
+          "success": false
+        },
+        {
+          "steps": 91,
+          "reward": -0.7100000000000009,
+          "success": true
+        }
+      ]
+    },
+    {
+      "env_name": "TMaze",
+      "view_mode": "ASCII_2D_FPV",
+      "agent_type": "LLM",
+      "success_rate": 1.0,
+      "avg_steps": 66.0,
+      "successes": 2,
+      "total_trials": 2,
+      "source_pmc": "PMC3399492",
+      "source_quote": "In the forced alternation task, each trial consists of a forced choice run followed by a free choice run. A mouse is subjected to 10 consecutive trials in a session per day.",
+      "trials": [
+        {
+          "steps": 81,
+          "reward": -17.780000000000012,
+          "success": true
+        },
+        {
+          "steps": 51,
+          "reward": -8.65,
+          "success": true
+        }
+      ]
+    },
+    {
+      "env_name": "BarnesMaze",
+      "view_mode": "ASCII_2D_FPV",
+      "agent_type": "Random",
+      "success_rate": 0.0,
+      "avg_steps": 200.0,
+      "successes": 0,
+      "total_trials": 2,
+      "source_pmc": "PMC6126525",
+      "source_quote": "The Barnes maze consists of a circular platform with 20 equidistant holes, 19 closed with plugs while the remaining hole leads to an escape shelter.",
+      "trials": [
+        {
+          "steps": 200,
+          "reward": -7.569999999999975,
+          "success": false
+        },
+        {
+          "steps": 200,
+          "reward": -10.739999999999966,
+          "success": false
+        }
+      ]
+    },
+    {
+      "env_name": "BarnesMaze",
+      "view_mode": "ASCII_2D_FPV",
+      "agent_type": "LLM",
+      "success_rate": 0.5,
+      "avg_steps": 104.0,
+      "successes": 1,
+      "total_trials": 2,
+      "source_pmc": "PMC6126525",
+      "source_quote": "The Barnes maze consists of a circular platform with 20 equidistant holes, 19 closed with plugs while the remaining hole leads to an escape shelter.",
+      "trials": [
+        {
+          "steps": 203,
+          "reward": -15.839999999999954,
+          "success": false
+        },
+        {
+          "steps": 5,
+          "reward": 0.96,
+          "success": true
+        }
+      ]
+    },
+    {
+      "env_name": "RadialArmMaze",
+      "view_mode": "ASCII_2D_FPV",
+      "agent_type": "Random",
+      "success_rate": 0.0,
+      "avg_steps": 200.0,
+      "successes": 0,
+      "total_trials": 2,
+      "source_pmc": "PMC4030456",
+      "source_quote": "Subjects are required to avoid arms previously used for escape during each testing day (working memory) as well as avoid fixed arms which never contain escape platforms (reference memory).",
+      "trials": [
+        {
+          "steps": 200,
+          "reward": -4.069999999999983,
+          "success": false
+        },
+        {
+          "steps": 200,
+          "reward": 12.670000000000025,
+          "success": false
+        }
+      ]
+    },
+    {
+      "env_name": "RadialArmMaze",
+      "view_mode": "ASCII_2D_FPV",
+      "agent_type": "LLM",
+      "success_rate": 0.0,
+      "avg_steps": 200.5,
+      "successes": 0,
+      "total_trials": 2,
+      "source_pmc": "PMC4030456",
+      "source_quote": "Subjects are required to avoid arms previously used for escape during each testing day (working memory) as well as avoid fixed arms which never contain escape platforms (reference memory).",
+      "trials": [
+        {
+          "steps": 201,
+          "reward": -14.879999999999956,
+          "success": false
+        },
+        {
+          "steps": 200,
+          "reward": -12.349999999999962,
+          "success": false
+        }
+      ]
+    },
+    {
+      "env_name": "OperantChamber",
+      "view_mode": "ASCII_2D_FPV",
+      "agent_type": "Random",
+      "success_rate": 1.0,
+      "avg_steps": 68.5,
+      "successes": 2,
+      "total_trials": 2,
+      "source_pmc": "PMC4598097",
+      "source_quote": "Program the operant responses (lever presses) necessary to obtain reward on a progressive ratio schedule of reinforcement.",
+      "trials": [
+        {
+          "steps": 51,
+          "reward": 9.31,
+          "success": true
+        },
+        {
+          "steps": 86,
+          "reward": 8.850000000000001,
+          "success": true
+        }
+      ]
+    },
+    {
+      "env_name": "OperantChamber",
+      "view_mode": "ASCII_2D_FPV",
+      "agent_type": "LLM",
+      "success_rate": 1.0,
+      "avg_steps": 23.5,
+      "successes": 2,
+      "total_trials": 2,
+      "source_pmc": "PMC4598097",
+      "source_quote": "Program the operant responses (lever presses) necessary to obtain reward on a progressive ratio schedule of reinforcement.",
+      "trials": [
+        {
+          "steps": 12,
+          "reward": 9.95,
+          "success": true
+        },
+        {
+          "steps": 35,
+          "reward": 7.95,
+          "success": true
+        }
+      ]
+    },
+    {
+      "env_name": "ShuttleBox",
+      "view_mode": "ASCII_2D_FPV",
+      "agent_type": "Random",
+      "success_rate": 0.0,
+      "avg_steps": 20.0,
+      "successes": 0,
+      "total_trials": 2,
+      "source_pmc": "PMC4692667",
+      "source_quote": "A conditioned stimulus (CS) is contingently followed by an aversive unconditioned stimulus (US). Subjects learn to avoid the US by shuttling from one compartment to the other in response to the CS.",
+      "trials": [
+        {
+          "steps": 20,
+          "reward": -5.0,
+          "success": false
+        },
+        {
+          "steps": 20,
+          "reward": -5.0,
+          "success": false
+        }
+      ]
+    },
+    {
+      "env_name": "ShuttleBox",
+      "view_mode": "ASCII_2D_FPV",
+      "agent_type": "LLM",
+      "success_rate": 0.0,
+      "avg_steps": 20.0,
+      "successes": 0,
+      "total_trials": 2,
+      "source_pmc": "PMC4692667",
+      "source_quote": "A conditioned stimulus (CS) is contingently followed by an aversive unconditioned stimulus (US). Subjects learn to avoid the US by shuttling from one compartment to the other in response to the CS.",
+      "trials": [
+        {
+          "steps": 20,
+          "reward": 0.0,
+          "success": false
+        },
+        {
+          "steps": 20,
+          "reward": 0.0,
+          "success": false
+        }
+      ]
+    },
+    {
+      "env_name": "PlacePreference",
+      "view_mode": "ASCII_2D_FPV",
+      "agent_type": "Random",
+      "success_rate": 0.0,
+      "avg_steps": 200.0,
+      "successes": 0,
+      "total_trials": 2,
+      "source_pmc": "PMC6101638",
+      "source_quote": "The procedure consists of three phases: Pre-Conditioning, Conditioning, and Post-Conditioning. Compartments have different floor textures and wall colors.",
+      "trials": [
+        {
+          "steps": 200,
+          "reward": 18.39999999999999,
+          "success": false
+        },
+        {
+          "steps": 200,
+          "reward": 20.000000000000014,
+          "success": false
+        }
+      ]
+    },
+    {
+      "env_name": "PlacePreference",
+      "view_mode": "ASCII_2D_FPV",
+      "agent_type": "LLM",
+      "success_rate": 0.0,
+      "avg_steps": 206.5,
+      "successes": 0,
+      "total_trials": 2,
+      "source_pmc": "PMC6101638",
+      "source_quote": "The procedure consists of three phases: Pre-Conditioning, Conditioning, and Post-Conditioning. Compartments have different floor textures and wall colors.",
+      "trials": [
+        {
+          "steps": 207,
+          "reward": 6.399999999999993,
+          "success": false
+        },
+        {
+          "steps": 206,
+          "reward": 10.09999999999998,
+          "success": false
+        }
+      ]
+    },
+    {
+      "env_name": "StarMaze",
+      "view_mode": "ASCII_2D_FPV",
+      "agent_type": "Random",
+      "success_rate": 0.0,
+      "avg_steps": 200.0,
+      "successes": 0,
+      "total_trials": 2,
+      "source_pmc": "PMC7866711",
+      "source_quote": "Star maze assesses navigation strategies using multiple arm configurations radiating from a central hub.",
+      "trials": [
+        {
+          "steps": 200,
+          "reward": -3.5299999999999803,
+          "success": false
+        },
+        {
+          "steps": 200,
+          "reward": -2.7199999999999904,
+          "success": false
+        }
+      ]
+    },
+    {
+      "env_name": "StarMaze",
+      "view_mode": "ASCII_2D_FPV",
+      "agent_type": "LLM",
+      "success_rate": 1.0,
+      "avg_steps": 141.5,
+      "successes": 2,
+      "total_trials": 2,
+      "source_pmc": "PMC7866711",
+      "source_quote": "Star maze assesses navigation strategies using multiple arm configurations radiating from a central hub.",
+      "trials": [
+        {
+          "steps": 112,
+          "reward": -4.069999999999991,
+          "success": true
+        },
+        {
+          "steps": 171,
+          "reward": -9.519999999999971,
+          "success": true
+        }
+      ]
+    },
+    {
+      "env_name": "DNMSTask",
+      "view_mode": "ASCII_2D_FPV",
+      "agent_type": "Random",
+      "success_rate": 0.5,
+      "avg_steps": 12.5,
+      "successes": 1,
+      "total_trials": 2,
+      "source_pmc": "PMC3982138",
+      "source_quote": "TUNL working memory task requires animals to non-match to a sample location after a delay. A correct response to the novel location leads to reward delivery.",
+      "trials": [
+        {
+          "steps": 12,
+          "reward": 1.0,
+          "success": true
+        },
+        {
+          "steps": 13,
+          "reward": -0.5,
+          "success": false
+        }
+      ]
+    },
+    {
+      "env_name": "DNMSTask",
+      "view_mode": "ASCII_2D_FPV",
+      "agent_type": "LLM",
+      "success_rate": 1.0,
+      "avg_steps": 12.5,
+      "successes": 2,
+      "total_trials": 2,
+      "source_pmc": "PMC3982138",
+      "source_quote": "TUNL working memory task requires animals to non-match to a sample location after a delay. A correct response to the novel location leads to reward delivery.",
+      "trials": [
+        {
+          "steps": 12,
+          "reward": 1.0,
+          "success": true
+        },
+        {
+          "steps": 13,
+          "reward": 1.0,
+          "success": true
+        }
+      ]
+    },
+    {
+      "env_name": "MorrisWaterMaze",
+      "view_mode": "ASCII_3D",
+      "agent_type": "Random",
+      "success_rate": 0.0,
+      "avg_steps": 200.0,
+      "successes": 0,
+      "total_trials": 2,
+      "source_pmc": "PMC2895266",
+      "source_quote": "The MWM is a test of spatial learning for rodents that relies on distal cues to navigate from start locations around the perimeter of an open swimming arena to locate a submerged escape platform.",
+      "trials": [
+        {
+          "steps": 200,
+          "reward": -2.799999999999988,
+          "success": false
+        },
+        {
+          "steps": 200,
+          "reward": -2.2799999999999954,
+          "success": false
+        }
+      ]
+    },
+    {
+      "env_name": "MorrisWaterMaze",
+      "view_mode": "ASCII_3D",
+      "agent_type": "LLM",
+      "success_rate": 0.5,
+      "avg_steps": 203.0,
+      "successes": 1,
+      "total_trials": 2,
+      "source_pmc": "PMC2895266",
+      "source_quote": "The MWM is a test of spatial learning for rodents that relies on distal cues to navigate from start locations around the perimeter of an open swimming arena to locate a submerged escape platform.",
+      "trials": [
+        {
+          "steps": 207,
+          "reward": -4.82999999999998,
+          "success": false
+        },
+        {
+          "steps": 199,
+          "reward": -3.659999999999977,
+          "success": true
+        }
+      ]
+    },
+    {
+      "env_name": "TMaze",
+      "view_mode": "ASCII_3D",
+      "agent_type": "Random",
+      "success_rate": 0.5,
+      "avg_steps": 198.0,
+      "successes": 1,
+      "total_trials": 2,
+      "source_pmc": "PMC3399492",
+      "source_quote": "In the forced alternation task, each trial consists of a forced choice run followed by a free choice run. A mouse is subjected to 10 consecutive trials in a session per day.",
+      "trials": [
+        {
+          "steps": 200,
+          "reward": -4.8799999999999795,
+          "success": false
+        },
+        {
+          "steps": 196,
+          "reward": -3.7399999999999762,
+          "success": true
+        }
+      ]
+    },
+    {
+      "env_name": "TMaze",
+      "view_mode": "ASCII_3D",
+      "agent_type": "LLM",
+      "success_rate": 0.0,
+      "avg_steps": 200.0,
+      "successes": 0,
+      "total_trials": 2,
+      "source_pmc": "PMC3399492",
+      "source_quote": "In the forced alternation task, each trial consists of a forced choice run followed by a free choice run. A mouse is subjected to 10 consecutive trials in a session per day.",
+      "trials": [
+        {
+          "steps": 200,
+          "reward": -28.98000000000009,
+          "success": false
+        },
+        {
+          "steps": 200,
+          "reward": -4.069999999999984,
+          "success": false
+        }
+      ]
+    },
+    {
+      "env_name": "BarnesMaze",
+      "view_mode": "ASCII_3D",
+      "agent_type": "Random",
+      "success_rate": 0.0,
+      "avg_steps": 200.0,
+      "successes": 0,
+      "total_trials": 2,
+      "source_pmc": "PMC6126525",
+      "source_quote": "The Barnes maze consists of a circular platform with 20 equidistant holes, 19 closed with plugs while the remaining hole leads to an escape shelter.",
+      "trials": [
+        {
+          "steps": 200,
+          "reward": -11.529999999999973,
+          "success": false
+        },
+        {
+          "steps": 200,
+          "reward": -8.109999999999971,
+          "success": false
+        }
+      ]
+    },
+    {
+      "env_name": "BarnesMaze",
+      "view_mode": "ASCII_3D",
+      "agent_type": "LLM",
+      "success_rate": 1.0,
+      "avg_steps": 52.5,
+      "successes": 2,
+      "total_trials": 2,
+      "source_pmc": "PMC6126525",
+      "source_quote": "The Barnes maze consists of a circular platform with 20 equidistant holes, 19 closed with plugs while the remaining hole leads to an escape shelter.",
+      "trials": [
+        {
+          "steps": 31,
+          "reward": -0.6600000000000001,
+          "success": true
+        },
+        {
+          "steps": 74,
+          "reward": -2.6499999999999964,
+          "success": true
+        }
+      ]
+    },
+    {
+      "env_name": "RadialArmMaze",
+      "view_mode": "ASCII_3D",
+      "agent_type": "Random",
+      "success_rate": 0.0,
+      "avg_steps": 200.0,
+      "successes": 0,
+      "total_trials": 2,
+      "source_pmc": "PMC4030456",
+      "source_quote": "Subjects are required to avoid arms previously used for escape during each testing day (working memory) as well as avoid fixed arms which never contain escape platforms (reference memory).",
+      "trials": [
+        {
+          "steps": 200,
+          "reward": -3.379999999999985,
+          "success": false
+        },
+        {
+          "steps": 200,
+          "reward": -3.829999999999991,
+          "success": false
+        }
+      ]
+    },
+    {
+      "env_name": "RadialArmMaze",
+      "view_mode": "ASCII_3D",
+      "agent_type": "LLM",
+      "success_rate": 0.0,
+      "avg_steps": 203.5,
+      "successes": 0,
+      "total_trials": 2,
+      "source_pmc": "PMC4030456",
+      "source_quote": "Subjects are required to avoid arms previously used for escape during each testing day (working memory) as well as avoid fixed arms which never contain escape platforms (reference memory).",
+      "trials": [
+        {
+          "steps": 206,
+          "reward": -10.459999999999962,
+          "success": false
+        },
+        {
+          "steps": 201,
+          "reward": -7.5299999999999665,
+          "success": false
+        }
+      ]
+    },
+    {
+      "env_name": "OperantChamber",
+      "view_mode": "ASCII_3D",
+      "agent_type": "Random",
+      "success_rate": 1.0,
+      "avg_steps": 89.0,
+      "successes": 2,
+      "total_trials": 2,
+      "source_pmc": "PMC4598097",
+      "source_quote": "Program the operant responses (lever presses) necessary to obtain reward on a progressive ratio schedule of reinforcement.",
+      "trials": [
+        {
+          "steps": 89,
+          "reward": 8.060000000000002,
+          "success": true
+        },
+        {
+          "steps": 89,
+          "reward": 8.06,
+          "success": true
+        }
+      ]
+    },
+    {
+      "env_name": "OperantChamber",
+      "view_mode": "ASCII_3D",
+      "agent_type": "LLM",
+      "success_rate": 1.0,
+      "avg_steps": 34.5,
+      "successes": 2,
+      "total_trials": 2,
+      "source_pmc": "PMC4598097",
+      "source_quote": "Program the operant responses (lever presses) necessary to obtain reward on a progressive ratio schedule of reinforcement.",
+      "trials": [
+        {
+          "steps": 42,
+          "reward": 5.95,
+          "success": true
+        },
+        {
+          "steps": 27,
+          "reward": 8.45,
+          "success": true
+        }
+      ]
+    },
+    {
+      "env_name": "ShuttleBox",
+      "view_mode": "ASCII_3D",
+      "agent_type": "Random",
+      "success_rate": 0.0,
+      "avg_steps": 20.0,
+      "successes": 0,
+      "total_trials": 2,
+      "source_pmc": "PMC4692667",
+      "source_quote": "A conditioned stimulus (CS) is contingently followed by an aversive unconditioned stimulus (US). Subjects learn to avoid the US by shuttling from one compartment to the other in response to the CS.",
+      "trials": [
+        {
+          "steps": 20,
+          "reward": -5.0,
+          "success": false
+        },
+        {
+          "steps": 20,
+          "reward": -5.0,
+          "success": false
+        }
+      ]
+    },
+    {
+      "env_name": "ShuttleBox",
+      "view_mode": "ASCII_3D",
+      "agent_type": "LLM",
+      "success_rate": 0.5,
+      "avg_steps": 13.0,
+      "successes": 1,
+      "total_trials": 2,
+      "source_pmc": "PMC4692667",
+      "source_quote": "A conditioned stimulus (CS) is contingently followed by an aversive unconditioned stimulus (US). Subjects learn to avoid the US by shuttling from one compartment to the other in response to the CS.",
+      "trials": [
+        {
+          "steps": 20,
+          "reward": -5.0,
+          "success": false
+        },
+        {
+          "steps": 6,
+          "reward": 1.0,
+          "success": true
+        }
+      ]
+    },
+    {
+      "env_name": "PlacePreference",
+      "view_mode": "ASCII_3D",
+      "agent_type": "Random",
+      "success_rate": 0.0,
+      "avg_steps": 200.0,
+      "successes": 0,
+      "total_trials": 2,
+      "source_pmc": "PMC6101638",
+      "source_quote": "The procedure consists of three phases: Pre-Conditioning, Conditioning, and Post-Conditioning. Compartments have different floor textures and wall colors.",
+      "trials": [
+        {
+          "steps": 200,
+          "reward": 0.0,
+          "success": false
+        },
+        {
+          "steps": 200,
+          "reward": 18.39999999999999,
+          "success": false
+        }
+      ]
+    },
+    {
+      "env_name": "PlacePreference",
+      "view_mode": "ASCII_3D",
+      "agent_type": "LLM",
+      "success_rate": 0.0,
+      "avg_steps": 201.5,
+      "successes": 0,
+      "total_trials": 2,
+      "source_pmc": "PMC6101638",
+      "source_quote": "The procedure consists of three phases: Pre-Conditioning, Conditioning, and Post-Conditioning. Compartments have different floor textures and wall colors.",
+      "trials": [
+        {
+          "steps": 201,
+          "reward": 19.300000000000004,
+          "success": false
+        },
+        {
+          "steps": 202,
+          "reward": 20.200000000000017,
+          "success": false
+        }
+      ]
+    },
+    {
+      "env_name": "StarMaze",
+      "view_mode": "ASCII_3D",
+      "agent_type": "Random",
+      "success_rate": 0.0,
+      "avg_steps": 200.0,
+      "successes": 0,
+      "total_trials": 2,
+      "source_pmc": "PMC7866711",
+      "source_quote": "Star maze assesses navigation strategies using multiple arm configurations radiating from a central hub.",
+      "trials": [
+        {
+          "steps": 200,
+          "reward": -3.3499999999999828,
+          "success": false
+        },
+        {
+          "steps": 200,
+          "reward": -3.7999999999999825,
+          "success": false
+        }
+      ]
+    },
+    {
+      "env_name": "StarMaze",
+      "view_mode": "ASCII_3D",
+      "agent_type": "LLM",
+      "success_rate": 0.0,
+      "avg_steps": 202.5,
+      "successes": 0,
+      "total_trials": 2,
+      "source_pmc": "PMC7866711",
+      "source_quote": "Star maze assesses navigation strategies using multiple arm configurations radiating from a central hub.",
+      "trials": [
+        {
+          "steps": 203,
+          "reward": -2.209999999999997,
+          "success": false
+        },
+        {
+          "steps": 202,
+          "reward": -2.109999999999999,
+          "success": false
+        }
+      ]
+    },
+    {
+      "env_name": "DNMSTask",
+      "view_mode": "ASCII_3D",
+      "agent_type": "Random",
+      "success_rate": 0.5,
+      "avg_steps": 20.5,
+      "successes": 1,
+      "total_trials": 2,
+      "source_pmc": "PMC3982138",
+      "source_quote": "TUNL working memory task requires animals to non-match to a sample location after a delay. A correct response to the novel location leads to reward delivery.",
+      "trials": [
+        {
+          "steps": 26,
+          "reward": 1.0,
+          "success": true
+        },
+        {
+          "steps": 15,
+          "reward": -0.5,
+          "success": false
+        }
+      ]
+    },
+    {
+      "env_name": "DNMSTask",
+      "view_mode": "ASCII_3D",
+      "agent_type": "LLM",
+      "success_rate": 0.0,
+      "avg_steps": 12.5,
+      "successes": 0,
+      "total_trials": 2,
+      "source_pmc": "PMC3982138",
+      "source_quote": "TUNL working memory task requires animals to non-match to a sample location after a delay. A correct response to the novel location leads to reward delivery.",
+      "trials": [
+        {
+          "steps": 12,
+          "reward": -0.5,
+          "success": false
+        },
+        {
+          "steps": 13,
+          "reward": -0.5,
+          "success": false
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,144 @@
+nohup: ignoring input
+============================================================
+MINIMAL VLM BENCHMARK - UNIFIED PROTOCOL
+============================================================
+Model: gpt-oss:120b
+Trials per environment: 2
+View modes: ['ASCII_2D', 'ASCII_2D_FPV', 'ASCII_3D']
+============================================================
+
+============================================================
+VIEW MODE: ASCII_2D
+============================================================
+
+  MorrisWaterMaze (Random)... 1/2 (50%)
+
+  MorrisWaterMaze (LLM)... 2/2 (100%)
+
+  TMaze (Random)... 2/2 (100%)
+
+  TMaze (LLM)... 2/2 (100%)
+
+  BarnesMaze (Random)... 0/2 (0%)
+
+  BarnesMaze (LLM)... 2/2 (100%)
+
+  RadialArmMaze (Random)... 0/2 (0%)
+
+  RadialArmMaze (LLM)... 0/2 (0%)
+
+  OperantChamber (Random)... 0/2 (0%)
+
+  OperantChamber (LLM)... 2/2 (100%)
+
+  ShuttleBox (Random)... 0/2 (0%)
+
+  ShuttleBox (LLM)... 1/2 (50%)
+
+  PlacePreference (Random)... 0/2 (0%)
+
+  PlacePreference (LLM)... 0/2 (0%)
+
+  StarMaze (Random)... 0/2 (0%)
+
+  StarMaze (LLM)... 2/2 (100%)
+
+  DNMSTask (Random)... 1/2 (50%)
+
+  DNMSTask (LLM)... 0/2 (0%)
+
+============================================================
+VIEW MODE: ASCII_2D_FPV
+============================================================
+
+  MorrisWaterMaze (Random)... 0/2 (0%)
+
+  MorrisWaterMaze (LLM)... 1/2 (50%)
+
+  TMaze (Random)... 1/2 (50%)
+
+  TMaze (LLM)... 2/2 (100%)
+
+  BarnesMaze (Random)... 0/2 (0%)
+
+  BarnesMaze (LLM)... 1/2 (50%)
+
+  RadialArmMaze (Random)... 0/2 (0%)
+
+  RadialArmMaze (LLM)... 0/2 (0%)
+
+  OperantChamber (Random)... 2/2 (100%)
+
+  OperantChamber (LLM)... 2/2 (100%)
+
+  ShuttleBox (Random)... 0/2 (0%)
+
+  ShuttleBox (LLM)... 0/2 (0%)
+
+  PlacePreference (Random)... 0/2 (0%)
+
+  PlacePreference (LLM)... 0/2 (0%)
+
+  StarMaze (Random)... 0/2 (0%)
+
+  StarMaze (LLM)... 2/2 (100%)
+
+  DNMSTask (Random)... 1/2 (50%)
+
+  DNMSTask (LLM)... 2/2 (100%)
+
+============================================================
+VIEW MODE: ASCII_3D
+============================================================
+
+  MorrisWaterMaze (Random)... 0/2 (0%)
+
+  MorrisWaterMaze (LLM)... 1/2 (50%)
+
+  TMaze (Random)... 1/2 (50%)
+
+  TMaze (LLM)... 0/2 (0%)
+
+  BarnesMaze (Random)... 0/2 (0%)
+
+  BarnesMaze (LLM)... 2/2 (100%)
+
+  RadialArmMaze (Random)... 0/2 (0%)
+
+  RadialArmMaze (LLM)... 0/2 (0%)
+
+  OperantChamber (Random)... 2/2 (100%)
+
+  OperantChamber (LLM)... 2/2 (100%)
+
+  ShuttleBox (Random)... 0/2 (0%)
+
+  ShuttleBox (LLM)... 1/2 (50%)
+
+  PlacePreference (Random)... 0/2 (0%)
+
+  PlacePreference (LLM)... 0/2 (0%)
+
+  StarMaze (Random)... 0/2 (0%)
+
+  StarMaze (LLM)... 0/2 (0%)
+
+  DNMSTask (Random)... 1/2 (50%)
+
+  DNMSTask (LLM)... 0/2 (0%)
+
+======================================================================
+BENCHMARK SUMMARY
+======================================================================
+
+View Mode       Agent      Success Rate   
+----------------------------------------
+ASCII_2D        LLM        11/18 (61.1%)
+ASCII_2D        Random     4/18 (22.2%)
+ASCII_2D_FPV    LLM        10/18 (55.6%)
+ASCII_2D_FPV    Random     4/18 (22.2%)
+ASCII_3D        LLM        6/18 (33.3%)
+ASCII_3D        Random     4/18 (22.2%)
+
+Results saved to benchmark_results.json
+LLM traces saved to llm_traces.log

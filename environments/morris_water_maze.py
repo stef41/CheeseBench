@@ -98,8 +98,8 @@ class MorrisWaterMaze(NavigationEnvironment):
         # Actions - use 8-direction system
         self.valid_actions = [
             Action.FORWARD,
-            Action.TURN_LEFT, 
-            Action.TURN_RIGHT,
+            Action.ROTATE_LEFT, 
+            Action.ROTATE_RIGHT,
             Action.STAY
         ]
         self.action_names[Action.FORWARD] = "swim forward"
@@ -234,10 +234,10 @@ class MorrisWaterMaze(NavigationEnvironment):
             else:
                 return -0.05  # Hit wall
                 
-        elif action == Action.TURN_LEFT:
+        elif action == Action.ROTATE_LEFT:
             # Turn 45° counter-clockwise (increment direction index)
             self.agent.angle = (self.agent.angle + 1) % 8
-        elif action == Action.TURN_RIGHT:
+        elif action == Action.ROTATE_RIGHT:
             # Turn 45° clockwise (decrement direction index)
             self.agent.angle = (self.agent.angle - 1) % 8
         elif action == Action.STAY:

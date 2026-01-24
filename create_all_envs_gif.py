@@ -79,7 +79,7 @@ def turn_toward(current, target):
     diff = (target - current) % 8
     if diff == 0:
         return None
-    return Action.TURN_LEFT if diff <= 4 else Action.TURN_RIGHT
+    return Action.ROTATE_LEFT if diff <= 4 else Action.ROTATE_RIGHT
 
 
 # ============== Action Generation for Each Environment ==============
@@ -111,7 +111,7 @@ def generate_navigation_actions(env, valid_positions, goal_x, goal_y, interact_a
         
         if turn:
             actions.append(turn)
-            if turn == Action.TURN_LEFT:
+            if turn == Action.ROTATE_LEFT:
                 agent_angle = (agent_angle + 1) % 8
             else:
                 agent_angle = (agent_angle - 1) % 8
@@ -179,7 +179,7 @@ def generate_radial_actions(env):
             
             if turn:
                 nav_actions.append(turn)
-                if turn == Action.TURN_LEFT:
+                if turn == Action.ROTATE_LEFT:
                     agent_angle = (agent_angle + 1) % 8
                 else:
                     agent_angle = (agent_angle - 1) % 8
@@ -211,9 +211,9 @@ def generate_operant_actions(env):
     actions = []
     # Turn to face active lever
     if env.active_lever == 0:
-        actions.append(Action.TURN_LEFT)
+        actions.append(Action.ROTATE_LEFT)
     else:
-        actions.append(Action.TURN_RIGHT)
+        actions.append(Action.ROTATE_RIGHT)
     # Press lever multiple times
     for _ in range(5):
         actions.append(Action.INTERACT)
@@ -238,7 +238,7 @@ def generate_place_actions(env):
     actions = []
     # Turn toward conditioning chamber
     if env.conditioning_chamber == 0:  # Left
-        actions.extend([Action.TURN_LEFT] * 4)
+        actions.extend([Action.ROTATE_LEFT] * 4)
     # Move forward into chamber
     for _ in range(10):
         actions.append(Action.FORWARD)
@@ -255,9 +255,9 @@ def generate_dnms_actions(env):
     actions.extend([Action.STAY] * 10)
     # Make correct choice
     if env.correct_choice == 0:
-        actions.append(Action.TURN_LEFT)
+        actions.append(Action.ROTATE_LEFT)
     else:
-        actions.append(Action.TURN_RIGHT)
+        actions.append(Action.ROTATE_RIGHT)
     # Confirm choice
     actions.append(Action.INTERACT)
     actions.extend([Action.STAY] * 3)

@@ -93,8 +93,8 @@ class DNMSTask(BaseEnvironment):
         # Actions
         self.valid_actions = [
             Action.FORWARD,     # Confirm choice
-            Action.TURN_LEFT,   # Choose left option
-            Action.TURN_RIGHT,  # Choose right option
+            Action.ROTATE_LEFT,   # Choose left option
+            Action.ROTATE_RIGHT,  # Choose right option
             Action.STAY         # Wait (auto-advances in sample phase)
         ]
         
@@ -167,9 +167,9 @@ class DNMSTask(BaseEnvironment):
         
         elif self.phase == 'choice':
             # Choose which stimulus (left/right) then confirm with FORWARD
-            if action == Action.TURN_LEFT:
+            if action == Action.ROTATE_LEFT:
                 self.choice_position = 0
-            elif action == Action.TURN_RIGHT:
+            elif action == Action.ROTATE_RIGHT:
                 self.choice_position = 1
             elif action == Action.FORWARD:
                 # Make the choice

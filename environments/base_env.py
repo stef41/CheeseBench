@@ -32,8 +32,8 @@ class ViewMode(Enum):
 class Action(Enum):
     """Standard discrete actions."""
     FORWARD = 0
-    TURN_LEFT = 2
-    TURN_RIGHT = 3
+    ROTATE_LEFT = 2
+    ROTATE_RIGHT = 3
     # Context-specific actions
     INTERACT = 6      # Press lever, enter hole, etc.
     STAY = 7          # Do nothing
@@ -151,14 +151,14 @@ class BaseEnvironment(ABC):
         # Action mapping (can be overridden)
         self.action_names = {
             Action.FORWARD: "move forward",
-            Action.TURN_LEFT: "turn left",
-            Action.TURN_RIGHT: "turn right",
+            Action.ROTATE_LEFT: "rotate left",
+            Action.ROTATE_RIGHT: "rotate right",
             Action.INTERACT: "interact",
             Action.STAY: "stay"
         }
         
         # Valid actions for this environment (subset)
-        self.valid_actions = [Action.FORWARD, Action.TURN_LEFT, Action.TURN_RIGHT, Action.STAY]
+        self.valid_actions = [Action.FORWARD, Action.ROTATE_LEFT, Action.ROTATE_RIGHT, Action.STAY]
         
     @property
     def observation_shape(self) -> Tuple[int, ...]:
@@ -365,6 +365,20 @@ class BaseEnvironment(ABC):
     def _render_ascii_3d(self) -> str:
         """Render ASCII pseudo-3D FPV."""
         pass
+    
+    # ==================== Optional Override Methods ====================
+    
+    def _get_char_under_agent(self) -> str:
+        """
+        Return the character that should appear at the agent's position.
+        
+        Override in subclasses where the agent can stand on meaningful content
+        (e.g., landmarks in RadialArmMaze). Default returns '.' (floor).
+        
+        This is used by FPV rendering to show what's under the agent when
+        the 2D map would show an agent marker.
+        """
+        return '.'
     
     # ==================== Shared 3D Rendering Helpers ====================
     
@@ -595,10 +609,10 @@ class BaseEnvironment(ABC):
             if y_bounds is not None:
                 self.agent.y = np.clip(self.agent.y, y_bounds[0], y_bounds[1])
                 
-        elif action == Action.TURN_LEFT:
+        elif action == Action.ROTATE_LEFT:
             self.agent.angle += turn_rate
             
-        elif action == Action.TURN_RIGHT:
+        elif action == Action.ROTATE_RIGHT:
             self.agent.angle -= turn_rate
         
         # Normalize angle to [0, 2π)
@@ -855,114 +869,7 @@ class BaseEnvironment(ABC):
     def _render_ascii_2d_fpv(self, view_width: int = 35, view_height: int = 23, 
                               view_distance: float = 5.0, fov_degrees: float = 120.0) -> str:
         """
-        Render ASCII 2D FPV using the Template Method Pattern.
-        
-        This method defines the overall structure. Environments can customize
-        behavior by overriding the hook methods:
-        - _fpv_get_cell_content(ray_angle, distance) -> char
-        - _fpv_get_wall_distance(ray_angle) -> float  
-        - _fpv_get_visible_landmarks(fov_half) -> list of (screen_col, char)
-        - _fpv_get_goal_marker() -> (row, col, char) or None
-        - _fpv_get_max_view_distance() -> float
-        
-        For grid-based mazes, the default uses map rotation.
-        For continuous/circular environments, override the hooks.
-        """
-        import numpy as np
-        
-        # Check if this environment uses continuous coordinates (has _fpv_get_wall_distance)
-        if hasattr(self, '_fpv_get_wall_distance'):
-            return self._render_ascii_2d_fpv_continuous(view_width, view_height, fov_degrees)
-        else:
-            return self._render_ascii_2d_fpv_grid(view_width, view_height, view_distance, fov_degrees)
-    
-    def _render_ascii_2d_fpv_continuous(self, view_width: int, view_height: int, 
-                                         fov_degrees: float) -> str:
-        """
-        FPV rendering for continuous/circular environments.
-        Uses raycasting to walls and world-coordinate landmark visibility.
-        """
-        import math
-        import numpy as np
-        
-        # Initialize grid with fog
-        grid = [['░' for _ in range(view_width)] for _ in range(view_height)]
-        
-        # Agent position in view
-        agent_col = view_width // 2
-        agent_row = view_height - 2
-        
-        # FOV parameters
-        fov = np.radians(fov_degrees)
-        half_fov = fov / 2
-        
-        # Get max view distance from environment
-        max_dist = self._fpv_get_max_view_distance() if hasattr(self, '_fpv_get_max_view_distance') else 10.0
-        
-        # Track wall row for each column (for landmark placement)
-        wall_row_per_col = {}
-        
-        # For each cell, determine content based on raycasting
-        for row in range(view_height - 2):
-            for col in range(view_width):
-                dx = col - agent_col
-                dy = agent_row - row
-                
-                if dx == 0 and dy == 0:
-                    continue
-                
-                # Calculate angle from forward direction
-                cell_angle = math.atan2(dx, dy)
-                
-                # Check FOV
-                if abs(cell_angle) > half_fov:
-                    continue
-                
-                # Get wall distance in this direction
-                ray_world_angle = self.agent.angle + cell_angle
-                wall_dist = self._fpv_get_wall_distance(ray_world_angle)
-                
-                # Map distance to row
-                dist_ratio = min(1.0, wall_dist / max_dist)
-                wall_row = int(agent_row - dist_ratio * (agent_row - 1))
-                
-                if col not in wall_row_per_col or wall_row > wall_row_per_col[col]:
-                    wall_row_per_col[col] = wall_row
-                
-                # Get cell content
-                if row < wall_row:
-                    grid[row][col] = '░'  # Beyond wall
-                elif row == wall_row:
-                    grid[row][col] = '#'  # Wall
-                else:
-                    # Get floor content from environment
-                    grid[row][col] = self._fpv_get_floor_char() if hasattr(self, '_fpv_get_floor_char') else ' '
-        
-        # Add landmarks
-        if hasattr(self, '_fpv_get_visible_landmarks'):
-            for screen_col, char in self._fpv_get_visible_landmarks(half_fov):
-                if 0 <= screen_col < view_width and screen_col in wall_row_per_col:
-                    wall_row = wall_row_per_col[screen_col]
-                    if 0 <= wall_row < view_height - 2:
-                        grid[wall_row][screen_col] = char
-        
-        # Add goal marker
-        if hasattr(self, '_fpv_get_goal_marker'):
-            goal_info = self._fpv_get_goal_marker(grid, agent_row, agent_col, view_width, view_height)
-            if goal_info:
-                row, col, char = goal_info
-                if 0 <= row < view_height - 2 and 0 <= col < view_width:
-                    grid[row][col] = char
-        
-        # Agent marker
-        grid[agent_row][agent_col] = '↑'
-        
-        return '\n'.join([''.join(row) for row in grid])
-    
-    def _render_ascii_2d_fpv_grid(self, view_width: int = 35, view_height: int = 23, 
-                                   view_distance: float = 5.0, fov_degrees: float = 120.0) -> str:
-        """
-        FPV rendering for grid-based environments.
+        Render ASCII 2D FPV for grid-based environments.
         Uses map rotation with raycasting for visibility.
         """
         import numpy as np
@@ -1019,16 +926,45 @@ class BaseEnvironment(ABC):
         
         # Determine what character represents floor in this map
         # Check neighbors of agent position - floor is what's around the agent
+        # Determine if spaces inside the arena are floor (not void outside boundary)
         floor_chars = set()
+        
+        # First check: if the agent is surrounded by mostly spaces AND walls,
+        # then space IS the floor character (e.g., OperantChamber)
+        space_neighbors = 0
+        wall_neighbors = 0
+        total_neighbors = 0
         for dr in [-1, 0, 1]:
             for dc in [-1, 0, 1]:
+                if dr == 0 and dc == 0:
+                    continue  # Skip agent position
                 r, c = agent_row + dr, agent_col + dc
                 if 0 <= r < full_height and 0 <= c < full_width:
+                    total_neighbors += 1
                     ch = padded[r][c]
-                    if ch not in wall_chars and ch not in agent_markers:
+                    if ch == ' ':
+                        space_neighbors += 1
+                    elif ch in wall_chars:
+                        wall_neighbors += 1
+                    elif ch not in agent_markers:
                         floor_chars.add(ch)
-        # If space is used as floor near agent, don't treat it as void
-        space_is_floor = ' ' in floor_chars
+        
+        # If agent is surrounded by spaces and walls (no other floor chars found),
+        # then space IS the floor
+        if space_neighbors > 0 and len(floor_chars) == 0:
+            # Agent is in a room where space = floor
+            space_is_floor = True
+        else:
+            # Check for explicit floor characters or mixed floor
+            for dr in [-1, 0, 1]:
+                for dc in [-1, 0, 1]:
+                    r, c = agent_row + dr, agent_col + dc
+                    if 0 <= r < full_height and 0 <= c < full_width:
+                        ch = padded[r][c]
+                        if ch not in wall_chars and ch not in agent_markers:
+                            if ch != ' ':
+                                floor_chars.add(ch)
+            space_is_floor = ' ' in floor_chars or (space_neighbors > 0 and len(floor_chars) == 0)
         
         # Get agent's facing angle
         # Handle both integer direction index (0-7) and radians
@@ -1066,11 +1002,16 @@ class BaseEnvironment(ABC):
         half_w = view_width // 2
         agent_view_y = view_height - 2  # Near bottom
         
+        # Scale factor: view cells per map cell
+        # Keep scale at 1.0 for all angles - diagonal corridors naturally
+        # appear longer because you're viewing them at an angle
+        scale = 1.0
+        
         # Create output grid filled with fog
         output = [['░' for _ in range(view_width)] for _ in range(view_height)]
         
         def view_to_map(vx: float, vy: float) -> tuple:
-            """Convert view coordinates to map coordinates with rotation.
+            """Convert view coordinates to map coordinates with rotation and scaling.
             
             View coords: (0,0) top-left, x right, y down, agent at bottom center
             Map coords: (row, col), row down, col right
@@ -1078,6 +1019,10 @@ class BaseEnvironment(ABC):
             # Offset from agent position
             dx = vx - half_w
             dy = vy - agent_view_y
+            
+            # Apply scale factor
+            dx *= scale
+            dy *= scale
             
             # In view space: +Y is down (toward agent's back), -Y is up (forward)
             # In map space after rotation: need to transform
@@ -1091,11 +1036,9 @@ class BaseEnvironment(ABC):
             return map_row, map_col
         
         def get_char_at_map(row: float, col: float) -> str:
-            """Get character at map position, preferring important chars over walls.
+            """Get character at map position for WALL DETECTION (raycasting).
             
-            When sampling rotated coordinates, we check a small neighborhood
-            and prefer meaningful characters (holes O, goals G/P/*, landmarks 1234 ABCD)
-            over structural characters (walls #) to avoid losing important info.
+            Uses simple rounding. Bottleneck detection is done in raycasting.
             """
             r = int(round(row))
             c = int(round(col))
@@ -1103,16 +1046,10 @@ class BaseEnvironment(ABC):
             if not (0 <= r < full_height and 0 <= c < full_width):
                 return ' '
             
-            ch = padded[r][c]
-            return ch
+            return padded[r][c]
         
         def get_display_char_at_map(row: float, col: float) -> str:
-            """Get character for DISPLAY at map position, preferring important chars.
-            
-            This is used for rendering only, NOT for wall detection.
-            When sampling rotated coordinates, we check a small neighborhood
-            and prefer meaningful characters (holes O, goals G/P/*, landmarks 1234 ABCD)
-            over structural characters (walls #) to avoid losing important info.
+            """Get character for DISPLAY at map position.
             """
             r = int(round(row))
             c = int(round(col))
@@ -1120,53 +1057,7 @@ class BaseEnvironment(ABC):
             if not (0 <= r < full_height and 0 <= c < full_width):
                 return ' '
             
-            ch = padded[r][c]
-            
-            # Landmark letters/numbers are important - return them directly
-            if ch in '1234ABCD':
-                return ch
-            
-            # High-priority characters that should be preserved even when sampling 
-            # lands on adjacent floor/water tiles (goals, platforms, special objects)
-            # Includes: G=goal, P=platform, *=reward, O/o=holes, E=escape/exit,
-            #           !=warning/shock (ShuttleBox), X=wrong answer (DNMS)
-            high_priority_chars = set('GP*OoE!X')
-            # Other important characters (floor types, brackets, etc.)
-            important_chars = set('OoGP*[]=-~EABCDabcd!X')
-            
-            # If we got a high-priority character, return it immediately
-            if ch in high_priority_chars:
-                return ch
-            
-            # For floor-like characters (water, dots, spaces), check neighbors
-            # for high-priority chars that might have been missed due to rotation
-            floor_chars = set('.~` ')
-            if ch in floor_chars or ch not in wall_chars:
-                # Check immediate neighbors for high-priority targets
-                for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]:
-                    nr, nc = r + dr, c + dc
-                    if 0 <= nr < full_height and 0 <= nc < full_width:
-                        neighbor = padded[nr][nc]
-                        if neighbor in high_priority_chars:
-                            # Accept if reasonably close (handles rotation sampling)
-                            if abs(row - nr) < 0.9 and abs(col - nc) < 0.9:
-                                return neighbor
-                # No high-priority neighbor found, return original char
-                return ch
-            
-            # We got a wall - check immediate neighbors for important chars
-            # Use radius of 0.8 to find landmarks at diagonally rotated positions
-            for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]:
-                nr, nc = r + dr, c + dc
-                if 0 <= nr < full_height and 0 <= nc < full_width:
-                    neighbor = padded[nr][nc]
-                    # Check for landmarks and other important chars
-                    if neighbor in '1234ABCD' or neighbor in important_chars:
-                        # Accept if reasonably close (handles rotation sampling)
-                        if abs(row - nr) < 0.9 and abs(col - nc) < 0.9:
-                            return neighbor
-            
-            return ch
+            return padded[r][c]
         
         def is_in_fov(vx: int, vy: int) -> bool:
             """Check if view position is within field of view (FOV centered on UP)."""
@@ -1192,16 +1083,17 @@ class BaseEnvironment(ABC):
         visible = [[False for _ in range(view_width)] for _ in range(view_height)]
         
         def is_blocking(vx: int, vy: int) -> bool:
-            """Check if a view cell blocks vision."""
+            """Check if a view cell blocks vision for diagonal corner checks.
+            
+            Only WALLS physically block diagonal vision. Void (empty space outside arena)
+            should NOT block diagonal vision - you can see around void to walls beyond.
+            """
             if not (0 <= vx < view_width and 0 <= vy < view_height):
                 return True  # Out of bounds blocks
             map_row, map_col = view_to_map(vx, vy)
             ch = get_char_at_map(map_row, map_col)
-            if ch in wall_chars_blocking:
-                return True
-            if ch == ' ' and not space_is_floor:
-                return True
-            return False
+            # Only walls block diagonal vision, not void
+            return ch in wall_chars_blocking
         
         def cast_ray_dda(target_vx: int, target_vy: int):
             """Cast ray using DDA with diagonal blocking checks."""
@@ -1224,7 +1116,7 @@ class BaseEnvironment(ABC):
             x, y = x0, y0
             prev_ix, prev_iy = int(round(x)), int(round(y))
             
-            for _ in range(steps + 1):
+            for step_num in range(steps + 1):
                 ix, iy = int(round(x)), int(round(y))
                 
                 if 0 <= ix < view_width and 0 <= iy < view_height:
@@ -1248,9 +1140,10 @@ class BaseEnvironment(ABC):
                             visible[iy][ix] = True  # Mark wall as visible
                             return  # Stop ray
                         
-                        # Stop at void (outside arena) - but only if space isn't floor
+                        # Stop at void (outside arena) - render as boundary wall
                         if ch == ' ' and not space_is_floor:
-                            return  # Stop ray, don't mark as visible
+                            visible[iy][ix] = True  # Mark boundary as visible
+                            return  # Stop ray
                     
                     # Mark cell as visible
                     visible[iy][ix] = True
@@ -1274,25 +1167,26 @@ class BaseEnvironment(ABC):
         # Mark agent position as visible
         visible[agent_view_y][half_w] = True
         
-        # Cast rays to edge cells WITHIN the FOV
-        # Top edge - always in FOV
-        for x in range(view_width):
-            if is_in_fov(x, 0):
-                cast_ray_dda(x, 0)
-        # Left edge - only cells within FOV
-        for y in range(view_height):
-            if is_in_fov(0, y):
-                cast_ray_dda(0, y)
-        # Right edge - only cells within FOV
-        for y in range(view_height):
-            if is_in_fov(view_width - 1, y):
-                cast_ray_dda(view_width - 1, y)
+        # Cast rays to ALL cells in view (not just edges) to ensure full coverage
+        # This ensures no cells are missed between ray paths
+        for vy in range(view_height):
+            for vx in range(view_width):
+                if is_in_fov(vx, vy):
+                    cast_ray_dda(vx, vy)
         
         # Fill output grid from visibility map
+        # Only visible cells get content; non-visible cells remain as fog
+        # Track which (map_row, map_col) have already been rendered with important chars
+        # to avoid duplicating landmarks/goals when multiple view cells map to same map cell
+        rendered_important_cells = set()
+        important_unique_chars = set('0123456789ABCDabcdGP*OoE!X')  # Landmarks, goals, special objects
+        
         for vy in range(view_height):
             for vx in range(view_width):
                 if visible[vy][vx]:
                     map_row, map_col = view_to_map(vx, vy)
+                    # Round to get the actual map cell being sampled
+                    map_cell = (int(round(map_row)), int(round(map_col)))
                     # Use display char for rendering (prefers important chars)
                     ch = get_display_char_at_map(map_row, map_col)
                     # Don't copy the agent marker from the source - we'll place our own
@@ -1302,14 +1196,258 @@ class BaseEnvironment(ABC):
                             if space_is_floor:
                                 # Space is floor in this map - render as floor
                                 output[vy][vx] = '.'
-                            # else: leave as fog (void outside arena)
+                            else:
+                                # Void outside arena - render as boundary wall
+                                output[vy][vx] = '#'
+                        elif ch in important_unique_chars:
+                            # Important character - only render once per map cell
+                            if map_cell not in rendered_important_cells:
+                                output[vy][vx] = ch
+                                rendered_important_cells.add(map_cell)
+                            else:
+                                # Already rendered this important char, show floor instead
+                                output[vy][vx] = '.'
                         else:
                             output[vy][vx] = ch
                     else:
-                        output[vy][vx] = '.'  # Clear agent's old position, show floor
+                        # Agent marker - show what's actually under the agent
+                        output[vy][vx] = self._get_char_under_agent()
         
         # Place agent marker at bottom center - always pointing UP since view is rotated
         output[agent_view_y][half_w] = '↑'
+        
+        # Post-processing: fix bottleneck artifacts
+        floor_like_chars = set('.0123456789*')
+        
+        # Pass 1: Fix .#. pattern (wall between floor) - always an artifact
+        for vy in range(view_height):
+            for vx in range(1, view_width - 1):
+                ch = output[vy][vx]
+                left = output[vy][vx - 1]
+                right = output[vy][vx + 1]
+                
+                if ch == '#' and left in floor_like_chars and right in floor_like_chars:
+                    output[vy][vx] = '.'
+        
+        # Pass 1b: Fix #░# pattern (fog between walls) - artifact from alternating rays
+        # This creates ugly #░#░# patterns that should be solid wall
+        for vy in range(view_height):
+            for vx in range(1, view_width - 1):
+                ch = output[vy][vx]
+                left = output[vy][vx - 1]
+                right = output[vy][vx + 1]
+                
+                if ch == '░' and left == '#' and right == '#':
+                    output[vy][vx] = '#'
+        
+        # Pass 2: Fix #.# pattern (floor between walls) when it's clearly an artifact
+        # Artifact detection: if the center floor continues vertically AND at least one 
+        # adjacent row has floor at the wall positions, AND the row below is NOT also #.#
+        # continuing as a real narrow corridor, it's likely an artifact
+        for vy in range(1, view_height - 1):
+            for vx in range(1, view_width - 1):
+                ch = output[vy][vx]
+                left = output[vy][vx - 1]
+                right = output[vy][vx + 1]
+                
+                if ch in floor_like_chars and left == '#' and right == '#':
+                    # Check if center continues vertically (corridor pattern)
+                    above_center = output[vy-1][vx]
+                    below_center = output[vy+1][vx]
+                    center_continues = above_center in floor_like_chars and below_center in floor_like_chars
+                    
+                    if center_continues:
+                        # Check if this is a real narrow corridor by looking multiple rows below
+                        # A real narrow corridor has #.# pattern continuing for several rows
+                        # An artifact may have ##.## (thick walls) below but then widen
+                        below_is_narrow = (output[vy+1][vx-1] == '#' and output[vy+1][vx+1] == '#')
+                        
+                        if below_is_narrow:
+                            # Row below is narrow - but check if it's really a narrow corridor
+                            # or just thick walls (##.## pattern) that open up further down
+                            # Check row+2 - if it's wider there, this row is still an artifact
+                            if vy + 2 < view_height:
+                                row_plus_2_wider = (
+                                    output[vy+2][vx-1] in floor_like_chars or 
+                                    output[vy+2][vx+1] in floor_like_chars
+                                )
+                                if not row_plus_2_wider:
+                                    # Real narrow corridor continues
+                                    continue
+                            else:
+                                # Can't check row+2, assume it's a real corridor
+                                continue
+                        
+                        # Check if adjacent rows have floor at the wall positions
+                        above_left = output[vy-1][vx-1]
+                        above_right = output[vy-1][vx+1]
+                        below_left = output[vy+1][vx-1]
+                        below_right = output[vy+1][vx+1]
+                        
+                        # Widen if either adjacent row has floor at wall positions
+                        above_wider = above_left in floor_like_chars or above_right in floor_like_chars
+                        below_wider = below_left in floor_like_chars or below_right in floor_like_chars
+                        
+                        if above_wider or below_wider:
+                            output[vy][vx - 1] = '.'
+                            output[vy][vx + 1] = '.'
+        
+        # Pass 3: Fix horizontal fog gaps between floor cells
+        for vy in range(view_height):
+            for vx in range(1, view_width - 1):
+                if output[vy][vx] == '░':
+                    left_is_floor = output[vy][vx - 1] in floor_like_chars
+                    right_is_floor = output[vy][vx + 1] in floor_like_chars
+                    
+                    if left_is_floor and right_is_floor:
+                        map_row, map_col = view_to_map(vx, vy)
+                        ch = get_display_char_at_map(map_row, map_col)
+                        
+                        if ch in wall_chars:
+                            output[vy][vx] = '#'
+                        elif ch == ' ':
+                            output[vy][vx] = '.' if space_is_floor else '#'
+                        elif ch not in agent_markers:
+                            output[vy][vx] = ch if ch not in important_unique_chars else '.'
+                        else:
+                            output[vy][vx] = '.'
+        
+        # Pass 4: Fix vertical fog gaps between floor cells
+        for vx in range(view_width):
+            for vy in range(1, view_height - 1):
+                if output[vy][vx] == '░':
+                    above_is_floor = output[vy - 1][vx] in floor_like_chars
+                    below_is_floor = output[vy + 1][vx] in floor_like_chars
+                    
+                    if above_is_floor and below_is_floor:
+                        map_row, map_col = view_to_map(vx, vy)
+                        ch = get_display_char_at_map(map_row, map_col)
+                        
+                        if ch in wall_chars:
+                            output[vy][vx] = '#'
+                        elif ch == ' ':
+                            output[vy][vx] = '.' if space_is_floor else '#'
+                        elif ch not in agent_markers:
+                            output[vy][vx] = ch if ch not in important_unique_chars else '.'
+                        else:
+                            output[vy][vx] = '.'
+        
+        # Pass 5-6: Fix fog between wall and floor (iterative)
+        # Run multiple times to propagate fills through fog gaps
+        for _ in range(max(view_width, view_height)):
+            changed = False
+            
+            # Horizontal: wall on one side, floor on the other
+            for vy in range(view_height):
+                for vx in range(1, view_width - 1):
+                    if output[vy][vx] == '░':
+                        left = output[vy][vx - 1]
+                        right = output[vy][vx + 1]
+                        
+                        if (left == '#' and right in floor_like_chars) or \
+                           (left in floor_like_chars and right == '#'):
+                            map_row, map_col = view_to_map(vx, vy)
+                            ch = get_display_char_at_map(map_row, map_col)
+                            
+                            if ch in wall_chars:
+                                output[vy][vx] = '#'
+                            elif ch == ' ':
+                                output[vy][vx] = '.' if space_is_floor else '#'
+                            elif ch not in agent_markers:
+                                output[vy][vx] = ch if ch not in important_unique_chars else '.'
+                            else:
+                                output[vy][vx] = '.'
+                            changed = True
+            
+            # Vertical: wall above/below, floor on the other side
+            for vx in range(view_width):
+                for vy in range(1, view_height - 1):
+                    if output[vy][vx] == '░':
+                        above = output[vy - 1][vx]
+                        below = output[vy + 1][vx]
+                        
+                        if (above == '#' and below in floor_like_chars) or \
+                           (above in floor_like_chars and below == '#'):
+                            map_row, map_col = view_to_map(vx, vy)
+                            ch = get_display_char_at_map(map_row, map_col)
+                            
+                            if ch in wall_chars:
+                                output[vy][vx] = '#'
+                            elif ch == ' ':
+                                output[vy][vx] = '.' if space_is_floor else '#'
+                            elif ch not in agent_markers:
+                                output[vy][vx] = ch if ch not in important_unique_chars else '.'
+                            else:
+                                output[vy][vx] = '.'
+                            changed = True
+            
+            if not changed:
+                break
+        
+        # Pass 7: Limit walls to 1 cell thick next to floor (horizontal)
+        # You can't see through a wall, so only show the wall immediately adjacent to floor
+        # BUT: don't thin walls that connect to another floor section
+        for vy in range(view_height):
+            row = output[vy]
+            # Left-to-right: for floor->wall, keep only 1 wall IF walls extend into fog
+            for vx in range(view_width - 1):
+                if row[vx] in floor_like_chars and row[vx + 1] == '#':
+                    # Find end of wall run
+                    wall_end = vx + 1
+                    for wx in range(vx + 2, view_width):
+                        if row[wx] == '#':
+                            wall_end = wx
+                        else:
+                            break
+                    # Check what's after walls - if fog, thin; if floor, keep
+                    after = row[wall_end + 1] if wall_end + 1 < view_width else '░'
+                    if after == '░':
+                        for wx in range(vx + 2, wall_end + 1):
+                            row[wx] = '░'
+            
+            # Right-to-left: same logic
+            for vx in range(view_width - 1, 0, -1):
+                if row[vx] in floor_like_chars and row[vx - 1] == '#':
+                    wall_start = vx - 1
+                    for wx in range(vx - 2, -1, -1):
+                        if row[wx] == '#':
+                            wall_start = wx
+                        else:
+                            break
+                    before = row[wall_start - 1] if wall_start > 0 else '░'
+                    if before == '░':
+                        for wx in range(vx - 2, wall_start - 1, -1):
+                            row[wx] = '░'
+        
+        # Pass 8: Limit walls to 1 cell thick (vertical direction)
+        for vx in range(view_width):
+            # Top-to-bottom
+            for vy in range(view_height - 1):
+                if output[vy][vx] in floor_like_chars and output[vy + 1][vx] == '#':
+                    wall_end = vy + 1
+                    for wy in range(vy + 2, view_height):
+                        if output[wy][vx] == '#':
+                            wall_end = wy
+                        else:
+                            break
+                    after = output[wall_end + 1][vx] if wall_end + 1 < view_height else '░'
+                    if after == '░':
+                        for wy in range(vy + 2, wall_end + 1):
+                            output[wy][vx] = '░'
+            
+            # Bottom-to-top
+            for vy in range(view_height - 1, 0, -1):
+                if output[vy][vx] in floor_like_chars and output[vy - 1][vx] == '#':
+                    wall_start = vy - 1
+                    for wy in range(vy - 2, -1, -1):
+                        if output[wy][vx] == '#':
+                            wall_start = wy
+                        else:
+                            break
+                    before = output[wall_start - 1][vx] if wall_start > 0 else '░'
+                    if before == '░':
+                        for wy in range(vy - 2, wall_start - 1, -1):
+                            output[wy][vx] = '░'
         
         return '\n'.join(''.join(row) for row in output)
     
@@ -1350,12 +1488,12 @@ class BaseEnvironment(ABC):
             "move forward": Action.FORWARD,
             "go forward": Action.FORWARD,
             "ahead": Action.FORWARD,
-            "left": Action.TURN_LEFT,
-            "turn left": Action.TURN_LEFT,
-            "rotate left": Action.TURN_LEFT,
-            "right": Action.TURN_RIGHT,
-            "turn right": Action.TURN_RIGHT,
-            "rotate right": Action.TURN_RIGHT,
+            "left": Action.ROTATE_LEFT,
+            "rotate left": Action.ROTATE_LEFT,
+            "rotate left": Action.ROTATE_LEFT,
+            "right": Action.ROTATE_RIGHT,
+            "rotate right": Action.ROTATE_RIGHT,
+            "rotate right": Action.ROTATE_RIGHT,
             "interact": Action.INTERACT,
             "press": Action.INTERACT,
             "enter": Action.INTERACT,
@@ -1462,20 +1600,21 @@ class NavigationEnvironment(BaseEnvironment):
             if self._check_collision_at(new_x, new_y):
                 return -0.1  # Hit wall
             
-            # For diagonal moves, also check that we don't clip through corners
-            # Can't move diagonally if EITHER adjacent cell is a wall
+            # For diagonal moves, check corner-clipping but allow diagonal corridors
+            # Block only if BOTH adjacent cells are walls (true corner)
+            # Allow if at least one adjacent cell is walkable (diagonal corridor)
             if dx != 0 and dy != 0:  # Diagonal move
                 side1_blocked = self._check_collision_at(self.agent.x + dx, self.agent.y)
                 side2_blocked = self._check_collision_at(self.agent.x, self.agent.y + dy)
-                if side1_blocked or side2_blocked:
-                    # Can't cut through corner - must go around
+                if side1_blocked and side2_blocked:
+                    # Both sides blocked = true corner, can't cut through
                     return -0.1
             
             self.agent.x, self.agent.y = new_x, new_y
                         
-        elif action == Action.TURN_LEFT:
+        elif action == Action.ROTATE_LEFT:
             self.agent.angle = (self.agent.angle + 1) % 8
-        elif action == Action.TURN_RIGHT:
+        elif action == Action.ROTATE_RIGHT:
             self.agent.angle = (self.agent.angle - 1) % 8
         
         # Update path length (Euclidean distance for diagonals)
