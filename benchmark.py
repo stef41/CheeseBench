@@ -29,7 +29,7 @@ from environments import (
 OLLAMA_URL = "http://localhost:11434/api/chat"
 OLLAMA_MODEL = "gpt-oss:120b"
 MAX_STEPS = 200
-NUM_TRIALS = 2
+NUM_TRIALS = 3
 TIMEOUT = 120
 MAX_ACTIONS_PER_CALL = 8  # Maximum number of actions to generate per LLM call
 SAVE_THINKING_IN_HISTORY = False  # Include short thinking in conversation history
@@ -390,9 +390,10 @@ def run_trial(env, agent, max_steps: int = MAX_STEPS, log_file=None, last_reward
                 result.actions.append(action.name)
                 step += 1
                 
-                # Log each step result
+                # Log each step result with observation
                 if log_file:
                     log_file.write(f"  Step {step}: {action.name} -> reward={reward:.2f}\n")
+                    log_file.write(f"{obs}\n")
                     log_file.flush()
                 
                 # Check if trial completed
