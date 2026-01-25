@@ -29,7 +29,7 @@ from environments import (
 OLLAMA_URL = "http://localhost:11434/api/chat"
 OLLAMA_MODEL = "gpt-oss:120b"
 MAX_STEPS = 200
-NUM_TRIALS = 3
+NUM_TRIALS = 10
 TIMEOUT = 120
 MAX_ACTIONS_PER_CALL = 8  # Maximum number of actions to generate per LLM call
 SAVE_THINKING_IN_HISTORY = False  # Include short thinking in conversation history
@@ -100,6 +100,10 @@ class BenchmarkResult:
         return sum(t.steps for t in self.trials) / len(self.trials) if self.trials else 0
     
     @property
+    def avg_actions(self) -> float:
+        return sum(len(t.actions) for t in self.trials) / len(self.trials) if self.trials else 0
+    
+    @property
     def successes(self) -> int:
         return sum(1 for t in self.trials if t.success)
     
@@ -110,11 +114,12 @@ class BenchmarkResult:
             "agent_type": self.agent_type,
             "success_rate": self.success_rate,
             "avg_steps": self.avg_steps,
+            "avg_actions": self.avg_actions,
             "successes": sum(1 for t in self.trials if t.success),
             "total_trials": len(self.trials),
             "source_pmc": self.source_pmc,
             "source_quote": self.source_quote,
-            "trials": [{"steps": t.steps, "reward": t.reward, "success": t.success} for t in self.trials]
+            "trials": [{"steps": t.steps, "reward": t.reward, "success": t.success, "num_actions": len(t.actions), "actions": t.actions} for t in self.trials]
         }
 
 
@@ -366,16 +371,11 @@ def run_trial(env, agent, max_steps: int = MAX_STEPS, log_file=None, last_reward
             
             actions = agent.get_actions(obs, reward, k)
             
-            # Log the LLM call with all observations it saw
+            # Log the LLM call (observations already logged as step outputs)
             if log_file and hasattr(agent, 'last_response') and agent.last_response:
-                log_file.write(f"\n--- LLM Call (steps {step+1}-{step+len(actions)}) ---\n")
+                log_file.write(f"\n--- LLM Call (steps {step+1}-{step+len(actions)}, {len(observations_for_llm)} obs) ---\n")
                 if hasattr(agent, 'notes') and agent.notes:
                     log_file.write(f"Agent learnings: {agent.notes}\n")
-                log_file.write(f"Observations shown to LLM ({len(observations_for_llm)}):\n")
-                for idx, (o, r, a) in enumerate(observations_for_llm):
-                    r_str = f"reward={r:.2f}" if r is not None else "no reward"
-                    a_str = f"after {a.name}" if a is not None else "initial"
-                    log_file.write(f"  [Obs {idx+1}, {a_str}, {r_str}]\n{o}\n")
                 log_file.write(f"LLM Response: {agent.last_response}\n")
                 log_file.write(f"Actions: {[a.name for a in actions]}\n")
                 log_file.flush()
@@ -514,24 +514,26 @@ def run_benchmark(num_trials: int = NUM_TRIALS, verbose: bool = True) -> Dict:
 
 def print_summary(results: Dict):
     """Print summary table"""
-    print("\n" + "="*70)
+    print("\n" + "="*80)
     print("BENCHMARK SUMMARY")
-    print("="*70)
+    print("="*80)
     
     # Aggregate by view mode and agent
     summary = {}
     for r in results["results"]:
         key = (r["view_mode"], r["agent_type"])
         if key not in summary:
-            summary[key] = {"successes": 0, "total": 0}
+            summary[key] = {"successes": 0, "total": 0, "total_actions": 0}
         summary[key]["successes"] += r["successes"]
         summary[key]["total"] += r["total_trials"]
+        summary[key]["total_actions"] += sum(t["num_actions"] for t in r["trials"])
     
-    print(f"\n{'View Mode':<15} {'Agent':<10} {'Success Rate':<15}")
-    print("-"*40)
+    print(f"\n{'View Mode':<15} {'Agent':<10} {'Success Rate':<15} {'Avg Actions/Trial':<18}")
+    print("-"*60)
     for (mode, agent), data in sorted(summary.items()):
         rate = data["successes"] / data["total"] if data["total"] > 0 else 0
-        print(f"{mode:<15} {agent:<10} {data['successes']}/{data['total']} ({rate*100:.1f}%)")
+        avg_actions = data["total_actions"] / data["total"] if data["total"] > 0 else 0
+        print(f"{mode:<15} {agent:<10} {data['successes']}/{data['total']} ({rate*100:.1f}%)     {avg_actions:.1f}")
 
 
 # =============================================================================

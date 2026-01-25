@@ -410,14 +410,9 @@ class DNMSTask(BaseEnvironment):
                         row_str = row_str[:start] + stim_str + row_str[start + len(stim_str):]
             
             elif self.phase == 'delay':
-                # Show delay progress bar
-                if row == center_row:
-                    progress = 1 - (self.delay_counter / max(1, self.delay_steps))
-                    bar_len = 20
-                    filled = int(bar_len * progress)
-                    bar = '█' * filled + '░' * (bar_len - filled)
-                    start = center_col - bar_len // 2
-                    row_str = row_str[:start] + bar + row_str[start + bar_len:]
+                # Blank/dark screen during delay (realistic - no visual timer)
+                # Animals just wait in darkness during retention interval
+                pass  # Keep the basic chamber view, no progress indicator
             
             elif self.phase == 'choice':
                 # Show two stimuli side by side

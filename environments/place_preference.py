@@ -149,12 +149,11 @@ class PlacePreference(BaseEnvironment):
         return reward
     
     def _check_success(self) -> bool:
-        """Success in test = preference for conditioned chamber."""
-        if self.phase == 'test':
-            total_time = sum(self.time_in_chamber)
-            if total_time > 0:
-                pref_ratio = self.time_in_chamber[self.conditioning_chamber] / total_time
-                return pref_ratio > 0.6  # >60% time in conditioned chamber
+        """Success = preference for conditioned chamber (>60% time there)."""
+        total_time = sum(self.time_in_chamber)
+        if total_time >= 20:  # Need minimum time to assess preference
+            pref_ratio = self.time_in_chamber[self.conditioning_chamber] / total_time
+            return pref_ratio > 0.6  # >60% time in conditioned chamber
         return False
     
     def _check_failure(self) -> bool:
