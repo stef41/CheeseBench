@@ -316,7 +316,6 @@ def generate_exploration_actions():
         'ROTATE_LEFT': Action.ROTATE_LEFT,
         'ROTATE_RIGHT': Action.ROTATE_RIGHT,
         'STAY': Action.STAY,
-        'INTERACT': Action.INTERACT,
     }
     
     return [action_map[a] for a in actions_str]

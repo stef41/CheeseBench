@@ -34,8 +34,6 @@ class Action(Enum):
     FORWARD = 0
     ROTATE_LEFT = 2
     ROTATE_RIGHT = 3
-    # Context-specific actions
-    INTERACT = 6      # Press lever, enter hole, etc.
     STAY = 7          # Do nothing
 
 
@@ -153,7 +151,6 @@ class BaseEnvironment(ABC):
             Action.FORWARD: "move forward",
             Action.ROTATE_LEFT: "rotate left",
             Action.ROTATE_RIGHT: "rotate right",
-            Action.INTERACT: "interact",
             Action.STAY: "stay"
         }
         
@@ -1494,9 +1491,6 @@ class BaseEnvironment(ABC):
             "right": Action.ROTATE_RIGHT,
             "rotate right": Action.ROTATE_RIGHT,
             "rotate right": Action.ROTATE_RIGHT,
-            "interact": Action.INTERACT,
-            "press": Action.INTERACT,
-            "enter": Action.INTERACT,
             "stay": Action.STAY,
             "wait": Action.STAY,
             "stop": Action.STAY

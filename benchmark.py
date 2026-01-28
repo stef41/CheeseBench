@@ -29,7 +29,7 @@ from environments import (
 OLLAMA_URL = "http://localhost:11434/api/chat"
 OLLAMA_MODEL = "gpt-oss:120b"
 MAX_STEPS = 200
-NUM_TRIALS = 10
+NUM_TRIALS = 20
 TIMEOUT = 120
 MAX_ACTIONS_PER_CALL = 8  # Maximum number of actions to generate per LLM call
 SAVE_THINKING_IN_HISTORY = False  # Include short thinking in conversation history
@@ -46,28 +46,33 @@ VIEW_MODES = [
 # UNIVERSAL SYSTEM PROMPT - IDENTICAL FOR ALL TASKS
 # =============================================================================
 
-SYSTEM_PROMPT = f"""You are an agent navigating an environment. Maximize cumulative reward.
+SYSTEM_PROMPT = f"""You are an embodied agent navigating a 2D grid environment. Your objective is to maximize cumulative reward.
 
-SYMBOLS:
-- Agent: ↑ ↗ → ↘ ↓ ↙ ← ↖ (8 directions, 45° apart)
-- Goals: G P * (goal, platform, coin)
-- Walls: # █ (BLOCKED)
-- Water/Floors: ~ . ░ (TRAVERSABLE)
-- Objects: [=] lever, [m] magazine
-- Targets: ? E (unknown, revealed)
-- Landmarks: 1-4
+PERCEPTION:
+- You see an ASCII rendering of the environment from a top-down or first-person view
+- Your position/orientation is shown by an arrow: ↑ ↗ → ↘ ↓ ↙ ← ↖
+- Walls (#, █) block movement. Open spaces (., ~, ░, spaces) are traversable
+- Various symbols represent objects, goals, or interactive elements
+- Numbers (1-8) are fixed landmarks for spatial reference
 
-ACTIONS (egocentric, relative to your facing direction):
-- FORWARD: move in facing direction
-- ROTATE_LEFT: turn 45° left
-- ROTATE_RIGHT: turn 45° right
-- STAY: do nothing
+ACTIONS (egocentric - relative to your current facing direction):
+- FORWARD: move one cell in the direction you face
+- ROTATE_LEFT: turn 45° counterclockwise
+- ROTATE_RIGHT: turn 45° clockwise  
+- STAY: remain in place (useful when waiting is required)
 
-You see your last 20 observations. Use [Your learnings: ...] (300 char max) for insights beyond recent history.
+CORE PRINCIPLES:
+1. REWARD SIGNALS: Positive reward = good action, repeat similar behavior. Negative reward = bad action, change strategy. Learn from every reward.
+2. SPATIAL AWARENESS: Track where you are, where you've been, and where you haven't explored. Avoid repeating unsuccessful paths.
+3. GOAL IDENTIFICATION: Distinctive symbols often indicate objectives. Move toward novel/salient elements.
+4. PATTERN RECOGNITION: The environment may have rules (e.g., certain actions trigger events, sequences matter). Infer rules from reward feedback.
+5. EFFICIENT PLANNING: Before acting, visualize the path. Count rotations needed to face your target, then move.
 
-Respond in this format:
-LEARNINGS: <high-level patterns, rules discovered, or long-term knowledge. Don't repeat recent observations. Write "unchanged" if nothing new>
-ACTIONS: <up to {MAX_ACTIONS_PER_CALL} comma-separated actions, e.g. FORWARD, FORWARD, ROTATE_LEFT>"""
+RESPONSE FORMAT:
+LEARNINGS: <Brief notes on: your current position, locations visited, goals identified, rules discovered. Max 500 chars. Write "unchanged" only if no new information.>
+ACTIONS: <1 to {MAX_ACTIONS_PER_CALL} comma-separated actions>
+
+Think step by step: Where am I? Where have I been? What gives reward? What should I try next?"""
 
 
 # =============================================================================
@@ -131,7 +136,7 @@ class RandomAgent:
     """Baseline random agent"""
     
     def __init__(self):
-        self.actions = [Action.FORWARD, Action.ROTATE_LEFT, Action.ROTATE_RIGHT, Action.STAY, Action.INTERACT]
+        self.actions = [Action.FORWARD, Action.ROTATE_LEFT, Action.ROTATE_RIGHT, Action.STAY]
     
     def reset(self):
         pass
@@ -141,7 +146,7 @@ class RandomAgent:
 
 
 class LLMAgent:
-    """VLM agent with unified protocol"""
+    """VLM agent with unified protocol and enhanced memory"""
     
     def __init__(self, model: str = OLLAMA_MODEL):
         self.model = model
@@ -150,6 +155,12 @@ class LLMAgent:
         self.notes = ""  # Working memory: understanding + hypotheses
         self.action_queue = []  # Queue of pending actions
         self.pending_observations = []  # Observations to show on next LLM call
+        
+        # State tracking
+        self.step_count = 0
+        self.total_reward = 0.0
+        self.recent_rewards = []  # Track recent rewards
+        self.negative_reward_streak = 0  # Track consecutive negative rewards
     
     def reset(self):
         self.history = [{"role": "system", "content": SYSTEM_PROMPT}]
@@ -157,13 +168,45 @@ class LLMAgent:
         self.notes = ""
         self.action_queue = []
         self.pending_observations = []  # List of (observation, reward, action_that_led_here)
+        
+        # Reset state tracking
+        self.step_count = 0
+        self.total_reward = 0.0
+        self.recent_rewards = []
+        self.negative_reward_streak = 0
     
     def add_observation(self, observation: str, reward: float = None, action: Action = None):
         """Add an observation to be shown on next LLM call."""
         self.pending_observations.append((observation, reward, action))
+        
+        # Track rewards for pattern detection
+        if reward is not None:
+            self.recent_rewards.append(reward)
+            if len(self.recent_rewards) > 10:
+                self.recent_rewards.pop(0)
+            self.total_reward += reward
+            
+            if reward < -0.05:
+                self.negative_reward_streak += 1
+            else:
+                self.negative_reward_streak = 0
+    
+
     
     def get_actions(self, observation: str, reward: float = None, k: int = MAX_ACTIONS_PER_CALL) -> List[Action]:
         """Get k actions from LLM. Returns list of actions."""
+        # Track this observation's reward
+        if reward is not None:
+            self.recent_rewards.append(reward)
+            if len(self.recent_rewards) > 10:
+                self.recent_rewards.pop(0)
+            self.total_reward += reward
+            
+            if reward < -0.05:
+                self.negative_reward_streak += 1
+            else:
+                self.negative_reward_streak = 0
+        
         # Add current observation to pending (no action led to first obs)
         self.pending_observations.append((observation, reward, None))
         
@@ -172,23 +215,19 @@ class LLMAgent:
         
         # Include current learnings at the start
         if self.notes:
-            msg_parts.append(f"[Your learnings: {self.notes}]")
+            msg_parts.append(f"Your previous learnings: {self.notes}")
         
         # Add all pending observations with rewards and actions
         for i, (obs, rew, act) in enumerate(self.pending_observations):
+            self.step_count += 1
             # Show action that led to this observation (if any)
             if act is not None:
-                msg_parts.append(f"[After {act.name}]")
+                msg_parts.append(f"Action: {act.name}")
             if rew is not None:
-                if rew > 0:
-                    msg_parts.append(f"[Step {i+1}: +{rew:.1f} reward - GOOD!]")
-                elif rew < 0:
-                    msg_parts.append(f"[Step {i+1}: {rew:.1f} penalty]")
-                else:
-                    msg_parts.append(f"[Step {i+1}: 0 reward]")
-            msg_parts.append(obs)
+                msg_parts.append(f"Reward: {rew:+.2f}")
+            msg_parts.append(f"Observation:\n{obs}")
         
-        msg_parts.append(f"\nProvide up to {k} actions to execute in sequence.")
+        msg_parts.append(f"\nProvide LEARNINGS and up to {k} ACTIONS.")
         
         user_msg = "\n".join(msg_parts)
         self.history.append({"role": "user", "content": user_msg})
@@ -223,8 +262,8 @@ class LLMAgent:
                 import re
                 notes_match = re.search(r'LEARNINGS:\s*(.+?)(?:ACTIONS?:|$)', content, re.IGNORECASE | re.DOTALL)
                 if notes_match:
-                    new_notes = notes_match.group(1).strip()[:300]
-                    if new_notes.lower() not in ('unchanged', 'same', 'no change', 'none'):
+                    new_notes = notes_match.group(1).strip()[:500]
+                    if new_notes.lower() not in ('unchanged', 'same', 'no change', 'none', ''):
                         self.notes = new_notes
                 
                 # For logging
@@ -253,6 +292,11 @@ class LLMAgent:
         # Remove failed user message
         if self.history and self.history[-1]['role'] == 'user':
             self.history.pop()
+        
+        # Smart fallback: if we've been getting penalties, try different actions
+        if self.negative_reward_streak >= 2:
+            # Rotate to try a new direction
+            return [Action.ROTATE_LEFT, Action.ROTATE_LEFT, Action.FORWARD, Action.FORWARD][:k]
         return [Action.FORWARD] * k
     
     def _parse_actions(self, text: str, k: int) -> List[Action]:
@@ -284,21 +328,25 @@ class LLMAgent:
                 if action:
                     actions.append(action)
         
-        # If still no actions, default to single FORWARD
+        # If still no actions, use smart fallback based on state
         if len(actions) == 0:
-            actions.append(Action.FORWARD)
+            if self.negative_reward_streak >= 2:
+                # Try rotating to explore new direction
+                actions = [Action.ROTATE_LEFT, Action.FORWARD]
+            else:
+                actions.append(Action.FORWARD)
         
         return actions[:k]
     
     def _word_to_action(self, word: str) -> Optional[Action]:
         word = word.lower().replace(' ', '_').replace('-', '_')
-        if 'forward' in word:
+        if 'forward' in word or 'fwd' in word:
             return Action.FORWARD
-        if 'rotate_left' in word or 'left' == word:
+        if 'rotate_left' in word or 'left' in word or 'turn_left' in word:
             return Action.ROTATE_LEFT
-        if 'rotate_right' in word or 'right' == word:
+        if 'rotate_right' in word or 'right' in word or 'turn_right' in word:
             return Action.ROTATE_RIGHT
-        if 'stay' in word:
+        if 'stay' in word or 'wait' in word:
             return Action.STAY
         return None
 

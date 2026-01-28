@@ -84,7 +84,7 @@ def turn_toward(current, target):
 
 # ============== Action Generation for Each Environment ==============
 
-def generate_navigation_actions(env, valid_positions, goal_x, goal_y, interact_at_goal=False):
+def generate_navigation_actions(env, valid_positions, goal_x, goal_y):
     """Generate actions to navigate from current position to goal."""
     actions = []
     path = bfs_path(valid_positions, (int(env.agent.x), int(env.agent.y)), (goal_x, goal_y))
@@ -120,9 +120,6 @@ def generate_navigation_actions(env, valid_positions, goal_x, goal_y, interact_a
             agent_x, agent_y = target
             idx += 1
     
-    if interact_at_goal:
-        actions.append(Action.INTERACT)
-    
     # Add celebration
     actions.extend([Action.STAY] * 3)
     
@@ -142,8 +139,8 @@ def generate_tmaze_actions(env):
 
 
 def generate_barnes_actions(env):
-    """Generate actions for BarnesMaze (needs INTERACT)."""
-    return generate_navigation_actions(env, env.valid_positions, env.goal_x, env.goal_y, interact_at_goal=True)
+    """Generate actions for BarnesMaze."""
+    return generate_navigation_actions(env, env.valid_positions, env.goal_x, env.goal_y)
 
 
 def generate_radial_actions(env):
@@ -214,9 +211,9 @@ def generate_operant_actions(env):
         actions.append(Action.ROTATE_LEFT)
     else:
         actions.append(Action.ROTATE_RIGHT)
-    # Press lever multiple times
+    # Press lever multiple times (FORWARD acts as press when facing lever)
     for _ in range(5):
-        actions.append(Action.INTERACT)
+        actions.append(Action.FORWARD)
         actions.append(Action.STAY)
     return actions
 
@@ -249,8 +246,8 @@ def generate_place_actions(env):
 def generate_dnms_actions(env):
     """Generate actions for DNMSTask."""
     actions = []
-    # Acknowledge sample
-    actions.append(Action.INTERACT)
+    # Acknowledge sample (FORWARD to confirm)
+    actions.append(Action.FORWARD)
     # Wait through delay
     actions.extend([Action.STAY] * 10)
     # Make correct choice
@@ -258,8 +255,8 @@ def generate_dnms_actions(env):
         actions.append(Action.ROTATE_LEFT)
     else:
         actions.append(Action.ROTATE_RIGHT)
-    # Confirm choice
-    actions.append(Action.INTERACT)
+    # Confirm choice (FORWARD to select)
+    actions.append(Action.FORWARD)
     actions.extend([Action.STAY] * 3)
     return actions
 

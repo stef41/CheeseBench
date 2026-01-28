@@ -117,9 +117,6 @@ KEY_ACTIONS = {
     'RIGHT': Action.ROTATE_RIGHT,
     
     # Other actions
-    'e': Action.INTERACT,
-    'E': Action.INTERACT,
-    ' ': Action.INTERACT,  # Space
     'x': Action.STAY,
     'X': Action.STAY,
 }
@@ -231,7 +228,7 @@ def render_ui(env, view_mode: ViewMode, step: int, total_reward: float, last_act
     raw_print('='*70)
     
     # Controls
-    raw_print("Controls: [w↑]=forward [a←]=left [d→]=right [e/space]=interact [s]=stay")
+    raw_print("Controls: [w↑]=forward [a←]=left [d→]=right [s]=stay")
     raw_print("          [1]=2D [2]=2D_FPV [3]=3D [r]=reset [q]=quit")
     
     if last_action:
@@ -419,7 +416,6 @@ Examples:
 
 Controls:
     WASD / Arrow keys   Move and turn
-    E / Space           Interact (press lever, check hole)
     1 / 2 / 3           Switch view mode
     R                   Reset environment
     Q                   Quit
