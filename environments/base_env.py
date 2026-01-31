@@ -27,6 +27,7 @@ class ViewMode(Enum):
     ASCII_2D = auto()       # ASCII top-down (full map)
     ASCII_3D = auto()       # ASCII pseudo-3D FPV
     ASCII_2D_FPV = auto()   # ASCII top-down cropped around agent (partial map)
+    FRONT_BLOCK = auto()    # Shows only the first block directly in front of the agent
 
 
 class Action(Enum):
@@ -1447,6 +1448,93 @@ class BaseEnvironment(ABC):
                             output[wy][vx] = '░'
         
         return '\n'.join(''.join(row) for row in output)
+
+    def _render_front_block(self) -> str:
+        """
+        Render only the first block directly in front of the agent.
+        
+        This is a minimal view showing just what's immediately ahead,
+        useful for testing very limited perception scenarios.
+        
+        Returns:
+            ASCII string showing the single block in front of the agent
+        """
+        import numpy as np
+        
+        # Get the full ASCII 2D map to extract positions
+        full_map = self._render_ascii_2d()
+        lines = full_map.split('\n')
+        
+        # Filter out status/info lines
+        status_indicators = [':', '%', 'Trial', 'Phase', 'Reward', 'Score', 'Step', 'Error', '|']
+        map_lines = []
+        for line in lines:
+            is_status = any(ind in line for ind in status_indicators)
+            if not is_status and len(line) > 0:
+                map_lines.append(line)
+        
+        if not map_lines:
+            map_lines = lines
+        
+        full_height = len(map_lines)
+        full_width = max(len(line) for line in map_lines) if map_lines else 1
+        
+        # Pad lines to uniform width
+        padded = [line.ljust(full_width) for line in map_lines]
+        
+        # Find agent in full map
+        agent_markers = set('^v<>↑↓←→↖↗↙↘@')
+        agent_row, agent_col = None, None
+        for r, line in enumerate(padded):
+            for c, ch in enumerate(line):
+                if ch in agent_markers:
+                    agent_row, agent_col = r, c
+                    break
+            if agent_row is not None:
+                break
+        
+        # If no agent found, return unknown
+        if agent_row is None:
+            return '?'
+        
+        # Get agent's facing direction
+        # Map row increases downward, direction 2 (North/↑) should decrease row
+        if hasattr(self, 'agent') and hasattr(self.agent, 'angle'):
+            angle_val = self.agent.angle
+            if isinstance(angle_val, (int, np.integer)) or (isinstance(angle_val, float) and angle_val == int(angle_val) and 0 <= angle_val <= 7):
+                # Integer direction: 0=E, 2=N, 4=W, 6=S
+                dir_idx = int(angle_val)
+            else:
+                # Radians to direction index
+                dir_idx = int(round(angle_val / (np.pi / 4))) % 8
+        else:
+            dir_idx = 2  # Default North
+        
+        # Direction vectors in map coordinates (row, col)
+        # Note: In map coords, row increases downward, col increases rightward
+        # Direction 0=E (col+1), 2=N (row-1), 4=W (col-1), 6=S (row+1)
+        dir_vectors = [
+            (0, 1),    # 0: East (col+)
+            (-1, 1),   # 1: Northeast
+            (-1, 0),   # 2: North (row-)
+            (-1, -1),  # 3: Northwest
+            (0, -1),   # 4: West (col-)
+            (1, -1),   # 5: Southwest
+            (1, 0),    # 6: South (row+)
+            (1, 1),    # 7: Southeast
+        ]
+        
+        dr, dc = dir_vectors[dir_idx]
+        front_row = agent_row + dr
+        front_col = agent_col + dc
+        
+        # Get the character at the front position
+        if 0 <= front_row < full_height and 0 <= front_col < full_width:
+            front_char = padded[front_row][front_col]
+        else:
+            front_char = '#'  # Out of bounds = wall
+        
+        return front_char
     
     # ==================== Rendering ====================
     
@@ -1462,6 +1550,8 @@ class BaseEnvironment(ABC):
             return self._render_ascii_3d()
         elif self.view_mode == ViewMode.ASCII_2D_FPV:
             return self._render_ascii_2d_fpv()
+        elif self.view_mode == ViewMode.FRONT_BLOCK:
+            return self._render_front_block()
         else:
             return self._render_fpv()
     
