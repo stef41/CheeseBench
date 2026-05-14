@@ -1,0 +1,940 @@
+{
+  "schema_version": "3",
+  "envs": [
+    "MorrisWaterMaze",
+    "TMaze",
+    "BarnesMaze",
+    "RadialArmMaze",
+    "OperantChamber",
+    "ShuttleBox",
+    "PlacePreference",
+    "StarMaze",
+    "DNMSTask"
+  ],
+  "rodent_baselines": {
+    "MorrisWaterMaze": {
+      "species": "C57BL/6 mice",
+      "learning_curve": [
+        0.3,
+        0.5,
+        0.65,
+        0.78,
+        0.85
+      ],
+      "trials_to_criterion": 15,
+      "notes": "Platform acquisition over 5 sessions, 5 trials/session"
+    },
+    "TMaze": {
+      "species": "NMRI mice",
+      "learning_curve": [
+        0.5,
+        0.6,
+        0.72,
+        0.8
+      ],
+      "trials_to_criterion": 20,
+      "notes": "Forced alternation, 10 trials/session over 4 days"
+    },
+    "BarnesMaze": {
+      "species": "B6C3F1/J mice",
+      "learning_curve": [
+        0.2,
+        0.4,
+        0.55,
+        0.7,
+        0.8
+      ],
+      "trials_to_criterion": 20,
+      "notes": "12 holes, 4 trials/session over 5 sessions"
+    },
+    "RadialArmMaze": {
+      "species": "C57BL/6 mice",
+      "learning_curve": [
+        0.15,
+        0.25,
+        0.4,
+        0.5,
+        0.6,
+        0.7
+      ],
+      "trials_to_criterion": 36,
+      "notes": "8 arms, 4 baited. WM errors: 3.5 -> 0.8 over 6 sessions"
+    },
+    "OperantChamber": {
+      "species": "C57BL/6 mice",
+      "learning_curve": [
+        0.4,
+        0.6,
+        0.75,
+        0.85,
+        0.9
+      ],
+      "trials_to_criterion": 50,
+      "notes": "FR-1 schedule, 20 min sessions"
+    },
+    "ShuttleBox": {
+      "species": "Sprague Dawley rats",
+      "learning_curve": [
+        0.25,
+        0.4,
+        0.55,
+        0.65,
+        0.7
+      ],
+      "trials_to_criterion": 150,
+      "notes": "Active avoidance, 30 trials/session over 5 sessions"
+    },
+    "PlacePreference": {
+      "species": "C57BL/6 mice",
+      "learning_curve": [
+        0.5,
+        0.55,
+        0.6,
+        0.65,
+        0.7,
+        0.75
+      ],
+      "trials_to_criterion": 6,
+      "notes": "3-phase CPP protocol, 6 conditioning sessions"
+    },
+    "StarMaze": {
+      "species": "C57BL/6 mice",
+      "learning_curve": [
+        0.25,
+        0.3,
+        0.4,
+        0.5,
+        0.55,
+        0.6,
+        0.65,
+        0.7,
+        0.75,
+        0.8
+      ],
+      "trials_to_criterion": 40,
+      "notes": "5-arm maze, 4 trials/session over 10 sessions"
+    },
+    "DNMSTask": {
+      "species": "Long-Evans rats",
+      "learning_curve": [
+        0.5,
+        0.65,
+        0.8
+      ],
+      "trials_to_criterion": 18,
+      "notes": "TUNL task, 6 trials/session, 0s delay initially"
+    }
+  },
+  "entries": [
+    {
+      "model": "Claude Opus 4.7",
+      "model_id": "claude-opus-4.7",
+      "modality": "text (ASCII)",
+      "source": "GitHub Copilot CLI",
+      "overall": 0.8666666666666667,
+      "per_environment": {
+        "MorrisWaterMaze": {
+          "success_rate": 1.0,
+          "best_view_mode": "ASCII_2D"
+        },
+        "TMaze": {
+          "success_rate": 1.0,
+          "best_view_mode": "ASCII_2D"
+        },
+        "BarnesMaze": {
+          "success_rate": 1.0,
+          "best_view_mode": "ASCII_2D"
+        },
+        "RadialArmMaze": {
+          "success_rate": 1.0,
+          "best_view_mode": "ASCII_2D"
+        },
+        "OperantChamber": {
+          "success_rate": 0.7,
+          "best_view_mode": "ASCII_2D"
+        },
+        "ShuttleBox": {
+          "success_rate": 0.4,
+          "best_view_mode": "ASCII_2D"
+        },
+        "PlacePreference": {
+          "success_rate": 1.0,
+          "best_view_mode": "ASCII_2D"
+        },
+        "StarMaze": {
+          "success_rate": 1.0,
+          "best_view_mode": "ASCII_2D"
+        },
+        "DNMSTask": {
+          "success_rate": 0.7,
+          "best_view_mode": "ASCII_2D_FPV"
+        }
+      },
+      "total_trials": 270,
+      "view_modes": [
+        "ASCII_2D",
+        "ASCII_2D_FPV",
+        "ASCII_3D"
+      ]
+    },
+    {
+      "model": "Claude Opus 4.6",
+      "model_id": "claude-opus-4.6",
+      "modality": "text (ASCII)",
+      "source": "GitHub Copilot CLI",
+      "overall": 0.8222222222222222,
+      "per_environment": {
+        "MorrisWaterMaze": {
+          "success_rate": 1.0,
+          "best_view_mode": "ASCII_2D"
+        },
+        "TMaze": {
+          "success_rate": 1.0,
+          "best_view_mode": "ASCII_2D"
+        },
+        "BarnesMaze": {
+          "success_rate": 1.0,
+          "best_view_mode": "ASCII_2D"
+        },
+        "RadialArmMaze": {
+          "success_rate": 0.9,
+          "best_view_mode": "ASCII_2D"
+        },
+        "OperantChamber": {
+          "success_rate": 0.9,
+          "best_view_mode": "ASCII_2D"
+        },
+        "ShuttleBox": {
+          "success_rate": 0.1,
+          "best_view_mode": "ASCII_2D"
+        },
+        "PlacePreference": {
+          "success_rate": 0.9,
+          "best_view_mode": "ASCII_2D"
+        },
+        "StarMaze": {
+          "success_rate": 1.0,
+          "best_view_mode": "ASCII_2D"
+        },
+        "DNMSTask": {
+          "success_rate": 0.6,
+          "best_view_mode": "ASCII_2D"
+        }
+      },
+      "total_trials": 270,
+      "view_modes": [
+        "ASCII_2D",
+        "ASCII_2D_FPV",
+        "ASCII_3D"
+      ]
+    },
+    {
+      "model": "Claude Sonnet 4.6",
+      "model_id": "claude-sonnet-4.6",
+      "modality": "text (ASCII)",
+      "source": "GitHub Copilot CLI",
+      "overall": 0.8111111111111111,
+      "per_environment": {
+        "MorrisWaterMaze": {
+          "success_rate": 1.0,
+          "best_view_mode": "ASCII_2D"
+        },
+        "TMaze": {
+          "success_rate": 1.0,
+          "best_view_mode": "ASCII_2D"
+        },
+        "BarnesMaze": {
+          "success_rate": 0.9,
+          "best_view_mode": "ASCII_2D"
+        },
+        "RadialArmMaze": {
+          "success_rate": 0.4,
+          "best_view_mode": "ASCII_2D"
+        },
+        "OperantChamber": {
+          "success_rate": 1.0,
+          "best_view_mode": "ASCII_2D"
+        },
+        "ShuttleBox": {
+          "success_rate": 0.3,
+          "best_view_mode": "ASCII_2D"
+        },
+        "PlacePreference": {
+          "success_rate": 1.0,
+          "best_view_mode": "ASCII_2D"
+        },
+        "StarMaze": {
+          "success_rate": 1.0,
+          "best_view_mode": "ASCII_2D"
+        },
+        "DNMSTask": {
+          "success_rate": 0.7,
+          "best_view_mode": "ASCII_2D"
+        }
+      },
+      "total_trials": 270,
+      "view_modes": [
+        "ASCII_2D",
+        "ASCII_2D_FPV",
+        "ASCII_3D"
+      ]
+    },
+    {
+      "model": "Claude Haiku 4.5",
+      "model_id": "claude-haiku-4.5",
+      "modality": "text (ASCII)",
+      "source": "GitHub Copilot CLI",
+      "overall": 0.7,
+      "per_environment": {
+        "MorrisWaterMaze": {
+          "success_rate": 1.0,
+          "best_view_mode": "ASCII_2D_FPV"
+        },
+        "TMaze": {
+          "success_rate": 1.0,
+          "best_view_mode": "ASCII_2D"
+        },
+        "BarnesMaze": {
+          "success_rate": 0.6,
+          "best_view_mode": "ASCII_2D"
+        },
+        "RadialArmMaze": {
+          "success_rate": 0.1,
+          "best_view_mode": "ASCII_2D"
+        },
+        "OperantChamber": {
+          "success_rate": 0.7,
+          "best_view_mode": "ASCII_2D"
+        },
+        "ShuttleBox": {
+          "success_rate": 0.6,
+          "best_view_mode": "ASCII_2D"
+        },
+        "PlacePreference": {
+          "success_rate": 0.8,
+          "best_view_mode": "ASCII_2D"
+        },
+        "StarMaze": {
+          "success_rate": 0.7,
+          "best_view_mode": "ASCII_2D"
+        },
+        "DNMSTask": {
+          "success_rate": 0.8,
+          "best_view_mode": "ASCII_3D"
+        }
+      },
+      "total_trials": 270,
+      "view_modes": [
+        "ASCII_2D",
+        "ASCII_2D_FPV",
+        "ASCII_3D"
+      ]
+    },
+    {
+      "model": "Qwen2.5-VL-7B",
+      "model_id": "qwen2.5vl-7b",
+      "modality": "text (ASCII)",
+      "source": "open-weights/vLLM",
+      "overall": 0.6801888888888888,
+      "per_environment": {
+        "MorrisWaterMaze": {
+          "success_rate": 0.95,
+          "best_view_mode": "ASCII_2D_FPV"
+        },
+        "TMaze": {
+          "success_rate": 0.875,
+          "best_view_mode": "ASCII_3D"
+        },
+        "BarnesMaze": {
+          "success_rate": 0.75,
+          "best_view_mode": "ASCII_2D"
+        },
+        "RadialArmMaze": {
+          "success_rate": 0.1,
+          "best_view_mode": "ASCII_2D_FPV"
+        },
+        "OperantChamber": {
+          "success_rate": 0.84,
+          "best_view_mode": "ASCII_2D"
+        },
+        "ShuttleBox": {
+          "success_rate": 0.8,
+          "best_view_mode": "ASCII_2D_FPV"
+        },
+        "PlacePreference": {
+          "success_rate": 0.9167,
+          "best_view_mode": "ASCII_3D"
+        },
+        "StarMaze": {
+          "success_rate": 0.35,
+          "best_view_mode": "ASCII_2D"
+        },
+        "DNMSTask": {
+          "success_rate": 0.54,
+          "best_view_mode": "ASCII_2D"
+        }
+      },
+      "total_trials": 1352,
+      "view_modes": [
+        "ASCII_2D",
+        "ASCII_2D_FPV",
+        "ASCII_3D",
+        "TOPDOWN_2D"
+      ]
+    },
+    {
+      "model": "Qwen2.5-VL-32B",
+      "model_id": "qwen2.5vl-32b",
+      "modality": "text (ASCII)",
+      "source": "open-weights/vLLM",
+      "overall": 0.674911111111111,
+      "per_environment": {
+        "MorrisWaterMaze": {
+          "success_rate": 0.95,
+          "best_view_mode": "ASCII_2D"
+        },
+        "TMaze": {
+          "success_rate": 0.825,
+          "best_view_mode": "ASCII_2D_FPV"
+        },
+        "BarnesMaze": {
+          "success_rate": 0.6875,
+          "best_view_mode": "ASCII_2D"
+        },
+        "RadialArmMaze": {
+          "success_rate": 0.0,
+          "best_view_mode": "ASCII_2D"
+        },
+        "OperantChamber": {
+          "success_rate": 1.0,
+          "best_view_mode": "ASCII_2D_FPV"
+        },
+        "ShuttleBox": {
+          "success_rate": 0.95,
+          "best_view_mode": "ASCII_2D"
+        },
+        "PlacePreference": {
+          "success_rate": 0.9167,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "StarMaze": {
+          "success_rate": 0.225,
+          "best_view_mode": "ASCII_2D"
+        },
+        "DNMSTask": {
+          "success_rate": 0.52,
+          "best_view_mode": "ASCII_2D"
+        }
+      },
+      "total_trials": 1352,
+      "view_modes": [
+        "ASCII_2D",
+        "ASCII_2D_FPV",
+        "ASCII_3D",
+        "TOPDOWN_2D"
+      ]
+    },
+    {
+      "model": "Qwen2.5-VL-72B",
+      "model_id": "qwen2.5vl-72b",
+      "modality": "text (ASCII)",
+      "source": "open-weights/vLLM",
+      "overall": 0.6001888888888889,
+      "per_environment": {
+        "MorrisWaterMaze": {
+          "success_rate": 0.85,
+          "best_view_mode": "ASCII_3D"
+        },
+        "TMaze": {
+          "success_rate": 0.725,
+          "best_view_mode": "ASCII_2D_FPV"
+        },
+        "BarnesMaze": {
+          "success_rate": 0.5,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "RadialArmMaze": {
+          "success_rate": 0.0,
+          "best_view_mode": "ASCII_2D"
+        },
+        "OperantChamber": {
+          "success_rate": 0.98,
+          "best_view_mode": "ASCII_2D_FPV"
+        },
+        "ShuttleBox": {
+          "success_rate": 0.775,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "PlacePreference": {
+          "success_rate": 0.6667,
+          "best_view_mode": "ASCII_2D_FPV"
+        },
+        "StarMaze": {
+          "success_rate": 0.425,
+          "best_view_mode": "ASCII_3D"
+        },
+        "DNMSTask": {
+          "success_rate": 0.48,
+          "best_view_mode": "ASCII_2D"
+        }
+      },
+      "total_trials": 1352,
+      "view_modes": [
+        "ASCII_2D",
+        "ASCII_2D_FPV",
+        "ASCII_3D",
+        "TOPDOWN_2D"
+      ]
+    },
+    {
+      "model": "Qwen2.5-VL-3B",
+      "model_id": "qwen2.5vl-3b",
+      "modality": "text (ASCII)",
+      "source": "open-weights/vLLM",
+      "overall": 0.5162999999999999,
+      "per_environment": {
+        "MorrisWaterMaze": {
+          "success_rate": 0.95,
+          "best_view_mode": "ASCII_3D"
+        },
+        "TMaze": {
+          "success_rate": 1.0,
+          "best_view_mode": "ASCII_3D"
+        },
+        "BarnesMaze": {
+          "success_rate": 0.375,
+          "best_view_mode": "ASCII_2D"
+        },
+        "RadialArmMaze": {
+          "success_rate": 0.0,
+          "best_view_mode": "ASCII_2D"
+        },
+        "OperantChamber": {
+          "success_rate": 0.54,
+          "best_view_mode": "ASCII_2D_FPV"
+        },
+        "ShuttleBox": {
+          "success_rate": 0.675,
+          "best_view_mode": "ASCII_3D"
+        },
+        "PlacePreference": {
+          "success_rate": 0.6667,
+          "best_view_mode": "ASCII_3D"
+        },
+        "StarMaze": {
+          "success_rate": 0.05,
+          "best_view_mode": "ASCII_3D"
+        },
+        "DNMSTask": {
+          "success_rate": 0.39,
+          "best_view_mode": "TOPDOWN_2D"
+        }
+      },
+      "total_trials": 1352,
+      "view_modes": [
+        "ASCII_2D",
+        "ASCII_2D_FPV",
+        "ASCII_3D",
+        "TOPDOWN_2D"
+      ]
+    },
+    {
+      "model": "Qwen2.5-VL-32B",
+      "model_id": "qwen2.5vl-32b",
+      "modality": "vision",
+      "source": "open-weights/vLLM",
+      "overall": 0.5015777777777779,
+      "per_environment": {
+        "MorrisWaterMaze": {
+          "success_rate": 0.8,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "TMaze": {
+          "success_rate": 0.65,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "BarnesMaze": {
+          "success_rate": 0.1875,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "RadialArmMaze": {
+          "success_rate": 0.0,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "OperantChamber": {
+          "success_rate": 0.56,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "ShuttleBox": {
+          "success_rate": 1.0,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "PlacePreference": {
+          "success_rate": 0.6667,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "StarMaze": {
+          "success_rate": 0.15,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "DNMSTask": {
+          "success_rate": 0.5,
+          "best_view_mode": "TOPDOWN_2D"
+        }
+      },
+      "total_trials": 338,
+      "view_modes": [
+        "TOPDOWN_2D"
+      ]
+    },
+    {
+      "model": "Phi-4-Multimodal-14B",
+      "model_id": "phi-4-mm-14b",
+      "modality": "text (ASCII)",
+      "source": "open-weights/vLLM",
+      "overall": 0.48869999999999997,
+      "per_environment": {
+        "MorrisWaterMaze": {
+          "success_rate": 0.85,
+          "best_view_mode": "ASCII_2D"
+        },
+        "TMaze": {
+          "success_rate": 0.575,
+          "best_view_mode": "ASCII_2D"
+        },
+        "BarnesMaze": {
+          "success_rate": 0.375,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "RadialArmMaze": {
+          "success_rate": 0.0,
+          "best_view_mode": "ASCII_2D"
+        },
+        "OperantChamber": {
+          "success_rate": 0.6,
+          "best_view_mode": "ASCII_3D"
+        },
+        "ShuttleBox": {
+          "success_rate": 0.5,
+          "best_view_mode": "ASCII_2D"
+        },
+        "PlacePreference": {
+          "success_rate": 0.8333,
+          "best_view_mode": "ASCII_2D_FPV"
+        },
+        "StarMaze": {
+          "success_rate": 0.125,
+          "best_view_mode": "ASCII_2D"
+        },
+        "DNMSTask": {
+          "success_rate": 0.54,
+          "best_view_mode": "ASCII_2D_FPV"
+        }
+      },
+      "total_trials": 1352,
+      "view_modes": [
+        "ASCII_2D",
+        "ASCII_2D_FPV",
+        "ASCII_3D",
+        "TOPDOWN_2D"
+      ]
+    },
+    {
+      "model": "InternVL2.5-8B",
+      "model_id": "internvl2.5-8b",
+      "modality": "text (ASCII)",
+      "source": "open-weights/vLLM",
+      "overall": 0.4662,
+      "per_environment": {
+        "MorrisWaterMaze": {
+          "success_rate": 0.6,
+          "best_view_mode": "ASCII_3D"
+        },
+        "TMaze": {
+          "success_rate": 0.4,
+          "best_view_mode": "ASCII_2D"
+        },
+        "BarnesMaze": {
+          "success_rate": 0.5625,
+          "best_view_mode": "ASCII_3D"
+        },
+        "RadialArmMaze": {
+          "success_rate": 0.05,
+          "best_view_mode": "ASCII_3D"
+        },
+        "OperantChamber": {
+          "success_rate": 0.22,
+          "best_view_mode": "ASCII_3D"
+        },
+        "ShuttleBox": {
+          "success_rate": 0.95,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "PlacePreference": {
+          "success_rate": 0.8333,
+          "best_view_mode": "ASCII_2D_FPV"
+        },
+        "StarMaze": {
+          "success_rate": 0.1,
+          "best_view_mode": "ASCII_2D_FPV"
+        },
+        "DNMSTask": {
+          "success_rate": 0.48,
+          "best_view_mode": "ASCII_2D"
+        }
+      },
+      "total_trials": 1352,
+      "view_modes": [
+        "ASCII_2D",
+        "ASCII_2D_FPV",
+        "ASCII_3D",
+        "TOPDOWN_2D"
+      ]
+    },
+    {
+      "model": "Qwen2.5-VL-7B",
+      "model_id": "qwen2.5vl-7b",
+      "modality": "vision",
+      "source": "open-weights/vLLM",
+      "overall": 0.43027777777777776,
+      "per_environment": {
+        "MorrisWaterMaze": {
+          "success_rate": 0.55,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "TMaze": {
+          "success_rate": 0.7,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "BarnesMaze": {
+          "success_rate": 0.4375,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "RadialArmMaze": {
+          "success_rate": 0.0,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "OperantChamber": {
+          "success_rate": 0.66,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "ShuttleBox": {
+          "success_rate": 0.6,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "PlacePreference": {
+          "success_rate": 0.5,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "StarMaze": {
+          "success_rate": 0.025,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "DNMSTask": {
+          "success_rate": 0.4,
+          "best_view_mode": "TOPDOWN_2D"
+        }
+      },
+      "total_trials": 338,
+      "view_modes": [
+        "TOPDOWN_2D"
+      ]
+    },
+    {
+      "model": "Qwen2.5-VL-72B",
+      "model_id": "qwen2.5vl-72b",
+      "modality": "vision",
+      "source": "open-weights/vLLM",
+      "overall": 0.37527777777777777,
+      "per_environment": {
+        "MorrisWaterMaze": {
+          "success_rate": 0.85,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "TMaze": {
+          "success_rate": 1.0,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "BarnesMaze": {
+          "success_rate": 0.3125,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "RadialArmMaze": {
+          "success_rate": 0.0,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "OperantChamber": {
+          "success_rate": 0.0,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "ShuttleBox": {
+          "success_rate": 0.0,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "PlacePreference": {
+          "success_rate": 0.5,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "StarMaze": {
+          "success_rate": 0.175,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "DNMSTask": {
+          "success_rate": 0.54,
+          "best_view_mode": "TOPDOWN_2D"
+        }
+      },
+      "total_trials": 338,
+      "view_modes": [
+        "TOPDOWN_2D"
+      ]
+    },
+    {
+      "model": "InternVL2.5-8B",
+      "model_id": "internvl2.5-8b",
+      "modality": "vision",
+      "source": "open-weights/vLLM",
+      "overall": 0.3070333333333333,
+      "per_environment": {
+        "MorrisWaterMaze": {
+          "success_rate": 0.95,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "TMaze": {
+          "success_rate": 0.075,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "BarnesMaze": {
+          "success_rate": 0.125,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "RadialArmMaze": {
+          "success_rate": 0.0,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "OperantChamber": {
+          "success_rate": 0.02,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "ShuttleBox": {
+          "success_rate": 0.6,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "PlacePreference": {
+          "success_rate": 0.5833,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "StarMaze": {
+          "success_rate": 0.0,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "DNMSTask": {
+          "success_rate": 0.41,
+          "best_view_mode": "TOPDOWN_2D"
+        }
+      },
+      "total_trials": 338,
+      "view_modes": [
+        "TOPDOWN_2D"
+      ]
+    },
+    {
+      "model": "Phi-4-Multimodal-14B",
+      "model_id": "phi-4-mm-14b",
+      "modality": "vision",
+      "source": "open-weights/vLLM",
+      "overall": 0.2452777777777778,
+      "per_environment": {
+        "MorrisWaterMaze": {
+          "success_rate": 0.0,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "TMaze": {
+          "success_rate": 0.0,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "BarnesMaze": {
+          "success_rate": 0.6875,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "RadialArmMaze": {
+          "success_rate": 0.0,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "OperantChamber": {
+          "success_rate": 0.02,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "ShuttleBox": {
+          "success_rate": 1.0,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "PlacePreference": {
+          "success_rate": 0.25,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "StarMaze": {
+          "success_rate": 0.0,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "DNMSTask": {
+          "success_rate": 0.25,
+          "best_view_mode": "TOPDOWN_2D"
+        }
+      },
+      "total_trials": 338,
+      "view_modes": [
+        "TOPDOWN_2D"
+      ]
+    },
+    {
+      "model": "Qwen2.5-VL-3B",
+      "model_id": "qwen2.5vl-3b",
+      "modality": "vision",
+      "source": "open-weights/vLLM",
+      "overall": 0.24333333333333332,
+      "per_environment": {
+        "MorrisWaterMaze": {
+          "success_rate": 1.0,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "TMaze": {
+          "success_rate": 0.075,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "BarnesMaze": {
+          "success_rate": 0.125,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "RadialArmMaze": {
+          "success_rate": 0.0,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "OperantChamber": {
+          "success_rate": 0.12,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "ShuttleBox": {
+          "success_rate": 0.125,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "PlacePreference": {
+          "success_rate": 0.5,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "StarMaze": {
+          "success_rate": 0.025,
+          "best_view_mode": "TOPDOWN_2D"
+        },
+        "DNMSTask": {
+          "success_rate": 0.22,
+          "best_view_mode": "TOPDOWN_2D"
+        }
+      },
+      "total_trials": 338,
+      "view_modes": [
+        "TOPDOWN_2D"
+      ]
+    }
+  ]
+}

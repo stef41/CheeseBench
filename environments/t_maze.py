@@ -6,16 +6,15 @@ Agent must choose correct arm based on task rules.
 """
 
 import numpy as np
-from typing import Tuple, Optional, Dict, Any, List
-from dataclasses import dataclass, field
-import math
+from typing import Optional, Dict, Any, List
+from dataclasses import dataclass
 
 from .base_env import (
     NavigationEnvironment, 
     EnvironmentConfig, 
     ViewMode, 
     Action,
-    AgentState
+    AsciiCanvas,
 )
 
 
@@ -245,11 +244,7 @@ class TMaze(NavigationEnvironment):
         
         # Check wrong arm penalty (T-maze specific)
         wrong_goal = self.right_goal if self.current_reward_arm == 'left' else self.left_goal
-        wrong_dist = np.sqrt(
-            (self.agent.x - wrong_goal[0])**2 + 
-            (self.agent.y - wrong_goal[1])**2
-        )
-        if wrong_dist < 0.5:
+        if self.agent.x == wrong_goal[0] and self.agent.y == wrong_goal[1]:
             return -0.5  # Wrong choice penalty
         
         return reward
@@ -309,13 +304,14 @@ class TMaze(NavigationEnvironment):
             NavigationEnvironment._draw_line(img, wx1, wy1, wx2, wy2, self.wall_color, 3)
         
         # Draw goal (using shared _draw_disk from base class)
+        # Offset y by +0.5 to center grid cells within their continuous floor bands
         gx = int(cx + self.goal_x * scale)
-        gy = int(cy - self.goal_y * scale)
+        gy = int(cy - (self.goal_y + 0.5) * scale)
         NavigationEnvironment._draw_disk(img, gx, gy, 8, self.goal_color)
         
         # Draw agent
         ax = int(cx + self.agent.x * scale)
-        ay = int(cy - self.agent.y * scale)
+        ay = int(cy - (self.agent.y + 0.5) * scale)
         NavigationEnvironment._draw_disk(img, ax, ay, 5, (255, 100, 100))
         
         # Direction indicator
@@ -328,86 +324,67 @@ class TMaze(NavigationEnvironment):
     
     def _render_ascii_2d(self) -> str:
         """Render ASCII top-down view - 1 world unit = 1 ASCII char."""
-        # World coords: stem x=0, y=0..2; arms y=3, x=-2..2
-        # Total world size: x from -2 to 2 (5 cells), y from 0 to 3 (4 cells)
-        
-        # Add padding around maze
         pad = 2
-        
-        # Calculate grid size: 1 char per world unit + walls + padding
-        # X: -2 to 2 = 5 positions + 2 walls + 2*padding
-        # Y: 0 to 3 = 4 positions + 2 walls + 2*padding  
         world_min_x = -self.arm_length
         world_max_x = self.arm_length
         world_min_y = 0
         world_max_y = self.stem_length
         
-        grid_width = (world_max_x - world_min_x + 1) + 2 + 2 * pad  # +2 for walls
+        grid_width = (world_max_x - world_min_x + 1) + 2 + 2 * pad
         grid_height = (world_max_y - world_min_y + 1) + 2 + 2 * pad
         
-        grid = [[' ' for _ in range(grid_width)] for _ in range(grid_height)]
+        c = AsciiCanvas(grid_width, grid_height)
         
         def world_to_grid(wx, wy):
-            """Convert world coords to grid coords. Y is flipped (0 at bottom)."""
-            gx = pad + 1 + (wx - world_min_x)  # +1 for left wall
-            gy = pad + 1 + (world_max_y - wy)  # +1 for top wall, flip Y
+            gx = pad + 1 + (wx - world_min_x)
+            gy = pad + 1 + (world_max_y - wy)
             return int(gx), int(gy)
         
         # Draw walls around valid positions
-        # Stem: x=0, y=0,1,2
         for y in range(self.stem_length):
             gx, gy = world_to_grid(0, y)
-            # Left and right walls
-            grid[gy][gx - 1] = '#'
-            grid[gy][gx + 1] = '#'
+            c.put(gx - 1, gy, '#')
+            c.put(gx + 1, gy, '#')
         
         # Bottom wall of stem
         gx, gy = world_to_grid(0, -1)
         for dx in [-1, 0, 1]:
-            grid[gy][gx + dx] = '#'
+            c.put(gx + dx, gy, '#')
         
-        # Arms: y=stem_length, x=-arm_length to +arm_length
+        # Arms
         arm_y = self.stem_length
         for x in range(-self.arm_length, self.arm_length + 1):
             gx, gy = world_to_grid(x, arm_y)
-            # Top and bottom walls (but not blocking stem entrance)
-            grid[gy - 1][gx] = '#'  # Top wall
-            if x != 0:  # Don't block stem entrance
-                grid[gy + 1][gx] = '#'  # Bottom wall
+            c.put(gx, gy - 1, '#')
+            if x != 0:
+                c.put(gx, gy + 1, '#')
         
         # End walls of arms
         for x in [-self.arm_length - 1, self.arm_length + 1]:
             gx, gy = world_to_grid(x, arm_y)
-            grid[gy - 1][gx] = '#'
-            grid[gy][gx] = '#'
-            grid[gy + 1][gx] = '#'
+            c.put(gx, gy - 1, '#')
+            c.put(gx, gy, '#')
+            c.put(gx, gy + 1, '#')
         
-        # Fill floor with '.' so FPV rendering can show it
-        # Stem: x=0, y=0,1,2
+        # Fill floor
         for y in range(self.stem_length):
             gx, gy = world_to_grid(0, y)
-            if grid[gy][gx] == ' ':
-                grid[gy][gx] = '.'
-        
-        # Arms: y=stem_length, x=-arm_length to +arm_length
-        arm_y = self.stem_length
+            if c.get(gx, gy) == ' ':
+                c.put(gx, gy, '.')
         for x in range(-self.arm_length, self.arm_length + 1):
             gx, gy = world_to_grid(x, arm_y)
-            if grid[gy][gx] == ' ':
-                grid[gy][gx] = '.'
+            if c.get(gx, gy) == ' ':
+                c.put(gx, gy, '.')
         
         # Mark goal
         gx, gy = world_to_grid(self.goal_x, self.goal_y)
-        if 0 <= gx < grid_width and 0 <= gy < grid_height:
-            grid[gy][gx] = 'G'
+        c.put(gx, gy, 'G')
         
         # Draw agent
         gx, gy = world_to_grid(self.agent.x, self.agent.y)
-        if 0 <= gx < grid_width and 0 <= gy < grid_height:
-            dirs = ['→', '↗', '↑', '↖', '←', '↙', '↓', '↘']
-            grid[gy][gx] = dirs[self.agent.angle]
+        c.put_agent(gx, gy, self.agent.angle)
         
-        return '\n'.join([''.join(row) for row in grid])
+        return c.to_string()
     
     def _render_ascii_3d(self, width: int = 60, height: int = 28) -> str:
         """Render ASCII pseudo-3D view with proper wall continuity."""

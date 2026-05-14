@@ -17,8 +17,8 @@ from .base_env import (
     EnvironmentConfig, 
     ViewMode, 
     Action,
-    AgentState,
-    DIR_VECTORS
+    DIR_VECTORS,
+    AsciiCanvas,
 )
 
 
@@ -136,7 +136,10 @@ class RadialArmMaze(NavigationEnvironment):
         
         # Calculate normalized total distances for arm ends
         cardinal_distance = self.center_radius + self.arm_length  # e.g., 2 + 8 = 10
-        diagonal_total_steps = int(round(cardinal_distance / np.sqrt(2)))  # e.g., 7
+        # Diagonal arm end is at step count = cardinal_distance / sqrt(2) from center,
+        # but we want the same number of walkable cells as cardinal arms.
+        # Cardinal walkable: arm_length cells. Diagonal walkable should also be arm_length cells.
+        diagonal_total_steps = self.center_radius + self.arm_length  # same walkable depth
         
         # Create 8 arms - all 3 cells wide
         for arm_idx in range(self.num_arms):
@@ -144,14 +147,9 @@ class RadialArmMaze(NavigationEnvironment):
             is_diagonal = (arm_idx % 2 == 1)
             
             # Determine how many steps this arm extends
-            if is_diagonal:
-                # Diagonal arm: extends from center_radius+1 to diagonal_total_steps
-                start_step = self.center_radius + 1
-                end_step = diagonal_total_steps
-            else:
-                # Cardinal arm: extends from center_radius+1 to cardinal_distance
-                start_step = self.center_radius + 1
-                end_step = cardinal_distance
+            # Both cardinal and diagonal arms have arm_length walkable cells
+            start_step = self.center_radius + 1
+            end_step = diagonal_total_steps if is_diagonal else cardinal_distance
             
             for step in range(start_step, end_step + 1):
                 # Center line of arm
@@ -196,11 +194,8 @@ class RadialArmMaze(NavigationEnvironment):
             is_diagonal = (arm_idx % 2 == 1)
             
             if is_diagonal:
-                # Diagonal arms: normalize total distance
-                # Each diagonal step has euclidean length sqrt(2)
-                # So we need: total_steps * sqrt(2) = cardinal_distance
-                # Therefore: total_steps = cardinal_distance / sqrt(2)
-                total_steps = int(round(cardinal_distance / np.sqrt(2)))
+                # Diagonal arms: same number of walkable cells as cardinal
+                total_steps = self.center_radius + self.arm_length
                 x = self.center_x + dx * total_steps
                 y = self.center_y + dy * total_steps
             else:
@@ -407,50 +402,48 @@ class RadialArmMaze(NavigationEnvironment):
         ax, ay = self.agent.x * scale, screen_y(self.agent.y)
         img[ay:ay+scale, ax:ax+scale] = (255, 100, 100)
         
+        # Direction indicator (nose)
+        dx, dy = DIR_VECTORS[self.agent.angle]
+        half = scale // 2
+        nose_cx = ax + half + dx * half
+        nose_cy = ay + half - dy * half  # screen Y is flipped
+        NavigationEnvironment._draw_disk(img, nose_cx, nose_cy, max(2, scale // 4), (200, 50, 50))
+        
         return img
     
     def _render_ascii_2d(self) -> str:
-        """Render ASCII top-down view.
+        """Render ASCII top-down view."""
+        c = AsciiCanvas(self.grid_size + 2, self.grid_size + 2)
         
-        Y-axis is flipped so that North (increasing Y) appears as UP on screen.
-        Screen row = grid_size - y (higher Y = lower row index = higher on screen)
-        """
-        grid = [[' ' for _ in range(self.grid_size + 2)] for _ in range(self.grid_size + 2)]
-        
-        # Helper to convert world Y to screen row (flip Y-axis)
         def screen_row(y):
             return self.grid_size - y
         
         # Draw walls around valid positions
         for (x, y) in self.valid_positions:
-            # Check neighbors
             for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
                 nx, ny = x + dx, y + dy
                 if (nx, ny) not in self.valid_positions:
-                    grid[screen_row(ny)][nx + 1] = '#'
+                    c.put(nx + 1, screen_row(ny), '#')
         
         # Draw floor
         for (x, y) in self.valid_positions:
-            grid[screen_row(y)][x + 1] = '.'
+            c.put(x + 1, screen_row(y), '.')
         
-        # Draw rewards (uncollected) with *
+        # Draw rewards (uncollected)
         for arm_idx in self.rewarded_arms:
             if not self.rewards_collected[arm_idx]:
                 ex, ey = self.arm_ends[arm_idx]
-                grid[screen_row(ey)][ex + 1] = '*'
+                c.put(ex + 1, screen_row(ey), '*')
         
         # Draw arm numbers at ends
         for lm in self.landmarks:
-            x, y = lm['x'], lm['y']
             if not (lm['arm_index'] in self.rewarded_arms and not self.rewards_collected[lm['arm_index']]):
-                grid[screen_row(y)][x + 1] = lm['char']
+                c.put(lm['x'] + 1, screen_row(lm['y']), lm['char'])
         
         # Draw agent
-        arrows = ['→', '↗', '↑', '↖', '←', '↙', '↓', '↘']
-        ax, ay = self.agent.x, self.agent.y
-        grid[screen_row(ay)][ax + 1] = arrows[self.agent.angle]
+        c.put_agent(self.agent.x + 1, screen_row(self.agent.y), self.agent.angle)
         
-        return '\n'.join(''.join(row) for row in grid)
+        return c.to_string()
     
     def _render_ascii_3d(self, width: int = 60, height: int = 28) -> str:
         """Render ASCII pseudo-3D view with proper wall continuity."""

@@ -1,0 +1,130 @@
+\begin{thebibliography}{}
+
+\bibitem[Abdin et~al., 2025]{abdin2024phi4}
+Abdin, M., Awan, A.~A., Baldassini, L., et~al. (2025).
+\newblock Phi-4-multimodal technical report.
+\newblock {\em arXiv preprint arXiv:2503.01743}.
+
+\bibitem[Antol et~al., 2015]{antol2015vqa}
+Antol, S., Agrawal, A., Lu, J., Mitchell, M., Batra, D., Zitnick, C.~L., and
+  Parikh, D. (2015).
+\newblock {VQA}: Visual question answering.
+\newblock In {\em Proceedings of the IEEE International Conference on Computer
+  Vision}, pages 2425--2433.
+
+\bibitem[Bai et~al., 2025]{bai2025qwen25}
+Bai, S., Chen, K., Liu, X., Wang, J., Ge, W., Song, S., Dang, K., Wang, P.,
+  Wang, S., Tang, J., et~al. (2025).
+\newblock Qwen2.5-{VL}: Enhancing vision-language model's perception of the
+  world at any resolution.
+\newblock {\em arXiv preprint arXiv:2502.13923}.
+
+\bibitem[Chac{\'o}n-Fern{\'a}ndez et~al., 2016]{chacon2016shuttle}
+Chac{\'o}n-Fern{\'a}ndez, P., S{\'a}nchez-Campusano, R., Gruart, A., and
+  Delgado-Garc{\'\i}a, J.~M. (2016).
+\newblock Long-term treadmill exercise improves shuttle-box avoidance learning
+  and alters brain monoamine levels in rats.
+\newblock {\em Behavioural Brain Research}, 298:221--231.
+
+\bibitem[Chen et~al., 2024]{chen2024internvl}
+Chen, Z., Wang, W., Cao, Y., Liu, Y., Gao, Z., Cui, E., Zhu, J., Ye, S., Tian,
+  H., Liu, Z., et~al. (2024).
+\newblock Expanding performance boundaries of open-source multimodal models
+  with model, data, and test-time scaling.
+\newblock {\em arXiv preprint arXiv:2412.05271}.
+
+\bibitem[Crosby et~al., 2020]{crosby2020animal}
+Crosby, M., Beyret, B., Shanahan, M., Hern{\'a}ndez-Orallo, J., Cheke, L., and
+  Halina, M. (2020).
+\newblock The animal-{AI} testbed and competition.
+\newblock In {\em Proceedings of the NeurIPS Competition Track}, pages
+  164--176.
+
+\bibitem[{Gemini Team}, 2024]{team2024gemini}
+{Gemini Team} (2024).
+\newblock Gemini: a family of highly capable multimodal models.
+\newblock {\em arXiv preprint arXiv:2312.11805}.
+
+\bibitem[Hendrycks et~al., 2021]{hendrycks2021measuring}
+Hendrycks, D., Burns, C., Basart, S., Zou, A., Mazeika, M., Song, D., and
+  Steinhardt, J. (2021).
+\newblock Measuring massive multitask language understanding.
+\newblock {\em Proceedings of the International Conference on Learning
+  Representations}.
+
+\bibitem[Kosinski, 2023]{kosinski2023theory}
+Kosinski, M. (2023).
+\newblock Theory of mind may have spontaneously emerged in large language
+  models.
+\newblock {\em arXiv preprint arXiv:2302.02083}.
+
+\bibitem[Liu et~al., 2024]{liu2024visual}
+Liu, H., Li, C., Wu, Q., and Lee, Y.~J. (2024).
+\newblock Visual instruction tuning.
+\newblock {\em Advances in Neural Information Processing Systems}, 36.
+
+\bibitem[Lu et~al., 2024]{lu2024mathvista}
+Lu, P., Banerjee, H., et~al. (2024).
+\newblock Math{V}ista: Evaluating mathematical reasoning of foundation models
+  in visual contexts.
+\newblock {\em Proceedings of the International Conference on Learning
+  Representations}.
+
+\bibitem[O'Keefe and Dostrovsky, 1971]{okeefe1971hippocampus}
+O'Keefe, J. and Dostrovsky, J. (1971).
+\newblock The hippocampus as a spatial map: preliminary evidence from unit
+  activity in the freely-moving rat.
+\newblock {\em Brain Research}, 34(1):171--175.
+
+\bibitem[Olton and Samuelson, 1976]{olton1976spatial}
+Olton, D.~S. and Samuelson, R.~J. (1976).
+\newblock Remembrance of places passed: Spatial memory in rats.
+\newblock {\em Journal of Experimental Psychology: Animal Behavior Processes},
+  2(2):97--116.
+
+\bibitem[Shoji et~al., 2012]{shoji2012t}
+Shoji, H., Hagihara, H., Takao, K., Hattori, S., and Miyakawa, T. (2012).
+\newblock T-maze forced alternation and left-right discrimination tasks for
+  assessing working and reference memory in mice.
+\newblock {\em Journal of Visualized Experiments}, (60):e3300.
+
+\bibitem[Shridhar et~al., 2021]{shridhar2021alfworld}
+Shridhar, M., Yuan, X., C{\^o}t{\'e}, M.-A., Bisk, Y., Trischler, A., and
+  Hausknecht, M. (2021).
+\newblock {ALFWorld}: Aligning text and embodied environments for interactive
+  learning.
+\newblock In {\em Proceedings of the International Conference on Learning
+  Representations}.
+
+\bibitem[Skinner, 1938]{skinner1938behavior}
+Skinner, B.~F. (1938).
+\newblock {\em The Behavior of Organisms: An Experimental Analysis}.
+\newblock Appleton-Century, New York.
+
+\bibitem[Vorhees and Williams, 2006]{vorhees2006morris}
+Vorhees, C.~V. and Williams, M.~T. (2006).
+\newblock Morris water maze: procedures for assessing spatial and related forms
+  of learning and memory.
+\newblock {\em Nature Protocols}, 1(2):848--858.
+
+\bibitem[Voudouris et~al., 2023]{voudouris2023direct}
+Voudouris, K., Crosby, M., Beyret, B., Sheridan, J.~M., Sheridan, M., and
+  Sheridan, A. (2023).
+\newblock Direct comparison of avian and mammalian cognition: Implications for
+  artificial intelligence.
+\newblock {\em arXiv preprint}.
+
+\bibitem[Webb et~al., 2023]{webb2023emergent}
+Webb, T., Holyoak, K.~J., and Lu, H. (2023).
+\newblock Emergent analogical reasoning in large language models.
+\newblock {\em Nature Human Behaviour}, 7:1526--1541.
+
+\bibitem[Zhou et~al., 2024]{zhou2024webarena}
+Zhou, S., Xu, F.~F., Zhu, H., Zhou, X., Lo, R., Sridhar, A., Cheng, X., et~al.
+  (2024).
+\newblock Web{A}rena: A realistic web environment for building autonomous
+  agents.
+\newblock {\em Proceedings of the International Conference on Learning
+  Representations}.
+
+\end{thebibliography}

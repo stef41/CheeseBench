@@ -6,9 +6,8 @@ Agent learns to shuttle between chambers to avoid aversive stimuli.
 """
 
 import numpy as np
-from typing import Tuple, Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List
 from dataclasses import dataclass
-import math
 
 from .base_env import (
     BaseEnvironment, 
@@ -16,8 +15,7 @@ from .base_env import (
     ViewMode, 
     Action,
     AgentState,
-    SessionState,
-    TrialResult
+    AsciiCanvas,
 )
 
 
@@ -63,7 +61,7 @@ class ShuttleBox(BaseEnvironment):
                 max_trial_steps=50,
                 success_criterion="avoid_shock",
                 arena_size=4.0,
-                source_pmc="PMC4692667",
+                source_pmc="PMC4633642",
                 source_quote="A conditioned stimulus (CS) is contingently followed by an aversive unconditioned stimulus (US). Subjects can learn to avoid the US by shuttling from one compartment to the other in response to the CS."
             )
         
@@ -133,6 +131,7 @@ class ShuttleBox(BaseEnvironment):
         self.phase_timer = self.iti_duration
         self.shock_active = False
         self.cue_active = False
+        self._trial_shuttled = False  # Track if agent shuttled this trial
     
     def _setup_trial(self):
         """Setup for new trial."""
@@ -181,6 +180,7 @@ class ShuttleBox(BaseEnvironment):
                 if self.trial_phase == 'cue':
                     # Avoidance - shuttled during cue
                     self.avoidances += 1
+                    self._trial_shuttled = True
                     reward = 1.0
                     self._trial_reward += 1.0  # Track for success criterion
                     self.trial_phase = 'escaped'
@@ -188,6 +188,7 @@ class ShuttleBox(BaseEnvironment):
                 elif self.trial_phase == 'shock':
                     # Escape - shuttled during shock
                     self.escapes += 1
+                    self._trial_shuttled = True
                     reward = 0.5
                     self._trial_reward += 0.5  # Track for success criterion
                     self.trial_phase = 'escaped'
@@ -201,12 +202,12 @@ class ShuttleBox(BaseEnvironment):
         return reward
     
     def _check_success(self) -> bool:
-        """Success = avoided or escaped shock."""
-        return self.trial_phase == 'escaped' and self._trial_reward > 0
+        """Success = avoided or escaped shock (shuttled to safe chamber)."""
+        return self.trial_phase == 'escaped' and self._trial_shuttled
     
     def _check_failure(self) -> bool:
-        """Failure = received full shock."""
-        return self.trial_phase == 'escaped' and self._trial_reward <= 0
+        """Failure = received full shock without escaping."""
+        return self.trial_phase == 'escaped' and not self._trial_shuttled
     
     def get_info(self) -> Dict[str, Any]:
         """Get current state info."""
@@ -226,42 +227,97 @@ class ShuttleBox(BaseEnvironment):
     # ==================== Rendering ====================
     
     def _render_fpv(self) -> np.ndarray:
-        """Render first-person view."""
+        """Render first-person view with raycasting based on agent position and angle."""
         img = np.zeros((224, 224, 3), dtype=np.uint8)
         
-        # Ceiling
-        img[:70, :] = self.wall_color
+        # Chamber boundaries
+        chamber_half_depth = self.chamber_depth / 2
+        if self.current_chamber == 0:
+            wall_left = -self.chamber_width
+            wall_right = 0
+        else:
+            wall_left = 0
+            wall_right = self.chamber_width
         
-        # Floor - different color based on chamber state
+        fov = np.pi / 2
+        agent_angle = self.agent.angle
+        horizon = 112
+        num_rays = 224
+        
+        # Floor color based on state
         if self.shock_active and self.current_chamber == self.shock_chamber:
             floor_col = self.shock_floor_color
         elif self.current_chamber != self.shock_chamber:
             floor_col = self.safe_floor_color
         else:
             floor_col = self.floor_color
-        img[154:, :] = floor_col
         
-        # Back wall
-        img[70:154, :] = self.wall_color
+        # Ceiling color differs per chamber
+        ceiling_col = (100, 100, 110) if self.current_chamber == 0 else (90, 90, 80)
         
-        # Door/passage to other chamber
-        self._draw_rect(img, 72, 90, 152, 154, self.door_color)
+        # Draw ceiling and floor gradients
+        for y in range(horizon):
+            t = y / horizon
+            shade = 0.4 + 0.6 * t
+            img[y, :] = tuple(int(c * shade) for c in ceiling_col)
+        for y in range(horizon, 224):
+            t = (y - horizon) / (224 - horizon)
+            shade = 0.4 + 0.6 * t
+            img[y, :] = tuple(int(c * shade) for c in floor_col)
         
-        # Cue light (top center) using shared _draw_disk
+        # Cast rays
+        for col in range(num_rays):
+            ray_offset = (col / max(1, num_rays - 1) - 0.5) * fov
+            ray_angle = agent_angle - ray_offset
+            
+            dx = np.cos(ray_angle)
+            dy = np.sin(ray_angle)
+            
+            # Distance to front/back walls
+            if abs(dy) > 0.01:
+                dist_y = ((chamber_half_depth if dy > 0 else -chamber_half_depth) - self.agent.y) / dy
+                dist_y = max(0.1, dist_y)
+            else:
+                dist_y = 20
+            
+            # Distance to side walls / door
+            hit_door = False
+            if abs(dx) > 0.01:
+                dist_x = ((wall_right if dx > 0 else wall_left) - self.agent.x) / dx
+                dist_x = max(0.1, dist_x)
+                
+                if (self.current_chamber == 0 and dx > 0) or (self.current_chamber == 1 and dx < 0):
+                    hit_y = self.agent.y + dy * dist_x
+                    if abs(hit_y) < self.door_width / 2:
+                        hit_door = True
+                        dist_x = 15
+            else:
+                dist_x = 20
+            
+            dist = min(dist_x, dist_y)
+            dist *= np.cos(ray_offset)  # Fish-eye correction
+            dist = max(0.5, dist)
+            
+            wall_height = min(100, int(150 / (dist + 0.3)))
+            y_top = horizon - wall_height
+            y_bot = horizon + wall_height
+            
+            if hit_door:
+                wall_col = self.door_color
+            else:
+                shade = max(40, min(255, int(200 / (dist + 0.3))))
+                wall_col = (shade // 2, shade // 2, int(shade * 0.6))
+            
+            img[y_top:y_bot, col] = wall_col
+        
+        # Cue light (top center)
         if self.cue_active:
-            self._draw_disk(img, 112, 40, 17, self.cue_light_color)
+            self._draw_disk(img, 112, 30, 17, self.cue_light_color)
         
         # Shock indicator (red flash on edges)
         if self.shock_active and self.current_chamber == self.shock_chamber:
             img[:, :15] = (200, 50, 50)
             img[:, 209:] = (200, 50, 50)
-        
-        # Chamber indicator
-        text_y = 200
-        if self.current_chamber == 0:
-            self._draw_rect(img, 10, text_y, 50, text_y+10, (150, 150, 150))
-        else:
-            self._draw_rect(img, 174, text_y, 214, text_y+10, (150, 150, 150))
         
         return img
     
@@ -308,60 +364,49 @@ class ShuttleBox(BaseEnvironment):
     
     def _render_ascii_2d(self, width: int = 40, height: int = 20) -> str:
         """Render ASCII view."""
-        grid = [[' ' for _ in range(width)] for _ in range(height)]
+        c = AsciiCanvas(width, height)
         
-        # Draw chambers
         ch_top, ch_bot = 2, height - 3
         ch_left, ch_mid, ch_right = 2, width // 2, width - 3
         
-        # Walls (all #)
-        for x in range(ch_left, ch_right + 1):
-            grid[ch_top][x] = '#'
-            grid[ch_bot][x] = '#'
-        for y in range(ch_top, ch_bot + 1):
-            grid[y][ch_left] = '#'
-            grid[y][ch_right] = '#'
+        # Fill interior floor with dots so LLMs can distinguish floor from void
+        c.fill_rect(ch_left + 1, ch_top + 1, ch_right - 1, ch_bot - 1, '.')
+        
+        # Walls
+        c.hline(ch_left, ch_right, ch_top, '#')
+        c.hline(ch_left, ch_right, ch_bot, '#')
+        c.vline(ch_left, ch_top, ch_bot, '#')
+        c.vline(ch_right, ch_top, ch_bot, '#')
         
         # Center divider with door
         door_top = height // 2 - 2
         door_bot = height // 2 + 2
         for y in range(ch_top + 1, ch_bot):
             if y < door_top or y > door_bot:
-                grid[y][ch_mid] = '#'
+                c.put(ch_mid, y, '#')
         
-        # Cue indicator and goal marker (visual only - no text)
+        # Cue indicator and goal marker
         if self.cue_active or self.shock_active:
-            # Show ! in shock chamber as warning
-            if self.shock_chamber == 0:
-                for row in range(ch_top + 1, ch_bot):
-                    grid[row][ch_left + 2] = '!'
-            else:
-                for row in range(ch_top + 1, ch_bot):
-                    grid[row][ch_mid + 2] = '!'
+            shock_col = ch_left + 2 if self.shock_chamber == 0 else ch_mid + 2
+            for row in range(ch_top + 1, ch_bot):
+                c.put(shock_col, row, '!')
             
-            # Show goal 'G' in SAFE chamber
             safe_chamber = 1 - self.shock_chamber
             safe_x = ch_left + (ch_mid - ch_left) // 2 if safe_chamber == 0 else ch_mid + (ch_right - ch_mid) // 2
-            safe_y = height // 2 - 1
-            grid[safe_y][safe_x] = 'G'
+            c.put(safe_x, height // 2 - 1, 'G')
         
         # Agent position
         agent_x = int((self.agent.x + 1.8) / 3.6 * (ch_right - ch_left - 2)) + ch_left + 1
-        # Scale y to match y_bounds=(-0.6, 0.6) to visual rows
         usable_height = ch_bot - ch_top - 2
         agent_y = int(height // 2 - self.agent.y / 0.6 * (usable_height // 2))
         agent_x = max(ch_left + 1, min(ch_right - 1, agent_x))
         agent_y = max(ch_top + 1, min(ch_bot - 1, agent_y))
         
-        # Agent direction - 8 directions for finer angle gradation
-        # Standard mapping: 0=E(→), 1=NE(↗), 2=N(↑), 3=NW(↖), 4=W(←), 5=SW(↙), 6=S(↓), 7=SE(↘)
         dirs = {0: '→', 1: '↗', 2: '↑', 3: '↖', 4: '←', 5: '↙', 6: '↓', 7: '↘'}
         dir_idx = int((self.agent.angle + np.pi/8) / (np.pi/4)) % 8
-        agent_char = dirs.get(dir_idx, '@')
+        c.put(agent_x, agent_y, dirs.get(dir_idx, '@'))
         
-        grid[agent_y][agent_x] = agent_char
-        
-        return '\n'.join(''.join(row) for row in grid)
+        return c.to_string()
     
     def _render_ascii_3d(self, width: int = 60, height: int = 28) -> str:
         """Render ASCII 3D view with raycasting-based perspective."""
@@ -397,8 +442,8 @@ class ShuttleBox(BaseEnvironment):
         ray_distances = []
         ray_hit_door = []
         for col in range(view_width):
-            ray_offset = (col / view_width - 0.5) * fov
-            ray_angle = agent_angle + ray_offset
+            ray_offset = (col / max(1, view_width - 1) - 0.5) * fov
+            ray_angle = agent_angle - ray_offset
             
             dx = np.cos(ray_angle)
             dy = np.sin(ray_angle)

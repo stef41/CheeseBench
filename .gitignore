@@ -40,3 +40,38 @@ demo_views_preview.png
 # Jupyter
 .ipynb_checkpoints/
 *.ipynb
+# Old result archives (keep local only)
+results_old_buggy/
+results_old_rendering_bugs_*/
+results_old_uniform_*/
+arxiv_submission.zip
+CheeseBench_anonymous.zip
+
+# Copilot CLI proxy raw traces (large; reproducible)
+results/copilot_eval/_proxy_traces/
+results/copilot_eval/_launcher.log
+results/server_logs/
+
+# Old wrappers / scratch
+rerun_*.py
+switch_to_targeted.py
+
+# Raw LLM trace logs (huge, reproducible)
+**/llm_traces.log
+**/llm_traces.log.bak_*
+**/rerun*.log
+**/switch.log
+**/*.log
+
+# Raw benchmark data: too large for git (release via HF datasets / zenodo)
+results/multi_model/
+results/image_mode/
+results/copilot_eval/
+results/ablation_*/
+results/scaling/
+results/server_logs/
+results/*.json
+results/*.log
+**/benchmark_results.json.bak_*
+
+# Keep results/analysis/ derived artifacts only

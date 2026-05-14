@@ -8,16 +8,16 @@ Uses INTEGER GRID coordinates for consistent movement.
 """
 
 import numpy as np
-from typing import Tuple, Optional, Dict, Any, List
-from dataclasses import dataclass, field
+from typing import Optional, Dict, Any, List
+from dataclasses import dataclass
 
 from .base_env import (
     BaseEnvironment,
     EnvironmentConfig, 
     ViewMode, 
     Action,
-    AgentState,
-    DIR_VECTORS
+    DIR_VECTORS,
+    AsciiCanvas,
 )
 
 
@@ -66,8 +66,8 @@ class BarnesMaze(BaseEnvironment):
                 max_trial_steps=300,
                 success_criterion="find_escape_hole",
                 arena_size=14,
-                source_pmc="PMC3827415",
-                source_quote="The Barnes maze was originally developed by Carol Barnes for use with rats to assess spatial learning using a circular platform with escape holes around the perimeter."
+                source_pmc="PMC1783636",
+                source_quote="B6C3F1/J mice were tested on a 12-hole Barnes maze over 5 sessions (4 trials/session). Primary errors decreased across sessions as mice learned to locate the escape hole."
             )
         
         super().__init__(config, view_mode)
@@ -334,75 +334,69 @@ class BarnesMaze(BaseEnvironment):
         ax, ay = self.agent.x * scale, screen_y(self.agent.y)
         img[ay:ay+scale, ax:ax+scale] = (255, 100, 100)
         
+        # Direction indicator (nose)
+        dx, dy = DIR_VECTORS[self.agent.angle]
+        half = scale // 2
+        nose_cx = ax + half + dx * half
+        nose_cy = ay + half - dy * half  # screen Y is flipped
+        BaseEnvironment._draw_disk(img, nose_cx, nose_cy, max(2, scale // 4), (200, 50, 50))
+        
         return img
     
     def _render_ascii_2d(self) -> str:
         """Render ASCII top-down view with integer grid."""
-        # Grid dimensions for display (extra space for thick walls)
         width = self.grid_size + 6
         height = self.grid_size + 6
         
-        grid = [[' ' for _ in range(width)] for _ in range(height)]
+        c = AsciiCanvas(width, height)
         
-        # Map grid coords to display coords
         def to_display(gx, gy):
-            # Direct mapping, flip Y for visual
             dx = gx - self.center_x + width // 2
             dy = self.center_y - gy + height // 2
             return dx, dy
         
-        # Draw thick walls (multiple rings around platform)
-        for wall_offset in [0.5, 1.5, 2.5]:  # 3 layers of wall
-            for angle_i in range(72):  # More points for smoother circle
+        # Draw walls (rings around platform)
+        for wall_offset in [0.5, 1.5]:
+            for angle_i in range(72):
                 angle = 2 * np.pi * angle_i / 72
                 wall_r = self.platform_radius + wall_offset
                 wx = self.center_x + wall_r * np.cos(angle)
                 wy = self.center_y + wall_r * np.sin(angle)
                 dx, dy = to_display(int(round(wx)), int(round(wy)))
-                if 0 <= dx < width and 0 <= dy < height:
-                    grid[dy][dx] = '#'
+                c.put(dx, dy, '#')
         
-        # Draw platform floor (needed for FPV to distinguish inside from outside)
+        # Draw platform floor
         for (gx, gy) in self.valid_positions:
             dx, dy = to_display(gx, gy)
-            if 0 <= dx < width and 0 <= dy < height:
-                if grid[dy][dx] == ' ':
-                    grid[dy][dx] = '.'
+            if c.get(dx, dy) == ' ':
+                c.put(dx, dy, '.')
         
-        # Draw holes - escape hole only revealed when close AND looking at it
+        # Draw holes
         for hole in self.holes:
             dx, dy = to_display(hole['x'], hole['y'])
-            if 0 <= dx < width and 0 <= dy < height:
-                if hole['is_escape'] and self._can_see_escape_hole(hole['x'], hole['y']):
-                    grid[dy][dx] = 'E'  # Escape hole visible!
-                else:
-                    grid[dy][dx] = '?'  # All holes look the same from afar
+            if hole['is_escape'] and self._can_see_escape_hole(hole['x'], hole['y']):
+                c.put(dx, dy, 'E')
+            else:
+                c.put(dx, dy, '?')
         
-        # Draw landmarks with wall directly behind them (no gap)
+        # Draw landmarks with wall behind them
         landmark_chars = ['1', '2', '3', '4']
-        # Directions from center for each landmark: E, N, W, S
         landmark_dirs = [(1, 0), (0, 1), (-1, 0), (0, -1)]
         for i, lm in enumerate(self.landmarks):
             dx, dy = to_display(lm['x'], lm['y'])
-            if 0 <= dx < width and 0 <= dy < height:
-                grid[dy][dx] = landmark_chars[i]
-            # Fill wall behind landmark (outward direction)
+            c.put(dx, dy, landmark_chars[i])
             dir_x, dir_y = landmark_dirs[i]
-            for offset in range(1, 3):  # 2 layers of wall behind
+            for offset in range(1, 3):
                 wall_x = lm['x'] + dir_x * offset
                 wall_y = lm['y'] + dir_y * offset
                 wx, wy = to_display(wall_x, wall_y)
-                if 0 <= wx < width and 0 <= wy < height:
-                    grid[wy][wx] = '#'
+                c.put(wx, wy, '#')
         
         # Draw agent
         dx, dy = to_display(self.agent.x, self.agent.y)
-        if 0 <= dx < width and 0 <= dy < height:
-            # Direction arrows: 0=E, 1=NE, 2=N, 3=NW, 4=W, 5=SW, 6=S, 7=SE
-            arrows = ['→', '↗', '↑', '↖', '←', '↙', '↓', '↘']
-            grid[dy][dx] = arrows[self.agent.angle]
+        c.put_agent(dx, dy, self.agent.angle)
         
-        return '\n'.join(''.join(row) for row in grid)
+        return c.to_string()
     
     def _render_ascii_3d(self, width: int = 60, height: int = 28) -> str:
         """Render ASCII pseudo-3D view from agent perspective on open platform."""
@@ -446,7 +440,7 @@ class BarnesMaze(BaseEnvironment):
             else:
                 dist = 15  # No intersection
             
-            edge_data.append(dist * np.cos(ray_offset * fov))  # Fish-eye correction
+            edge_data.append((dist * np.cos(ray_offset * fov), dist))  # (corrected, raw)
         
         # Calculate visible objects (holes and landmarks)
         visible_objects = {}  # col -> (char, distance)
@@ -492,12 +486,12 @@ class BarnesMaze(BaseEnvironment):
         for row in range(view_height):
             line = '║'
             for col in range(width - 2):
-                edge_dist = edge_data[col]
+                edge_dist, raw_edge_dist = edge_data[col]
                 
                 # Check for visible objects at ground level (horizon + a bit)
                 if col in visible_objects and horizon <= row <= horizon + 2:
                     char, obj_dist = visible_objects[col]
-                    if obj_dist < edge_dist:
+                    if obj_dist < raw_edge_dist:
                         line += char
                         continue
                 

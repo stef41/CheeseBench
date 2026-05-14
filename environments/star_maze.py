@@ -8,7 +8,7 @@ Uses integer grid coordinates like other environments.
 """
 
 import numpy as np
-from typing import Tuple, Optional, Dict, Any, List, Set
+from typing import Optional, Dict, Any, List, Set, Tuple
 from dataclasses import dataclass
 import math
 
@@ -17,8 +17,8 @@ from .base_env import (
     EnvironmentConfig, 
     ViewMode, 
     Action,
-    AgentState,
-    DIR_VECTORS
+    DIR_VECTORS,
+    AsciiCanvas,
 )
 
 
@@ -61,7 +61,7 @@ class StarMaze(NavigationEnvironment):
                 max_trial_steps=300,
                 success_criterion="reach_goal",
                 arena_size=25.0,
-                source_pmc="PMC3399492",
+                source_pmc="PMC3695082",
                 source_quote="Complex multi-arm mazes assess spatial navigation strategies and shortcut learning through multiple arm configurations."
             )
         
@@ -334,7 +334,7 @@ class StarMaze(NavigationEnvironment):
     
     def _cast_ray(self, angle: float) -> float:
         """Cast ray using shared base implementation."""
-        return super()._cast_ray(angle, max_dist=30.0, step_size=1.0)
+        return super()._cast_ray(angle, max_dist=30.0, step_size=0.4)
     
     def _render_topdown(self) -> np.ndarray:
         """Render top-down view using shared helpers."""
@@ -381,32 +381,23 @@ class StarMaze(NavigationEnvironment):
     
     def _render_ascii_2d(self, width: int = None, height: int = None) -> str:
         """Render ASCII top-down view at 1:1 scale."""
-        # Use grid size directly (no scaling)
         width = self.grid_size
         height = self.grid_size
         
-        # Create grid filled with walls
-        grid = [['#' for _ in range(width)] for _ in range(height)]
+        c = AsciiCanvas(width, height, fill='#')
         
         # Draw floor (valid positions)
         for (x, y) in self.valid_positions:
-            # Flip y for display (y=0 at bottom in world, top in display)
             dy = height - 1 - y
-            if 0 <= x < width and 0 <= dy < height:
-                grid[dy][x] = '.'
+            c.put(x, dy, '.')
         
         # Draw goal
-        gy = height - 1 - self.goal_y
-        if 0 <= self.goal_x < width and 0 <= gy < height:
-            grid[gy][self.goal_x] = 'G'
+        c.put(self.goal_x, height - 1 - self.goal_y, 'G')
         
         # Draw agent
-        ay = height - 1 - self.agent.y
-        if 0 <= self.agent.x < width and 0 <= ay < height:
-            dirs = {0: '→', 1: '↗', 2: '↑', 3: '↖', 4: '←', 5: '↙', 6: '↓', 7: '↘'}
-            grid[ay][self.agent.x] = dirs.get(self.agent.angle, '@')
+        c.put_agent(self.agent.x, height - 1 - self.agent.y, self.agent.angle)
         
-        return '\n'.join(''.join(row) for row in grid)
+        return c.to_string()
     
     def _render_ascii_3d(self, width: int = 60, height: int = 28) -> str:
         """Render ASCII 3D view with proper wall continuity using raycasting."""

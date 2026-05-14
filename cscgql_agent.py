@@ -87,7 +87,7 @@ class CSCGQLAgent:
 
     def _update_q(self, prev_state, prev_action_idx, reward, cur_state):
         """Standard Q-learning update."""
-        alpha = self.base_alpha / np.sqrt(self.episode_num)
+        alpha = self.base_alpha / np.sqrt(max(self.episode_num, 1))
         max_next = np.max(self.Q[cur_state])
         td_target = reward + self.gamma * max_next
         td_error = td_target - self.Q[prev_state][prev_action_idx]

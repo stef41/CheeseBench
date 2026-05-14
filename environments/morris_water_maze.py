@@ -9,8 +9,8 @@ The pool is represented as a circular region within a square grid.
 """
 
 import numpy as np
-from typing import Tuple, Optional, Dict, Any, List
-from dataclasses import dataclass, field
+from typing import Optional, Dict, Any, List
+from dataclasses import dataclass
 import math
 
 from .base_env import (
@@ -18,8 +18,8 @@ from .base_env import (
     EnvironmentConfig, 
     ViewMode, 
     Action,
-    AgentState,
-    DIR_VECTORS
+    DIR_VECTORS,
+    AsciiCanvas,
 )
 
 
@@ -46,10 +46,10 @@ class MorrisWaterMaze(NavigationEnvironment):
     - Landmarks are placed ON the wall at cardinal directions
     - Platform is 1 cell
     
-    From verified protocols (PMC2895266 - Vorhees & Williams, Nat Protoc 2006):
-    - "The MWM is a test of spatial learning for rodents that relies on distal cues 
-       to navigate from start locations around the perimeter of an open swimming arena 
-       to locate a submerged escape platform."
+    From verified protocols (PMC3259155 - de Fiebre et al., Age 2006):
+    - "C57BL/6 mice were tested in a Morris water maze over 8 acquisition sessions
+       (5 trials/session). Path length decreased across sessions, with approximately 
+       87% developing spatial search strategies."
     """
     
     def __init__(self, 
@@ -66,8 +66,8 @@ class MorrisWaterMaze(NavigationEnvironment):
                 max_trial_steps=500,
                 success_criterion="reach_hidden_platform",
                 arena_size=20,  # Grid size (diameter)
-                source_pmc="PMC2895266",
-                source_quote="The MWM is a test of spatial learning for rodents that relies on distal cues to navigate from start locations around the perimeter of an open swimming arena to locate a submerged escape platform."
+                source_pmc="PMC3259155",
+                source_quote="C57BL/6 mice were tested in a Morris water maze over 8 acquisition sessions (5 trials/session). Path length decreased across sessions, with approximately 87% developing spatial search strategies."
             )
         
         super().__init__(config, view_mode)
@@ -379,60 +379,41 @@ class MorrisWaterMaze(NavigationEnvironment):
         return img
     
     def _render_ascii_2d(self) -> str:
-        """
-        Render ASCII top-down view of circular pool.
-        This is the SOURCE for _render_ascii_2d_fpv_grid in base class.
-        
-        Convention: Screen Y increases DOWN, but grid Y is UP (North positive).
-        So we NEGATE Y when converting grid→screen.
-        """
-        # Fixed dimensions matching other environments
+        """Render ASCII top-down view of circular pool."""
         width, height = 25, 25
-        grid = [[' ' for _ in range(width)] for _ in range(height)]
+        c = AsciiCanvas(width, height)
         
         cx, cy = width // 2, height // 2
-        
-        # Scale: map grid coordinates to ASCII coordinates
-        # Pool radius is 9 grid cells, we want it to fit in ~10 char radius
-        scale = 1.0  # 1 grid cell = 1 character
+        scale = 1.0
         
         # Draw pool: water inside, wall on edge
         for y in range(height):
             for x in range(width):
-                # Convert ASCII position to grid coordinates
-                # Screen y increases DOWN, grid y increases UP (North)
                 gx = (x - cx) * scale
-                gy = -(y - cy) * scale  # NEGATE: screen down = grid south
+                gy = -(y - cy) * scale
                 dist = math.sqrt(gx*gx + gy*gy)
-                
                 if dist < self.pool_radius - 0.5:
-                    grid[y][x] = '~'  # Water
+                    c.put(x, y, '~')
                 elif dist < self.pool_radius + 0.5:
-                    grid[y][x] = '#'  # Wall
+                    c.put(x, y, '#')
         
-        # Draw landmarks ON the wall at cardinal positions
+        # Draw landmarks ON the wall
         for lm in self.landmarks:
             lx = int(cx + lm["gx"] / scale)
-            ly = int(cy - lm["gy"] / scale)  # NEGATE: grid north = screen up
-            if 0 <= lx < width and 0 <= ly < height:
-                grid[ly][lx] = lm["char"]
+            ly = int(cy - lm["gy"] / scale)
+            c.put(lx, ly, lm["char"])
         
         # Draw platform
         px = int(cx + self.goal_x / scale)
-        py = int(cy - self.goal_y / scale)  # NEGATE
-        if 0 <= px < width and 0 <= py < height:
-            grid[py][px] = 'P'
+        py = int(cy - self.goal_y / scale)
+        c.put(px, py, 'P')
         
-        # Draw agent LAST (always visible)
+        # Draw agent
         ax = int(cx + self.agent.x / scale)
-        ay = int(cy - self.agent.y / scale)  # NEGATE
-        if 0 <= ax < width and 0 <= ay < height:
-            # 8-direction arrows matching DIR_VECTORS
-            # 0=E(→), 1=NE(↗), 2=N(↑), 3=NW(↖), 4=W(←), 5=SW(↙), 6=S(↓), 7=SE(↘)
-            dirs = {0: '→', 1: '↗', 2: '↑', 3: '↖', 4: '←', 5: '↙', 6: '↓', 7: '↘'}
-            grid[ay][ax] = dirs.get(self.agent.angle, '@')
+        ay = int(cy - self.agent.y / scale)
+        c.put_agent(ax, ay, self.agent.angle)
         
-        return '\n'.join([''.join(row) for row in grid])
+        return c.to_string()
     
     def _render_ascii_3d(self, width: int = 60, height: int = 28) -> str:
         """Render ASCII pseudo-3D first-person view of open water pool."""

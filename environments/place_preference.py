@@ -6,9 +6,8 @@ Tests reward learning and preference formation.
 """
 
 import numpy as np
-from typing import Tuple, Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List
 from dataclasses import dataclass
-import math
 
 from .base_env import (
     BaseEnvironment, 
@@ -16,8 +15,7 @@ from .base_env import (
     ViewMode, 
     Action,
     AgentState,
-    SessionState,
-    TrialResult
+    AsciiCanvas,
 )
 
 
@@ -124,7 +122,7 @@ class PlacePreference(BaseEnvironment):
         # Check if entering test phase
         if self.phase == 'conditioning':
             self.conditioning_count += 1
-            if self.conditioning_count > self.conditioning_trials:
+            if self.conditioning_count >= self.conditioning_trials:
                 self.phase = 'test'
     
     def _execute_action(self, action: Action) -> float:
@@ -132,9 +130,9 @@ class PlacePreference(BaseEnvironment):
         reward = 0.0
         
         # Movement using shared helper
-        # y_bounds increased to allow full vertical movement in the chamber
+        # y_bounds constrained to stay within chamber walls (depth/2 = 0.75)
         old_chamber = self.current_chamber
-        self._move_continuous(action, speed=0.2, x_bounds=(-1.8, 1.8), y_bounds=(-1.2, 1.2))
+        self._move_continuous(action, speed=0.2, x_bounds=(-1.8, 1.8), y_bounds=(-0.6, 0.6))
         self.current_chamber = self._get_chamber()
         
         # Track time
@@ -149,11 +147,11 @@ class PlacePreference(BaseEnvironment):
         return reward
     
     def _check_success(self) -> bool:
-        """Success = preference for conditioned chamber (>60% time there)."""
+        """Success = preference for conditioned chamber (>55% time there)."""
         total_time = sum(self.time_in_chamber)
         if total_time >= 20:  # Need minimum time to assess preference
             pref_ratio = self.time_in_chamber[self.conditioning_chamber] / total_time
-            return pref_ratio > 0.6  # >60% time in conditioned chamber
+            return pref_ratio > 0.55  # >55% time in conditioned chamber
         return False
     
     def _check_failure(self) -> bool:
@@ -178,39 +176,103 @@ class PlacePreference(BaseEnvironment):
     # ==================== Rendering ====================
     
     def _render_fpv(self) -> np.ndarray:
-        """Render first-person view with distinct chamber features."""
+        """Render first-person view with raycasting based on agent position and angle."""
         img = np.zeros((224, 224, 3), dtype=np.uint8)
         
         chamber = self.chambers[self.current_chamber]
+        wall_col = chamber['wall_color']
+        floor_base = np.array(chamber['floor_color'])
+        
+        # Chamber boundaries
+        wall_front = self.chamber_depth / 2
+        wall_back = -self.chamber_depth / 2
+        if self.current_chamber == 0:
+            wall_left = -self.chamber_width
+            wall_right = 0
+        else:
+            wall_left = 0
+            wall_right = self.chamber_width
+        
+        fov = np.pi / 2
+        agent_angle = self.agent.angle
+        horizon = 112
+        num_rays = 224
         
         # Ceiling
-        img[:70, :] = (100, 100, 100)
-        
-        # Walls
-        img[70:154, :] = chamber['wall_color']
+        ceiling_col = (100, 100, 100)
+        for y in range(horizon):
+            t = y / horizon
+            shade = 0.4 + 0.6 * t
+            img[y, :] = tuple(int(c * shade) for c in ceiling_col)
         
         # Floor with pattern
-        floor_base = np.array(chamber['floor_color'])
-        if chamber['floor_pattern'] == 'stripes':
-            for y in range(154, 224):
-                for x in range(224):
+        for y in range(horizon, 224):
+            for x in range(224):
+                if chamber['floor_pattern'] == 'stripes':
                     if (x // 20) % 2 == 0:
                         img[y, x] = floor_base
                     else:
                         img[y, x] = (floor_base * 0.7).astype(np.uint8)
-        else:  # dots
-            img[154:, :] = floor_base
+                else:  # dots
+                    img[y, x] = floor_base
+        
+        # Dot pattern overlay
+        if chamber['floor_pattern'] == 'dots':
             dot_color = tuple((floor_base * 0.6).astype(np.uint8))
-            for y in range(160, 220, 15):
-                for x in range(10, 220, 15):
-                    self._draw_disk(img, x, y, 3, dot_color)
+            for dy in range(horizon + 10, 220, 15):
+                for dx in range(10, 220, 15):
+                    self._draw_disk(img, dx, dy, 3, dot_color)
         
-        # Door to other chamber (center)
-        self._draw_rect(img, 87, 90, 137, 154, (40, 40, 40))
+        # Cast rays
+        for col in range(num_rays):
+            ray_offset = (col / max(1, num_rays - 1) - 0.5) * fov
+            ray_angle = agent_angle - ray_offset
+            
+            dx = np.cos(ray_angle)
+            dy = np.sin(ray_angle)
+            
+            # Distance to front/back walls
+            if abs(dy) > 0.01:
+                dist_y = ((wall_front if dy > 0 else wall_back) - self.agent.y) / dy
+                dist_y = max(0.1, dist_y)
+            else:
+                dist_y = 20
+            
+            # Distance to side walls / door
+            hit_door = False
+            if abs(dx) > 0.01:
+                dist_x = ((wall_right if dx > 0 else wall_left) - self.agent.x) / dx
+                dist_x = max(0.1, dist_x)
+                
+                if (self.current_chamber == 0 and dx > 0) or (self.current_chamber == 1 and dx < 0):
+                    hit_y = self.agent.y + dy * dist_x
+                    if abs(hit_y) < 0.4:
+                        hit_door = True
+                        dist_x = 12
+            else:
+                dist_x = 20
+            
+            dist = min(dist_x, dist_y)
+            dist *= np.cos(ray_offset)  # Fish-eye correction
+            dist = max(0.5, dist)
+            
+            wall_height = min(100, int(150 / (dist + 0.3)))
+            y_top = horizon - wall_height
+            y_bot = horizon + wall_height
+            
+            if hit_door:
+                img[y_top:y_bot, col] = (40, 40, 40)
+            else:
+                shade = max(40, min(255, int(200 / (dist + 0.3))))
+                img[y_top:y_bot, col] = (
+                    int(wall_col[0] * shade / 255),
+                    int(wall_col[1] * shade / 255),
+                    int(wall_col[2] * shade / 255),
+                )
         
-        # Phase indicator (using shared _draw_disk)
+        # Phase indicator
         if self.phase == 'conditioning' and self.current_chamber == self.conditioning_chamber:
-            self._draw_disk(img, 112, 40, 15, (255, 215, 0))  # Gold for reward
+            self._draw_disk(img, 112, 40, 15, (255, 215, 0))
         
         return img
     
@@ -246,56 +308,58 @@ class PlacePreference(BaseEnvironment):
             marker_x = 63 if self.conditioning_chamber == 0 else 160
             self._draw_disk(img, marker_x, 55, 8, (255, 215, 0))
         
-        # Agent - scale to match y_bounds=(-1.2, 1.2)
+        # Agent - scale to match y_bounds=(-0.6, 0.6)
         agent_x = int(112 + self.agent.x * 50)
-        agent_y = int(112 - self.agent.y * 60)  # Scaled for y_bounds ±1.2
+        agent_y = int(112 - self.agent.y * 120)  # Scaled for y_bounds ±0.6
         self._draw_disk(img, agent_x, agent_y, 6, (0, 150, 255))
+        
+        # Direction indicator (nose)
+        nose_x = int(agent_x + 10 * np.cos(self.agent.angle))
+        nose_y = int(agent_y - 10 * np.sin(self.agent.angle))
+        self._draw_disk(img, nose_x, nose_y, 3, (0, 80, 180))
         
         return img
     
     def _render_ascii_2d(self, width: int = 40, height: int = 20) -> str:
         """Render ASCII view."""
-        grid = [[' ' for _ in range(width)] for _ in range(height)]
+        c = AsciiCanvas(width, height)
         
         ch_top, ch_bot = 2, height - 3
         ch_left, ch_mid, ch_right = 2, width // 2, width - 3
         
-        # Walls (all #)
-        for x in range(ch_left, ch_right + 1):
-            grid[ch_top][x] = '#'
-            grid[ch_bot][x] = '#'
-        for y in range(ch_top, ch_bot + 1):
-            grid[y][ch_left] = '#'
-            grid[y][ch_right] = '#'
+        # Fill interior floor with dots so LLMs can distinguish floor from void
+        c.fill_rect(ch_left + 1, ch_top + 1, ch_right - 1, ch_bot - 1, '.')
+        
+        # Walls
+        c.hline(ch_left, ch_right, ch_top, '#')
+        c.hline(ch_left, ch_right, ch_bot, '#')
+        c.vline(ch_left, ch_top, ch_bot, '#')
+        c.vline(ch_right, ch_top, ch_bot, '#')
         
         # Center divider with door
         door_y = height // 2
         for y in range(ch_top + 1, ch_bot):
             if abs(y - door_y) > 2:
-                grid[y][ch_mid] = '#'
+                c.put(ch_mid, y, '#')
         
         # Goal marker in conditioning chamber
         if self.conditioning_chamber == 0:
-            grid[ch_top + 2][ch_left + 2] = 'G'
+            c.put(ch_left + 2, ch_top + 2, 'G')
         else:
-            grid[ch_top + 2][ch_mid + 2] = 'G'
+            c.put(ch_mid + 2, ch_top + 2, 'G')
         
         # Agent
         agent_x = int(ch_left + 1 + (self.agent.x + 1.8) / 3.6 * (ch_right - ch_left - 2))
-        # Scale y to match y_bounds=(-1.2, 1.2) to visual rows (ch_top+1 to ch_bot-1)
-        usable_height = ch_bot - ch_top - 2  # rows available for agent
+        usable_height = ch_bot - ch_top - 2
         agent_y = int(height // 2 - self.agent.y / 1.2 * (usable_height // 2))
         agent_x = max(ch_left + 1, min(ch_right - 1, agent_x))
         agent_y = max(ch_top + 1, min(ch_bot - 1, agent_y))
         
-        # Agent direction - 8 directions for finer angle gradation
-        # Standard mapping: 0=E(→), 1=NE(↗), 2=N(↑), 3=NW(↖), 4=W(←), 5=SW(↙), 6=S(↓), 7=SE(↘)
         dirs = {0: '→', 1: '↗', 2: '↑', 3: '↖', 4: '←', 5: '↙', 6: '↓', 7: '↘'}
         dir_idx = int((self.agent.angle + np.pi/8) / (np.pi/4)) % 8
-        agent_char = dirs.get(dir_idx, '@')
-        grid[agent_y][agent_x] = agent_char
+        c.put(agent_x, agent_y, dirs.get(dir_idx, '@'))
         
-        return '\n'.join(''.join(row) for row in grid)
+        return c.to_string()
     
     def _render_ascii_3d(self, width: int = 60, height: int = 28) -> str:
         """Render ASCII 3D view with raycasting-based perspective."""
@@ -335,8 +399,8 @@ class PlacePreference(BaseEnvironment):
         ray_distances = []
         ray_hit_door = []
         for col in range(view_width):
-            ray_offset = (col / view_width - 0.5) * fov
-            ray_angle = agent_angle + ray_offset
+            ray_offset = (col / max(1, view_width - 1) - 0.5) * fov
+            ray_angle = agent_angle - ray_offset
             
             dx = np.cos(ray_angle)
             dy = np.sin(ray_angle)
@@ -347,7 +411,7 @@ class PlacePreference(BaseEnvironment):
                     dist_y = (wall_front - self.agent.y) / dy
                 else:
                     dist_y = (wall_back - self.agent.y) / dy
-                dist_y = max(0.1, abs(dist_y))
+                dist_y = max(0.1, dist_y)
             else:
                 dist_y = 20
             
@@ -358,7 +422,7 @@ class PlacePreference(BaseEnvironment):
                     dist_x = (wall_right - self.agent.x) / dx
                 else:
                     dist_x = (wall_left - self.agent.x) / dx
-                dist_x = max(0.1, abs(dist_x))
+                dist_x = max(0.1, dist_x)
                 
                 # Check if hitting door at x=0
                 if (self.current_chamber == 0 and dx > 0) or (self.current_chamber == 1 and dx < 0):

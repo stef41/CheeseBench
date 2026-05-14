@@ -12,7 +12,7 @@
       "avg_steps": 120.0,
       "successes": 1,
       "total_trials": 2,
-      "source_pmc": "PMC2895266",
+      "source_pmc": "PMC3259155",
       "source_quote": "The MWM is a test of spatial learning for rodents that relies on distal cues to navigate from start locations around the perimeter of an open swimming arena to locate a submerged escape platform.",
       "trials": [
         {
@@ -35,7 +35,7 @@
       "avg_steps": 26.5,
       "successes": 2,
       "total_trials": 2,
-      "source_pmc": "PMC2895266",
+      "source_pmc": "PMC3259155",
       "source_quote": "The MWM is a test of spatial learning for rodents that relies on distal cues to navigate from start locations around the perimeter of an open swimming arena to locate a submerged escape platform.",
       "trials": [
         {
@@ -104,7 +104,7 @@
       "avg_steps": 200.0,
       "successes": 0,
       "total_trials": 2,
-      "source_pmc": "PMC6126525",
+      "source_pmc": "PMC1783636",
       "source_quote": "The Barnes maze consists of a circular platform with 20 equidistant holes, 19 closed with plugs while the remaining hole leads to an escape shelter.",
       "trials": [
         {
@@ -127,7 +127,7 @@
       "avg_steps": 30.0,
       "successes": 2,
       "total_trials": 2,
-      "source_pmc": "PMC6126525",
+      "source_pmc": "PMC1783636",
       "source_quote": "The Barnes maze consists of a circular platform with 20 equidistant holes, 19 closed with plugs while the remaining hole leads to an escape shelter.",
       "trials": [
         {
@@ -426,7 +426,7 @@
       "avg_steps": 200.0,
       "successes": 0,
       "total_trials": 2,
-      "source_pmc": "PMC2895266",
+      "source_pmc": "PMC3259155",
       "source_quote": "The MWM is a test of spatial learning for rodents that relies on distal cues to navigate from start locations around the perimeter of an open swimming arena to locate a submerged escape platform.",
       "trials": [
         {
@@ -449,7 +449,7 @@
       "avg_steps": 103.5,
       "successes": 1,
       "total_trials": 2,
-      "source_pmc": "PMC2895266",
+      "source_pmc": "PMC3259155",
       "source_quote": "The MWM is a test of spatial learning for rodents that relies on distal cues to navigate from start locations around the perimeter of an open swimming arena to locate a submerged escape platform.",
       "trials": [
         {
@@ -518,7 +518,7 @@
       "avg_steps": 200.0,
       "successes": 0,
       "total_trials": 2,
-      "source_pmc": "PMC6126525",
+      "source_pmc": "PMC1783636",
       "source_quote": "The Barnes maze consists of a circular platform with 20 equidistant holes, 19 closed with plugs while the remaining hole leads to an escape shelter.",
       "trials": [
         {
@@ -541,7 +541,7 @@
       "avg_steps": 104.0,
       "successes": 1,
       "total_trials": 2,
-      "source_pmc": "PMC6126525",
+      "source_pmc": "PMC1783636",
       "source_quote": "The Barnes maze consists of a circular platform with 20 equidistant holes, 19 closed with plugs while the remaining hole leads to an escape shelter.",
       "trials": [
         {
@@ -840,7 +840,7 @@
       "avg_steps": 200.0,
       "successes": 0,
       "total_trials": 2,
-      "source_pmc": "PMC2895266",
+      "source_pmc": "PMC3259155",
       "source_quote": "The MWM is a test of spatial learning for rodents that relies on distal cues to navigate from start locations around the perimeter of an open swimming arena to locate a submerged escape platform.",
       "trials": [
         {
@@ -863,7 +863,7 @@
       "avg_steps": 203.0,
       "successes": 1,
       "total_trials": 2,
-      "source_pmc": "PMC2895266",
+      "source_pmc": "PMC3259155",
       "source_quote": "The MWM is a test of spatial learning for rodents that relies on distal cues to navigate from start locations around the perimeter of an open swimming arena to locate a submerged escape platform.",
       "trials": [
         {
@@ -932,7 +932,7 @@
       "avg_steps": 200.0,
       "successes": 0,
       "total_trials": 2,
-      "source_pmc": "PMC6126525",
+      "source_pmc": "PMC1783636",
       "source_quote": "The Barnes maze consists of a circular platform with 20 equidistant holes, 19 closed with plugs while the remaining hole leads to an escape shelter.",
       "trials": [
         {
@@ -955,7 +955,7 @@
       "avg_steps": 52.5,
       "successes": 2,
       "total_trials": 2,
-      "source_pmc": "PMC6126525",
+      "source_pmc": "PMC1783636",
       "source_quote": "The Barnes maze consists of a circular platform with 20 equidistant holes, 19 closed with plugs while the remaining hole leads to an escape shelter.",
       "trials": [
         {

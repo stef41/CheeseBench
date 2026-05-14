@@ -28,10 +28,10 @@ from .base_env import (
     AgentState,
     TrialResult,
     ViewMode,
-    Action
+    Action,
+    AsciiCanvas,
+    DIRECTION_ARROWS,
 )
-
-from .renderer import SimpleRenderer
 
 # Navigation environments
 from .morris_water_maze import MorrisWaterMaze, create_morris_water_maze
@@ -61,36 +61,17 @@ from .registry import (
 )
 
 __all__ = [
-    # Base classes
-    'BaseEnvironment',
-    'NavigationEnvironment',
-    'EnvironmentConfig',
-    'SessionState',
-    'AgentState',
-    'TrialResult',
-    'ViewMode',
-    'Action',
-    'SimpleRenderer',
-    
-    # Spatial navigation environments
-    'MorrisWaterMaze',
-    'TMaze',
-    'BarnesMaze',
-    'RadialArmMaze',
-    
-    # Operant conditioning
-    'OperantChamber',
-    
+    # Base
+    'BaseEnvironment', 'NavigationEnvironment', 'EnvironmentConfig',
+    'SessionState', 'AgentState', 'TrialResult', 'ViewMode', 'Action',
+    'AsciiCanvas', 'DIRECTION_ARROWS',
+    # Environments
+    'MorrisWaterMaze', 'TMaze', 'BarnesMaze', 'RadialArmMaze', 'StarMaze',
+    'OperantChamber', 'ShuttleBox', 'PlacePreference', 'DNMSTask',
     # Factory functions
-    'create_morris_water_maze',
-    'create_t_maze',
-    'create_barnes_maze',
-    'create_radial_arm_maze',
-    'create_operant_chamber',
-    
+    'create_morris_water_maze', 'create_t_maze', 'create_barnes_maze',
+    'create_radial_arm_maze', 'create_operant_chamber',
     # Registry
-    'EnvironmentRegistry',
-    'ProtocolSpec',
-    'load_verified_environments',
-    'get_available_environment_types',
+    'EnvironmentRegistry', 'ProtocolSpec',
+    'load_verified_environments', 'get_available_environment_types',
 ]

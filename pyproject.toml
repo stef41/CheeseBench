@@ -1,11 +1,76 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
-name = "minimal-benchmark"
-version = "0.1.0"
-description = "Add your description here"
-requires-python = ">=3.12"
-dependencies = [
-    "imageio>=2.37.2",
-    "numpy>=2.4.1",
-    "opencv-python>=4.13.0.90",
-    "pillow>=12.1.0",
+name = "cheesebench"
+version = "0.1.1"
+description = "CheeseBench: A VLM benchmark over 9 rodent behavioral neuroscience paradigms"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "CheeseBench Contributors" }]
+keywords = [
+    "benchmark",
+    "vision-language-model",
+    "vlm",
+    "llm",
+    "evaluation",
+    "neuroscience",
+    "behavioral-neuroscience",
+    "embodied-ai",
+    "cognition",
 ]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "imageio>=2.30",
+    "numpy>=1.24",
+    "opencv-python>=4.8",
+    "pillow>=10.0",
+    "requests>=2.31",
+    "matplotlib>=3.7",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7", "build", "twine"]
+
+[project.urls]
+Homepage = "https://github.com/stef41/CheeseBench"
+Repository = "https://github.com/stef41/CheeseBench"
+Issues = "https://github.com/stef41/CheeseBench/issues"
+
+[project.scripts]
+cheesebench = "benchmark:main"
+
+[tool.setuptools]
+include-package-data = true
+py-modules = [
+    "benchmark",
+    "config",
+    "analysis",
+    "error_analysis",
+    "stat_tests",
+    "visualize",
+    "heuristic_agent",
+    "cscgql_agent",
+    "model_server",
+    "play",
+]
+
+[tool.setuptools.package-data]
+environments = ["task_definitions.json"]
+
+[tool.setuptools.packages.find]
+include = ["environments*"]
+exclude = ["results*", "results_old*", "paper*", "demo_gifs*", "inspection_videos*", "tests*"]
+

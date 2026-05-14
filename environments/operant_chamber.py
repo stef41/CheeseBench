@@ -6,9 +6,8 @@ Tests instrumental conditioning and learning.
 """
 
 import numpy as np
-from typing import Tuple, Optional, Dict, Any, List
-from dataclasses import dataclass, field
-import math
+from typing import Optional, Dict, Any, List
+from dataclasses import dataclass
 
 from .base_env import (
     BaseEnvironment, 
@@ -16,8 +15,7 @@ from .base_env import (
     ViewMode, 
     Action,
     AgentState,
-    SessionState,
-    TrialResult
+    AsciiCanvas,
 )
 
 
@@ -59,7 +57,7 @@ class OperantChamber(BaseEnvironment):
                 max_trial_steps=100,
                 success_criterion="earn_criterion_rewards",
                 arena_size=2.0,
-                source_pmc="PMC2895266",
+                source_pmc="PMC6619163",
                 source_quote="Operant conditioning tasks use lever presses to assess instrumental learning with various reinforcement schedules."
             )
         
@@ -243,12 +241,16 @@ class OperantChamber(BaseEnvironment):
             # Move toward left lever (index 0)
             if self.facing_lever == -1:
                 self.facing_lever = 0  # From center to left lever
+            elif self.facing_lever == 0:
+                self.facing_lever = -1  # From left lever back to center
             elif self.facing_lever > 0:
                 self.facing_lever -= 1
         elif action == Action.ROTATE_RIGHT:
             # Move toward right lever (index 1 for 2-lever setup)
             if self.facing_lever == -1:
                 self.facing_lever = self.num_levers - 1  # From center to right lever
+            elif self.facing_lever == self.num_levers - 1:
+                self.facing_lever = -1  # From right lever back to center
             elif self.facing_lever < self.num_levers - 1:
                 self.facing_lever += 1
         elif action == Action.FORWARD:
@@ -313,7 +315,7 @@ class OperantChamber(BaseEnvironment):
             img[:50, :] = (150, 150, 140)  # Lit ceiling
         
         # Draw lever(s) based on facing direction
-        lever = self.levers[self.facing_lever] if self.facing_lever < len(self.levers) else None
+        lever = self.levers[self.facing_lever] if 0 <= self.facing_lever < len(self.levers) else None
         
         if lever:
             # Lever
@@ -323,7 +325,7 @@ class OperantChamber(BaseEnvironment):
             lever_x = 112 - lever_width // 2
             
             # Lever pressed animation
-            is_pressed = self.lever_press_frames[self.facing_lever] > 0
+            is_pressed = 0 <= self.facing_lever < len(self.lever_press_frames) and self.lever_press_frames[self.facing_lever] > 0
             color = self.lever_pressed_color if is_pressed else self.lever_color
             y_offset = 5 if is_pressed else 0
             
@@ -397,47 +399,62 @@ class OperantChamber(BaseEnvironment):
     def _render_ascii_2d(self) -> str:
         """Render ASCII top-down view."""
         width = 25
-        lines = []
-        lines.append("#" * (width + 2))
+        c = AsciiCanvas(width + 2, 10)  # enough rows for chamber
+        
+        row = 0
+        c.hline(0, width + 1, row, '#')
+        row += 1
         
         # Lever row
-        lever_line = "#"
-        for i, lever in enumerate(self.levers):
-            pos = 5 + i * 12
-            lever_line += " " * (pos - len(lever_line) + 1)
+        c.put(0, row, '#')
+        c.put(width + 1, row, '#')
+        for i in range(self.num_levers):
+            pos = 6 + i * 12
             is_pressed = self.lever_press_frames[i] > 0
-            lever_line += "[=]" if not is_pressed else "[_]"
-        lever_line = lever_line.ljust(width + 1) + "#"
-        lines.append(lever_line)
+            c.blit(pos, row, "[_]" if is_pressed else "[=]")
+        row += 1
         
-        # Cue lights - only active lever has light on (discriminative stimulus)
+        # Cue lights
         if self.has_cue_light:
-            light_line = "#"
+            c.put(0, row, '#')
+            c.put(width + 1, row, '#')
             for i in range(self.num_levers):
-                pos = 5 + i * 12
-                light_line += " " * (pos - len(light_line) + 1)
-                # Cue light indicates which lever is active (rewarded)
+                pos = 6 + i * 12
                 is_active = (i == self.active_lever)
-                light_line += "(*)" if is_active else "( )"
-            light_line = light_line.ljust(width + 1) + "#"
-            lines.append(light_line)
+                c.blit(pos, row, "(*)" if is_active else "( )")
+            row += 1
         
         # Magazine
+        c.put(0, row, '#')
+        c.put(width + 1, row, '#')
         mag_str = "[M]" if self.magazine_lit else "[m]"
-        lines.append("#" + mag_str.center(width) + "#")
+        mag_x = (width + 2 - len(mag_str)) // 2
+        c.blit(mag_x, row, mag_str)
+        row += 1
         
-        # Empty space
+        # Empty space (floor)
         for _ in range(4):
-            lines.append("#" + " " * width + "#")
+            c.put(0, row, '#')
+            c.put(width + 1, row, '#')
+            for x in range(1, width + 1):
+                c.put(x, row, '.')
+            row += 1
         
-        # Agent - use standard direction symbols
-        # In operant chamber, agent faces the lever (north/up)
-        agent_str = "↑"
-        lines.append("#" + agent_str.center(width) + "#")
+        # Agent
+        c.put(0, row, '#')
+        c.put(width + 1, row, '#')
+        for x in range(1, width + 1):
+            c.put(x, row, '.')
+        c.put((width + 2) // 2, row, '↑')
+        row += 1
         
-        lines.append("#" * (width + 2))
+        c.hline(0, width + 1, row, '#')
         
-        return '\n'.join(lines)
+        # Trim to actual height used
+        c.grid = c.grid[:row + 1]
+        c.height = row + 1
+        
+        return c.to_string()
     
     def _render_ascii_3d(self, width: int = 60, height: int = 28) -> str:
         """Render ASCII 3D view of operant chamber with raycasting."""

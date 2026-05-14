@@ -5,9 +5,7 @@ Parses verified_strict.json and creates appropriate environment instances.
 """
 
 import json
-import re
 from typing import Dict, List, Optional, Any, Type
-from pathlib import Path
 from dataclasses import dataclass
 
 from .base_env import BaseEnvironment, ViewMode

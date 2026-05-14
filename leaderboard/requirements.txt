@@ -1,0 +1,2 @@
+gradio>=5.49
+pandas>=2.0

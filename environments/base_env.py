@@ -64,6 +64,68 @@ class SessionState:
     trial_results: List[TrialResult] = field(default_factory=list)
 
 
+DIRECTION_ARROWS = ['→', '↗', '↑', '↖', '←', '↙', '↓', '↘']
+
+
+class AsciiCanvas:
+    """Lightweight character grid that renders to a string.
+    
+    Centralizes the repeated pattern of:
+      1. Create 2D char grid
+      2. Place walls, floor, markers
+      3. Place agent arrow
+      4. Convert to string
+    """
+    
+    def __init__(self, width: int, height: int, fill: str = ' '):
+        self.width = width
+        self.height = height
+        self.grid = [[fill] * width for _ in range(height)]
+    
+    def put(self, x: int, y: int, ch: str):
+        """Place a single character at (x, y) with bounds checking."""
+        if 0 <= x < self.width and 0 <= y < self.height:
+            self.grid[y][x] = ch
+    
+    def get(self, x: int, y: int) -> str:
+        """Get char at (x, y), or ' ' if out of bounds."""
+        if 0 <= x < self.width and 0 <= y < self.height:
+            return self.grid[y][x]
+        return ' '
+    
+    def fill_rect(self, x1: int, y1: int, x2: int, y2: int, ch: str):
+        """Fill a rectangle (inclusive) with a character."""
+        for y in range(max(0, y1), min(self.height, y2 + 1)):
+            for x in range(max(0, x1), min(self.width, x2 + 1)):
+                self.grid[y][x] = ch
+    
+    def hline(self, x1: int, x2: int, y: int, ch: str):
+        """Draw a horizontal line."""
+        if 0 <= y < self.height:
+            for x in range(max(0, x1), min(self.width, x2 + 1)):
+                self.grid[y][x] = ch
+    
+    def vline(self, x: int, y1: int, y2: int, ch: str):
+        """Draw a vertical line."""
+        if 0 <= x < self.width:
+            for y in range(max(0, y1), min(self.height, y2 + 1)):
+                self.grid[y][x] = ch
+    
+    def blit(self, x: int, y: int, text: str):
+        """Place a multi-char string horizontally starting at (x, y)."""
+        for i, c in enumerate(text):
+            self.put(x + i, y, c)
+    
+    def put_agent(self, x: int, y: int, angle: int):
+        """Place an agent direction arrow at (x, y) using integer direction 0-7."""
+        if 0 <= angle < len(DIRECTION_ARROWS):
+            self.put(x, y, DIRECTION_ARROWS[angle])
+    
+    def to_string(self) -> str:
+        """Convert grid to newline-separated string."""
+        return '\n'.join(''.join(row) for row in self.grid)
+
+
 # Direction constants (0-7, clockwise from East)
 # 0=E(→), 1=NE(↗), 2=N(↑), 3=NW(↖), 4=W(←), 5=SW(↙), 6=S(↓), 7=SE(↘)
 # Integer grid movement - each FORWARD moves exactly 1 cell
@@ -144,7 +206,6 @@ class BaseEnvironment(ABC):
         self._trial_reward = 0.0
         
         # Rendering
-        self._renderer = None
         self._last_observation = None
         
         # Action mapping (can be overridden)
@@ -452,8 +513,8 @@ class BaseEnvironment(ABC):
             ray_offset = (col / max(1, view_width - 1)) - 0.5
             ray_angle = agent_angle - ray_offset * fov
             
-            dist = cast_ray_func(ray_angle)
-            corrected_dist = dist * np.cos(ray_offset * fov)  # Fish-eye correction
+            raw_dist = cast_ray_func(ray_angle)
+            corrected_dist = raw_dist * np.cos(ray_offset * fov)  # Fish-eye correction
             
             if corrected_dist < 0.5:
                 wall_height = view_height
@@ -463,12 +524,12 @@ class BaseEnvironment(ABC):
             wall_top = max(0, horizon - wall_height // 2)
             wall_bottom = min(view_height, horizon + wall_height // 2)
             
-            column_data.append((wall_top, wall_bottom, corrected_dist))
+            column_data.append((wall_top, wall_bottom, corrected_dist, raw_dist))
         
         # Render rows
         for row in range(view_height):
             row_chars = []
-            for col, (wall_top, wall_bottom, dist) in enumerate(column_data):
+            for col, (wall_top, wall_bottom, dist, raw_dist) in enumerate(column_data):
                 if row < wall_top:
                     ceiling_depth = wall_top - row
                     if ceiling_char_override:
@@ -484,9 +545,9 @@ class BaseEnvironment(ABC):
                 else:
                     char = self.wall_char(dist)
                 
-                # Allow overlay customization
+                # Allow overlay customization (raw_dist for depth comparison)
                 if overlay_func:
-                    char = overlay_func(row, col, char, dist, wall_top, wall_bottom)
+                    char = overlay_func(row, col, char, raw_dist, wall_top, wall_bottom)
                 
                 row_chars.append(char)
             
@@ -633,68 +694,6 @@ class BaseEnvironment(ABC):
     def _distance_to(self, x: float, y: float) -> float:
         """Calculate Euclidean distance from agent to a point."""
         return np.sqrt((self.agent.x - x)**2 + (self.agent.y - y)**2)
-
-    def _render_topdown_base(self, img_size: int = 224, 
-                              floor_func=None, 
-                              overlay_func=None) -> np.ndarray:
-        """
-        Shared topdown renderer for grid-based environments.
-        
-        Args:
-            img_size: Output image size (default 224x224)
-            floor_func: Optional function(x, y) -> color for floor tiles
-            overlay_func: Optional function(img, scale, offset) to draw overlays
-            
-        Returns:
-            numpy array of shape (img_size, img_size, 3)
-        """
-        img = np.zeros((img_size, img_size, 3), dtype=np.uint8)
-        img[:] = (50, 50, 50)  # Background
-        
-        if not hasattr(self, 'grid_size'):
-            return img
-            
-        scale = img_size // self.grid_size
-        offset = (img_size - self.grid_size * scale) // 2
-        
-        # Draw floor
-        if hasattr(self, 'valid_positions'):
-            for (x, y) in self.valid_positions:
-                px = offset + x * scale
-                py = offset + (self.grid_size - 1 - y) * scale  # Flip Y
-                if floor_func:
-                    color = floor_func(x, y)
-                else:
-                    color = getattr(self, 'floor_color', (180, 180, 180))
-                if 0 <= px < img_size - scale and 0 <= py < img_size - scale:
-                    img[py:py+scale, px:px+scale] = color
-        
-        # Allow custom overlays (goals, rewards, holes, etc.)
-        if overlay_func:
-            overlay_func(img, scale, offset)
-        
-        # Draw agent
-        if hasattr(self, 'agent'):
-            ax = offset + self.agent.x * scale + scale // 2
-            ay = offset + (self.grid_size - 1 - self.agent.y) * scale + scale // 2
-            agent_color = (255, 100, 100)
-            self._draw_disk(img, ax, ay, scale // 2 - 1, agent_color, img_size)
-            
-            # Direction indicator
-            if isinstance(self.agent.angle, int):
-                from environments.base_env import DIR_VECTORS
-                dir_dx, dir_dy = DIR_VECTORS[self.agent.angle]
-                agent_rad = self.agent.angle * (np.pi / 4)
-            else:
-                dir_dx = np.cos(self.agent.angle)
-                dir_dy = np.sin(self.agent.angle)
-                agent_rad = self.agent.angle
-            
-            nose_x = int(ax + dir_dx * (scale // 2 + 2))
-            nose_y = int(ay - dir_dy * (scale // 2 + 2))  # Flip Y
-            self._draw_disk(img, nose_x, nose_y, 3, (200, 50, 50), img_size)
-        
-        return img
 
     # ==================== Shared FPV Rendering Helpers ====================
 
@@ -895,6 +894,13 @@ class BaseEnvironment(ABC):
         full_height = len(lines)
         full_width = max(len(line) for line in lines) if lines else 1
         
+        # Adapt viewport to maze size to avoid excessive fog on small maps
+        view_width = min(view_width, full_width + 4)
+        view_height = min(view_height, full_height + 4)
+        # Ensure odd widths for centering
+        if view_width % 2 == 0:
+            view_width += 1
+        
         # Pad lines to uniform width  
         padded = [line.ljust(full_width) for line in lines]
         
@@ -1056,26 +1062,6 @@ class BaseEnvironment(ABC):
                 return ' '
             
             return padded[r][c]
-        
-        def is_in_fov(vx: int, vy: int) -> bool:
-            """Check if view position is within field of view (FOV centered on UP)."""
-            dx = vx - half_w
-            dy = vy - agent_view_y
-            
-            if dx == 0 and dy == 0:
-                return True
-            
-            # Angle from agent position, with UP being π/2
-            target_angle = np.arctan2(-dy, dx)  # -dy because UP is forward
-            diff = target_angle - np.pi / 2
-            
-            # Normalize to [-π, π]
-            while diff > np.pi:
-                diff -= 2 * np.pi
-            while diff < -np.pi:
-                diff += 2 * np.pi
-            
-            return abs(diff) <= fov_half
         
         # Create visibility map using ray casting
         visible = [[False for _ in range(view_width)] for _ in range(view_height)]

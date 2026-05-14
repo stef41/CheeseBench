@@ -6,9 +6,8 @@ and choose the non-matching stimulus after a delay.
 """
 
 import numpy as np
-from typing import Tuple, Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List
 from dataclasses import dataclass
-import math
 
 from .base_env import (
     BaseEnvironment, 
@@ -16,8 +15,7 @@ from .base_env import (
     ViewMode, 
     Action,
     AgentState,
-    SessionState,
-    TrialResult
+    AsciiCanvas,
 )
 
 
@@ -73,9 +71,6 @@ class DNMSTask(BaseEnvironment):
         self.num_stimuli = config.extra_params.get('num_stimuli', 2)
         self.stimulus_type = config.extra_params.get('stimulus_type', 'visual')
         
-        # Stimulus properties
-        self.stimuli = self._create_stimuli()
-        
         # Trial state
         self.phase = 'sample'  # 'sample', 'delay', 'choice', 'response'
         self.sample_stimulus = 0
@@ -108,6 +103,9 @@ class DNMSTask(BaseEnvironment):
         
         self.stimulus_shapes = ['circle', 'square', 'triangle', 'diamond']
         
+        # Stimulus properties (must be after stimulus_colors/shapes are defined)
+        self.stimuli = self._create_stimuli()
+        
         # Choice position
         self.choice_position = 0  # 0 = center, -1 = left, 1 = right
     
@@ -117,7 +115,7 @@ class DNMSTask(BaseEnvironment):
         for i in range(max(4, self.num_stimuli)):
             stimuli.append({
                 'id': i,
-                'color_idx': i % len(self.stimulus_colors) if hasattr(self, 'stimulus_colors') else i,
+                'color_idx': i % len(self.stimulus_colors),
                 'shape_idx': i % 4,
             })
         return stimuli
@@ -264,69 +262,56 @@ class DNMSTask(BaseEnvironment):
     
     def _render_ascii_2d(self, width: int = 40, height: int = 20) -> str:
         """Render ASCII view with phase indicator."""
-        grid = [[' ' for _ in range(width)] for _ in range(height)]
+        c = AsciiCanvas(width, height)
         
-        # Border (all #)
-        for x in range(width):
-            grid[0][x] = '#'
-            grid[height-1][x] = '#'
-        for y in range(height):
-            grid[y][0] = '#'
-            grid[y][width-1] = '#'
+        # Border
+        c.hline(0, width - 1, 0, '#')
+        c.hline(0, width - 1, height - 1, '#')
+        c.vline(0, 0, height - 1, '#')
+        c.vline(width - 1, 0, height - 1, '#')
         
         center_y = height // 2
         center_x = width // 2
         
-        # Use visual symbols only - no text
         symbols = ['●', '■', '▲', '◆']
         
         if self.phase == 'sample':
-            # Show sample stimulus as large symbol
             stim = symbols[self.sample_stimulus % len(symbols)]
-            # Draw stimulus pattern
             for dy in [-1, 0, 1]:
                 for dx in [-2, -1, 0, 1, 2]:
                     if 0 < center_x + dx < width - 1 and 0 < center_y + dy < height - 1:
-                        grid[center_y + dy][center_x + dx] = stim
+                        c.put(center_x + dx, center_y + dy, stim)
             
         elif self.phase == 'delay':
-            # Blank screen during delay (realistic - no visual timer)
-            # Animals wait in empty chamber during retention interval
-            pass  # Screen stays empty
+            pass
             
         elif self.phase == 'choice':
             left_x = width // 4
             right_x = 3 * width // 4
             
-            # Show both stimuli
             left_stim = symbols[self.choice_stimuli[0] % len(symbols)]
             right_stim = symbols[self.choice_stimuli[1] % len(symbols)]
             
-            # Draw left stimulus
             for dy in [-1, 0, 1]:
-                grid[center_y + dy][left_x] = left_stim
+                c.put(left_x, center_y + dy, left_stim)
+                c.put(right_x, center_y + dy, right_stim)
             
-            # Draw right stimulus
-            for dy in [-1, 0, 1]:
-                grid[center_y + dy][right_x] = right_stim
-            
-            # No hint - agent must remember sample and choose non-matching
-            # (Real DNMS task tests working memory)
-            
-            # Show selection with arrow
+            # Show selection pointer under chosen stimulus (use ▼ to avoid FPV agent detection)
             if self.choice_position == 0:
-                grid[center_y + 2][left_x] = '↑'
+                c.put(left_x, center_y + 2, '▼')
             else:
-                grid[center_y + 2][right_x] = '↑'
+                c.put(right_x, center_y + 2, '▼')
         
         elif self.phase == 'response':
-            # Show result with symbol
             if self._trial_reward > 0:
-                grid[center_y][center_x] = '*'  # Reward
+                c.put(center_x, center_y, '*')
             else:
-                grid[center_y][center_x] = 'X'  # Wrong
+                c.put(center_x, center_y, 'X')
         
-        return '\n'.join(''.join(row) for row in grid)
+        # Agent marker at bottom center (all phases)
+        c.put(center_x, height - 2, '↑')
+        
+        return c.to_string()
     
     def _render_ascii_3d(self, width: int = 60, height: int = 28) -> str:
         """Render ASCII 3D view with raycasting-based perspective."""
