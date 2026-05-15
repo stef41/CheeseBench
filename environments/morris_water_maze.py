@@ -547,7 +547,7 @@ def create_morris_water_maze(
     trials_per_session: int = 3,
     platform_quadrant: int = 0,
     view_mode: ViewMode = ViewMode.FPV_3D,
-    source_pmc: str = "PMC12765891",
+    source_pmc: str = "PMC2895266",
     source_quote: str = "Training was conducted for five consecutive days, consisting of three trials per day."
 ) -> MorrisWaterMaze:
     """Factory function to create Morris Water Maze with verified parameters."""
