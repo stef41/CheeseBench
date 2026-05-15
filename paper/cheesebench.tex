@@ -31,7 +31,7 @@
 We introduce \textsc{CheeseBench}, a benchmark that evaluates large language models (LLMs) on nine classical behavioral neuroscience paradigms (Morris water maze, Barnes maze, T-maze, radial arm maze, star maze, operant chamber, shuttle box, conditioned place preference, and delayed non-match to sample), spanning six cognitive dimensions.
 Each task is grounded in peer-reviewed rodent protocols with approximate animal baselines.
 The agent receives a unified system prompt with no task-specific instructions and must discover goals purely from ASCII text observations and reward signals, much like a rodent placed into an unfamiliar apparatus.
-We evaluate thirteen LLMs spanning six open-weight models (3B--72B parameters) and seven frontier proprietary models (Claude Haiku/Sonnet/Opus~4.5--4.7, GPT-4.1, GPT-5.2, GPT-5.2-Codex) and compare against both a random baseline and a graph-based reinforcement learning agent.
+We evaluate thirteen LLMs spanning six open-weight models (3B--72B parameters) and seven frontier proprietary models (Claude Haiku~4.5, Sonnet~4.6, Opus~4.6--4.7, GPT-4.1, GPT-5.2, GPT-5.2-Codex) and compare against both a random baseline and a graph-based reinforcement learning agent.
 The best open-weight model (Qwen2.5-VL-7B) reaches 68.0\% average success on ASCII input versus 32.1\% for random agents and 78.9\% for approximate rodent baselines, while the best frontier model (Claude Opus~4.7) reaches 86.7\%, the first configuration in our evaluation to match or exceed the rodent reference.
 We find that (1)~scaling beyond 7B yields diminishing returns within the open-weight Qwen2.5-VL family, (2)~longer context history degrades performance, (3)~chain-of-thought prompting hurts rather than helps, (4)~a vision-language architecture provides an advantage at 7B but hurts at 32B, and (5)~the working-memory bottleneck (Radial Arm Maze) that is nearly unsolved by open-weight models is largely closed by frontier models.
 Because the same model's performance ranges from 20\% to 57\% depending on interface parameters alone, these results characterize the agent-plus-interface system, not the model in isolation.
@@ -299,12 +299,12 @@ At 32B, the pattern reverses: the VLM (32.6\%) underperforms text-only (43.0\%) 
 \subsection{Frontier Models}
 \label{sec:frontier}
 
-We additionally evaluate seven frontier proprietary models accessed through a uniform OpenAI-compatible interface (Claude Haiku/Sonnet/Opus~4.5--4.7, GPT-4.1, GPT-5.2, GPT-5.2-Codex), under the same unified system prompt and same three view modes.
+We additionally evaluate seven frontier proprietary models accessed through a uniform OpenAI-compatible interface (Claude Haiku~4.5, Sonnet~4.6, Opus~4.6--4.7, GPT-4.1, GPT-5.2, GPT-5.2-Codex), under the same unified system prompt and same three view modes.
 \Cref{tab:frontier} summarizes per-environment success rates.
 
 Three findings stand out:
 \textbf{(1)~Frontier models close the rodent gap.}
-Claude Opus~4.7 reaches 86.7\% overall, the first configuration in our evaluation to match or exceed the 78.9\% rodent reference average; GPT-5.2-Codex (82.2\%), Claude Opus~4.6 (82.2\%), and Claude Sonnet~4.6 (81.1\%) also exceed the rodent average. The best open-weight model trails by 14--19 percentage points.
+Claude Opus~4.7 reaches 86.7\% overall, the first configuration in our evaluation to match or exceed the 78.9\% rodent reference average; GPT-5.2-Codex (82.2\%), Claude Opus~4.6 (82.2\%), and Claude Sonnet~4.6 (81.1\%) also exceed the rodent average. The best open-weight model trails by 13--19 percentage points.
 \textbf{(2)~Working memory becomes solvable.}
 The Radial Arm Maze, nearly unsolved by open-weight models (best 10\%), is solved at 100\% by Claude Opus~4.7 and 90\% by Claude Opus~4.6 --- evidence that the within-trial state-tracking bottleneck is not architectural to transformers but is closable by sufficiently capable post-trained models.
 GPT-4.1 is a striking counter-example: it achieves 0\% on RAM and exhibits a strong action bias (predominantly emitting \texttt{STAY}) that inflates its call count by roughly 3$\times$ relative to peers.
@@ -407,7 +407,7 @@ Again, this may reflect the specific prompting interface as much as an inherent 
 \emph{Scaling saturation.}
 The plateau beyond 7B \emph{within the open-weight Qwen2.5-VL family} contrasts with typical NLP benchmark scaling.
 One interpretation is that for procedural behavioral tasks, the bottleneck is not world knowledge or language understanding but the ability to plan under uncertainty given the information available in the prompt.
-The frontier results suggest that scale alone is not the limiting factor either: capability gains from frontier-lab post-training pipelines, not parameter count, appear to drive the additional 14--19 percentage points over the best open-weight model.
+The frontier results suggest that scale alone is not the limiting factor either: capability gains from frontier-lab post-training pipelines, not parameter count, appear to drive the additional 13--19 percentage points over the best open-weight model.
 
 \paragraph{Agent-Plus-Interface Evaluation.}
 Since observed performance is tightly coupled to interface design (history length, action batching, scratchpad size, prompt variant), CheeseBench should be understood as evaluating the \emph{agent-plus-interface system}, not raw latent model cognition.
