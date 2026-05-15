@@ -178,6 +178,57 @@
       ]
     },
     {
+      "model": "GPT-5.2 Codex",
+      "model_id": "gpt-5.2-codex",
+      "modality": "text (ASCII)",
+      "source": "GitHub Copilot CLI",
+      "overall": 0.8222222222222223,
+      "per_environment": {
+        "MorrisWaterMaze": {
+          "success_rate": 1.0,
+          "best_view_mode": "ASCII_2D"
+        },
+        "TMaze": {
+          "success_rate": 1.0,
+          "best_view_mode": "ASCII_2D"
+        },
+        "BarnesMaze": {
+          "success_rate": 1.0,
+          "best_view_mode": "ASCII_2D"
+        },
+        "RadialArmMaze": {
+          "success_rate": 0.5,
+          "best_view_mode": "ASCII_2D"
+        },
+        "OperantChamber": {
+          "success_rate": 1.0,
+          "best_view_mode": "ASCII_2D"
+        },
+        "ShuttleBox": {
+          "success_rate": 0.2,
+          "best_view_mode": "ASCII_2D_FPV"
+        },
+        "PlacePreference": {
+          "success_rate": 1.0,
+          "best_view_mode": "ASCII_2D"
+        },
+        "StarMaze": {
+          "success_rate": 1.0,
+          "best_view_mode": "ASCII_2D"
+        },
+        "DNMSTask": {
+          "success_rate": 0.7,
+          "best_view_mode": "ASCII_2D"
+        }
+      },
+      "total_trials": 270,
+      "view_modes": [
+        "ASCII_2D",
+        "ASCII_2D_FPV",
+        "ASCII_3D"
+      ]
+    },
+    {
       "model": "Claude Opus 4.6",
       "model_id": "claude-opus-4.6",
       "modality": "text (ASCII)",
@@ -269,6 +320,57 @@
         },
         "DNMSTask": {
           "success_rate": 0.7,
+          "best_view_mode": "ASCII_2D"
+        }
+      },
+      "total_trials": 270,
+      "view_modes": [
+        "ASCII_2D",
+        "ASCII_2D_FPV",
+        "ASCII_3D"
+      ]
+    },
+    {
+      "model": "GPT-5.2",
+      "model_id": "gpt-5.2",
+      "modality": "text (ASCII)",
+      "source": "GitHub Copilot CLI",
+      "overall": 0.7555555555555554,
+      "per_environment": {
+        "MorrisWaterMaze": {
+          "success_rate": 1.0,
+          "best_view_mode": "ASCII_2D"
+        },
+        "TMaze": {
+          "success_rate": 1.0,
+          "best_view_mode": "ASCII_2D"
+        },
+        "BarnesMaze": {
+          "success_rate": 1.0,
+          "best_view_mode": "ASCII_2D"
+        },
+        "RadialArmMaze": {
+          "success_rate": 0.1,
+          "best_view_mode": "ASCII_2D"
+        },
+        "OperantChamber": {
+          "success_rate": 1.0,
+          "best_view_mode": "ASCII_2D_FPV"
+        },
+        "ShuttleBox": {
+          "success_rate": 0.1,
+          "best_view_mode": "ASCII_2D"
+        },
+        "PlacePreference": {
+          "success_rate": 1.0,
+          "best_view_mode": "ASCII_2D"
+        },
+        "StarMaze": {
+          "success_rate": 1.0,
+          "best_view_mode": "ASCII_2D"
+        },
+        "DNMSTask": {
+          "success_rate": 0.6,
           "best_view_mode": "ASCII_2D"
         }
       },
@@ -484,6 +586,57 @@
         "ASCII_2D_FPV",
         "ASCII_3D",
         "TOPDOWN_2D"
+      ]
+    },
+    {
+      "model": "GPT-4.1",
+      "model_id": "gpt-4.1",
+      "modality": "text (ASCII)",
+      "source": "GitHub Copilot CLI",
+      "overall": 0.5555666666666667,
+      "per_environment": {
+        "MorrisWaterMaze": {
+          "success_rate": 0.3333,
+          "best_view_mode": "ASCII_2D"
+        },
+        "TMaze": {
+          "success_rate": 0.6667,
+          "best_view_mode": "ASCII_2D"
+        },
+        "BarnesMaze": {
+          "success_rate": 0.6667,
+          "best_view_mode": "ASCII_2D"
+        },
+        "RadialArmMaze": {
+          "success_rate": 0.0,
+          "best_view_mode": "ASCII_2D"
+        },
+        "OperantChamber": {
+          "success_rate": 1.0,
+          "best_view_mode": "ASCII_2D_FPV"
+        },
+        "ShuttleBox": {
+          "success_rate": 0.3333,
+          "best_view_mode": "ASCII_2D"
+        },
+        "PlacePreference": {
+          "success_rate": 0.6667,
+          "best_view_mode": "ASCII_2D"
+        },
+        "StarMaze": {
+          "success_rate": 0.6667,
+          "best_view_mode": "ASCII_2D"
+        },
+        "DNMSTask": {
+          "success_rate": 0.6667,
+          "best_view_mode": "ASCII_2D"
+        }
+      },
+      "total_trials": 81,
+      "view_modes": [
+        "ASCII_2D",
+        "ASCII_2D_FPV",
+        "ASCII_3D"
       ]
     },
     {
