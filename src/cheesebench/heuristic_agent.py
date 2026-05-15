@@ -4,7 +4,7 @@ Parses ASCII_2D observations, finds goal markers, and uses BFS navigation.
 Falls back to systematic exploration when no goal is visible.
 """
 from collections import deque
-from environments import Action
+from .environments import Action
 
 
 GOAL_CHARS = {'G', 'P', '*', '+', 'E'}

@@ -26,7 +26,7 @@ from matplotlib.gridspec import GridSpec
 from pathlib import Path
 from typing import Dict, List
 
-from analysis import (
+from .analysis import (
     COGNITIVE_DIMENSIONS,
     ENV_COGNITIVE_MAP,
     ANIMAL_BASELINES,

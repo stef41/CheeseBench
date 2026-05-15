@@ -7,7 +7,7 @@ import numpy as np
 from typing import Dict, Tuple, List, Set
 from collections import defaultdict, deque
 
-from environments import Action
+from .environments import Action
 
 
 def _hash_obs(obs: str) -> int:

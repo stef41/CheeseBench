@@ -19,7 +19,7 @@ import tty
 import select
 
 sys.path.insert(0, '.')
-from environments import (
+from .environments import (
     MorrisWaterMaze, TMaze, BarnesMaze, RadialArmMaze,
     OperantChamber, ShuttleBox, PlacePreference, StarMaze, DNMSTask,
     Action, ViewMode

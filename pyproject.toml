@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cheesebench"
-version = "0.1.2"
+version = "0.2.0"
 description = "CheeseBench: An LLM benchmark over 9 rodent behavioral neuroscience paradigms"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -52,27 +52,18 @@ Repository = "https://github.com/stef41/CheeseBench"
 Issues = "https://github.com/stef41/CheeseBench/issues"
 
 [project.scripts]
-cheesebench = "benchmark:main"
+cheesebench = "cheesebench.benchmark:main"
 
 [tool.setuptools]
 include-package-data = true
-py-modules = [
-    "benchmark",
-    "config",
-    "analysis",
-    "error_analysis",
-    "stat_tests",
-    "visualize",
-    "heuristic_agent",
-    "cscgql_agent",
-    "model_server",
-    "play",
-]
+
+[tool.setuptools.package-dir]
+"" = "src"
 
 [tool.setuptools.package-data]
-environments = ["task_definitions.json"]
+"cheesebench.environments" = ["task_definitions.json"]
 
 [tool.setuptools.packages.find]
-include = ["environments*"]
-exclude = ["results*", "results_old*", "paper*", "demo_gifs*", "inspection_videos*", "tests*"]
+where = ["src"]
+include = ["cheesebench*"]
 

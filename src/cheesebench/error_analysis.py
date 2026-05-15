@@ -22,7 +22,7 @@ from typing import Dict, List, Tuple
 from collections import defaultdict, Counter
 from dataclasses import dataclass, field
 
-from analysis import EnvResult, TrialMetrics, ANIMAL_BASELINES
+from .analysis import EnvResult, TrialMetrics, ANIMAL_BASELINES
 
 
 # ============================================================================

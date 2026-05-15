@@ -28,12 +28,12 @@ from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, '.')
-from environments import (
+from .environments import (
     MorrisWaterMaze, TMaze, BarnesMaze, RadialArmMaze,
     OperantChamber, ShuttleBox, PlacePreference, StarMaze, DNMSTask,
     Action, ViewMode
 )
-from config import BenchmarkConfig
+from .config import BenchmarkConfig
 
 # =============================================================================
 # CONFIGURATION — loaded from config.py, overridable via CLI

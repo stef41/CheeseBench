@@ -13,7 +13,7 @@ from typing import Dict, List, Tuple, Optional
 from collections import defaultdict
 from dataclasses import dataclass
 
-from analysis import EnvResult, ANIMAL_BASELINES, COGNITIVE_DIMENSIONS, ENV_COGNITIVE_MAP
+from .analysis import EnvResult, ANIMAL_BASELINES, COGNITIVE_DIMENSIONS, ENV_COGNITIVE_MAP
 
 
 # ============================================================================
