@@ -4,13 +4,13 @@ CheeseBench — Full Experiment Runner for NeurIPS Paper
 
 Runs ALL experiments needed for a competitive paper submission:
 
-  Experiment 1: Multi-model benchmark (6+ VLMs across 9 envs × 3 views)
+  Experiment 1: Multi-model benchmark (6+ models across 9 envs × 3 views)
   Experiment 2: Scaling analysis (3B → 72B, same family)
   Experiment 3: Ablation — prompt variants
   Experiment 4: Ablation — history length
   Experiment 5: Ablation — actions per call
   Experiment 6: Ablation — text-only vs vision (architecture ablation)
-  Experiment 7: Image mode — TOPDOWN_2D view across all VLMs
+  Experiment 7: Image mode — TOPDOWN_2D view across all open-weight VLMs
 
 Each experiment launches a vLLM server, runs the benchmark, saves results,
 then shuts down the server before moving to the next model.
@@ -169,7 +169,7 @@ def exp_multi_model(num_trials: int = 20):
     print("EXPERIMENT 1: Multi-Model Benchmark")
     print("=" * 60)
 
-    # Core VLMs to benchmark
+    # Core models to benchmark
     model_names = [
         "qwen2.5vl-3b",
         "qwen2.5vl-7b",
@@ -606,13 +606,13 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Experiments:
-  multi_model      6+ VLMs across all environments (main table)
+  multi_model      6+ models across all environments (main table)
   scaling          Qwen2.5-VL 3B→72B scaling law
   ablation_prompt  4 prompt format variants
   ablation_history 4 history length settings
   ablation_actions 4 action budget settings
   ablation_vision  VLM vs text-only at same scale
-  image_mode       TOPDOWN_2D image view across all VLMs
+  image_mode       TOPDOWN_2D image view across all open-weight VLMs
 
 Examples:
   python run_experiments.py --all                    # Full paper

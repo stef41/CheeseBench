@@ -358,7 +358,7 @@ def load_verified_environments(
     """
     Convenience function to load all verified environments.
     
-    Returns list of environment instances ready for VLM evaluation.
+    Returns list of environment instances ready for LLM evaluation.
     """
     registry = EnvironmentRegistry(data_path)
     

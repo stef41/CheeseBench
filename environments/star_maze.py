@@ -1,5 +1,5 @@
 """
-Star Maze environment for VLM evaluation.
+Star Maze environment for LLM evaluation.
 
 Complex multi-arm maze for spatial navigation and shortcut learning.
 Covers Starmaze, Sunburst maze, and similar complex branching mazes.

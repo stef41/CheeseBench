@@ -1,5 +1,5 @@
 """
-T-Maze environment for VLM evaluation.
+T-Maze environment for LLM evaluation.
 
 T-shaped maze for testing spatial working memory and navigation.
 Agent must choose correct arm based on task rules.

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-CheeseBench — VLM Benchmark for Behavioral Neuroscience Environments
+CheeseBench — LLM Benchmark for Behavioral Neuroscience Environments
 
 Unified experimental protocol — identical prompt for ALL tasks.
-No task-specific hints. The VLM must infer goals from observation only.
+No task-specific hints. The model must infer goals from observation only.
 
 Usage:
     python benchmark.py                        # Run with defaults
@@ -244,7 +244,7 @@ class RandomAgent:
 
 
 class LLMAgent:
-    """VLM agent with unified protocol."""
+    """Model agent with unified protocol."""
 
     _tokenizer_cache = {}  # class-level cache: model_id → tokenizer
 
@@ -948,7 +948,7 @@ def print_summary(results: Dict):
 # =============================================================================
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="CheeseBench — VLM Benchmark for Behavioral Neuroscience")
+    parser = argparse.ArgumentParser(description="CheeseBench — LLM Benchmark for Behavioral Neuroscience")
     parser.add_argument("--model", type=str, default=None, help="Model name (default: from config/env)")
     parser.add_argument("--num-trials", type=int, default=None,
                         help="Override trials per env (default: per-environment protocol)")
@@ -1004,7 +1004,7 @@ def main():
         CFG.verbose = False
 
     print("=" * 60)
-    print("CHEESEBENCH — VLM Benchmark for Behavioral Neuroscience")
+    print("CHEESEBENCH — LLM Benchmark for Behavioral Neuroscience")
     print("=" * 60)
     print(f"Model:  {CFG.model}")
     print(f"Trials: per-environment (default {CFG.num_trials})")

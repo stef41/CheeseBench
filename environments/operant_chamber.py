@@ -1,5 +1,5 @@
 """
-Operant Chamber (Skinner Box) environment for VLM evaluation.
+Operant Chamber (Skinner Box) environment for LLM evaluation.
 
 Lever press / nose poke task with various reinforcement schedules.
 Tests instrumental conditioning and learning.

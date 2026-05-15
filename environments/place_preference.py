@@ -1,5 +1,5 @@
 """
-Conditioned Place Preference (CPP) environment for VLM evaluation.
+Conditioned Place Preference (CPP) environment for LLM evaluation.
 
 Two-chamber apparatus where agent learns to associate one chamber with reward.
 Tests reward learning and preference formation.

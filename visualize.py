@@ -3,8 +3,8 @@
 CheeseBench Visualization Pipeline
 
 Generates publication-quality figures from benchmark results:
-1. Cognitive radar chart (VLM vs animal baselines)
-2. Per-environment learning curves (VLM overlaid on rodent curves)
+1. Cognitive radar chart (model vs animal baselines)
+2. Per-environment learning curves (model overlaid on rodent curves)
 3. View mode comparison heatmap
 4. Strategy analysis (action distributions, entropy)
 
@@ -120,7 +120,7 @@ def plot_cognitive_radar(
     ax.set_yticks([0.2, 0.4, 0.6, 0.8, 1.0])
     ax.set_yticklabels(["20%", "40%", "60%", "80%", "100%"], size=8)
     ax.legend(loc="upper right", bbox_to_anchor=(1.3, 1.1), fontsize=10)
-    ax.set_title("Cognitive Profile: VLM vs. Rodent Baselines", pad=20, fontsize=13, fontweight="bold")
+    ax.set_title("Cognitive Profile: Model vs. Rodent Baselines", pad=20, fontsize=13, fontweight="bold")
 
     fig.savefig(output_path / "cognitive_radar.pdf")
     fig.savefig(output_path / "cognitive_radar.png")
@@ -137,7 +137,7 @@ def plot_learning_curves(
     output_path: Path,
 ):
     """
-    Per-environment learning curves: VLM block success rate vs animal baseline.
+    Per-environment learning curves: model block success rate vs animal baseline.
     """
     by_agent = {}
     for r in results:
@@ -190,7 +190,7 @@ def plot_learning_curves(
     for idx in range(n_envs, len(axes)):
         axes[idx].set_visible(False)
 
-    fig.suptitle("Learning Curves: VLM vs. Rodent Baselines", fontsize=14, fontweight="bold", y=1.02)
+    fig.suptitle("Learning Curves: Model vs. Rodent Baselines", fontsize=14, fontweight="bold", y=1.02)
     fig.tight_layout()
     fig.savefig(output_path / "learning_curves.pdf")
     fig.savefig(output_path / "learning_curves.png")
@@ -311,7 +311,7 @@ def plot_strategy_analysis(
     ax2.axhline(y=2.0, ls="--", color="#999", lw=0.8, label="Uniform (4 actions)")
     ax2.legend(fontsize=8)
 
-    fig.suptitle("VLM Strategy Analysis", fontsize=14, fontweight="bold", y=1.02)
+    fig.suptitle("Model Strategy Analysis", fontsize=14, fontweight="bold", y=1.02)
     fig.tight_layout()
     fig.savefig(output_path / "strategy_analysis.pdf")
     fig.savefig(output_path / "strategy_analysis.png")

@@ -1,5 +1,5 @@
 """
-Virtual Environments for VLM Evaluation
+Virtual Environments for LLM Evaluation
 
 Based on verified animal learning protocols from neuroscience literature.
 

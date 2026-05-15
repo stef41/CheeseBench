@@ -1,5 +1,5 @@
 """
-Radial Arm Maze environment for VLM evaluation.
+Radial Arm Maze environment for LLM evaluation.
 
 Central platform with multiple arms radiating outward.
 Tests working memory and reference memory.

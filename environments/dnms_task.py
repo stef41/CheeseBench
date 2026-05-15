@@ -1,5 +1,5 @@
 """
-Delayed Non-Match-to-Sample (DNMS) Working Memory environment for VLM evaluation.
+Delayed Non-Match-to-Sample (DNMS) Working Memory environment for LLM evaluation.
 
 Tests working memory by requiring agent to remember a sample stimulus
 and choose the non-matching stimulus after a delay.

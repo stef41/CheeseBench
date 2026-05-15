@@ -1,5 +1,5 @@
 """
-Shuttle Box environment for VLM evaluation.
+Shuttle Box environment for LLM evaluation.
 
 Two-chamber apparatus for fear conditioning and active/passive avoidance tasks.
 Agent learns to shuttle between chambers to avoid aversive stimuli.

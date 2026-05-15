@@ -1,5 +1,5 @@
 """
-Morris Water Maze environment for VLM evaluation.
+Morris Water Maze environment for LLM evaluation.
 
 Based on verified protocols from neuroscience literature.
 Animal must navigate circular pool to find hidden escape platform.

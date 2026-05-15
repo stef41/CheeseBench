@@ -1,5 +1,5 @@
 """
-Base environment class for VLM evaluation.
+Base environment class for LLM evaluation.
 
 Interface:
     next_view, reward = env.step(action)
@@ -22,7 +22,7 @@ import time
 
 class ViewMode(Enum):
     """Observation format options."""
-    FPV_3D = auto()         # First-person 3D view (default for VLM)
+    FPV_3D = auto()         # First-person 3D view (default for image-based models)
     TOPDOWN_2D = auto()     # Top-down 2D view
     ASCII_2D = auto()       # ASCII top-down (full map)
     ASCII_3D = auto()       # ASCII pseudo-3D FPV
@@ -179,7 +179,7 @@ class EnvironmentConfig:
 
 class BaseEnvironment(ABC):
     """
-    Base class for all VLM evaluation environments.
+    Base class for all LLM evaluation environments.
     
     Key principle: The environment controls everything internally.
     The agent only sees observations and takes actions.
@@ -286,7 +286,7 @@ class BaseEnvironment(ABC):
         """
         Take action, return (next_observation, reward).
         
-        This is the main interface for VLM agents.
+        This is the main interface for model agents.
         The environment internally handles trial management.
         """
         # Parse action
@@ -1553,7 +1553,7 @@ class BaseEnvironment(ABC):
     # ==================== Utility ====================
     
     def _parse_action_string(self, action_str: str) -> Action:
-        """Parse action from string (for VLM text output)."""
+        """Parse action from string (for model text output)."""
         action_str = action_str.lower().strip()
         
         mappings = {
@@ -1584,7 +1584,7 @@ class BaseEnvironment(ABC):
         return {}
     
     def parse_action(self, action_str: str) -> Action:
-        """Public interface to parse action from string (for VLM text output)."""
+        """Public interface to parse action from string (for model text output)."""
         return self._parse_action_string(action_str)
     
     def get_info(self) -> Dict[str, Any]:
@@ -1607,12 +1607,12 @@ class BaseEnvironment(ABC):
         return self._get_observation()
     
     def get_action_prompt(self) -> str:
-        """Get prompt describing available actions (for VLM)."""
+        """Get prompt describing available actions (for the model)."""
         actions = [f"- {self.action_names[a]}" for a in self.valid_actions]
         return "Available actions:\n" + "\n".join(actions)
     
     def get_task_description(self) -> str:
-        """Get task description (for VLM context)."""
+        """Get task description (for model context)."""
         return f"""Task: {self.config.name}
 Type: {self.config.task_type}
 Objective: {self.config.success_criterion}

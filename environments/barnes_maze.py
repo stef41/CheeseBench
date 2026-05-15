@@ -1,5 +1,5 @@
 """
-Barnes Maze environment for VLM evaluation.
+Barnes Maze environment for LLM evaluation.
 
 Circular platform with multiple holes, only one leads to escape box.
 Tests spatial learning and memory using visual cues.
