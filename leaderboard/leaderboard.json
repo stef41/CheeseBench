@@ -741,8 +741,7 @@
       "overall_by_view": {
         "ASCII_2D": 0.5264777777777777,
         "ASCII_2D_FPV": 0.3620333333333334,
-        "ASCII_3D": 0.5337999999999998,
-        "TOPDOWN_2D": 0.4590777777777778
+        "ASCII_3D": 0.5337999999999998
       },
       "per_environment": {
         "MorrisWaterMaze": {
@@ -751,8 +750,7 @@
           "view_mode_scores": {
             "ASCII_2D": 0.3,
             "ASCII_2D_FPV": 0.95,
-            "ASCII_3D": 0.7,
-            "TOPDOWN_2D": 0.55
+            "ASCII_3D": 0.7
           }
         },
         "TMaze": {
@@ -761,8 +759,7 @@
           "view_mode_scores": {
             "ASCII_2D": 0.7,
             "ASCII_2D_FPV": 0.225,
-            "ASCII_3D": 0.875,
-            "TOPDOWN_2D": 0.625
+            "ASCII_3D": 0.875
           }
         },
         "BarnesMaze": {
@@ -771,8 +768,7 @@
           "view_mode_scores": {
             "ASCII_2D": 0.75,
             "ASCII_2D_FPV": 0.25,
-            "ASCII_3D": 0.4375,
-            "TOPDOWN_2D": 0.375
+            "ASCII_3D": 0.4375
           }
         },
         "RadialArmMaze": {
@@ -781,8 +777,7 @@
           "view_mode_scores": {
             "ASCII_2D": 0.05,
             "ASCII_2D_FPV": 0.1,
-            "ASCII_3D": 0.05,
-            "TOPDOWN_2D": 0.0
+            "ASCII_3D": 0.05
           }
         },
         "OperantChamber": {
@@ -791,8 +786,7 @@
           "view_mode_scores": {
             "ASCII_2D": 0.84,
             "ASCII_2D_FPV": 0.28,
-            "ASCII_3D": 0.84,
-            "TOPDOWN_2D": 0.84
+            "ASCII_3D": 0.84
           }
         },
         "ShuttleBox": {
@@ -801,8 +795,7 @@
           "view_mode_scores": {
             "ASCII_2D": 0.625,
             "ASCII_2D_FPV": 0.8,
-            "ASCII_3D": 0.3,
-            "TOPDOWN_2D": 0.425
+            "ASCII_3D": 0.3
           }
         },
         "PlacePreference": {
@@ -811,8 +804,7 @@
           "view_mode_scores": {
             "ASCII_2D": 0.5833,
             "ASCII_2D_FPV": 0.0833,
-            "ASCII_3D": 0.9167,
-            "TOPDOWN_2D": 0.6667
+            "ASCII_3D": 0.9167
           }
         },
         "StarMaze": {
@@ -821,8 +813,7 @@
           "view_mode_scores": {
             "ASCII_2D": 0.35,
             "ASCII_2D_FPV": 0.05,
-            "ASCII_3D": 0.175,
-            "TOPDOWN_2D": 0.2
+            "ASCII_3D": 0.175
           }
         },
         "DNMSTask": {
@@ -831,17 +822,15 @@
           "view_mode_scores": {
             "ASCII_2D": 0.54,
             "ASCII_2D_FPV": 0.52,
-            "ASCII_3D": 0.51,
-            "TOPDOWN_2D": 0.45
+            "ASCII_3D": 0.51
           }
         }
       },
-      "total_trials": 1352,
+      "total_trials": 1014,
       "view_modes": [
         "ASCII_2D",
         "ASCII_2D_FPV",
-        "ASCII_3D",
-        "TOPDOWN_2D"
+        "ASCII_3D"
       ]
     },
     {
@@ -849,12 +838,11 @@
       "model_id": "qwen2.5vl-32b",
       "modality": "text (ASCII)",
       "source": "open-weights/vLLM",
-      "overall": 0.674911111111111,
+      "overall": 0.6471333333333332,
       "overall_by_view": {
         "ASCII_2D": 0.4800888888888889,
         "ASCII_2D_FPV": 0.5351888888888889,
-        "ASCII_3D": 0.43472222222222223,
-        "TOPDOWN_2D": 0.4143555555555556
+        "ASCII_3D": 0.43472222222222223
       },
       "per_environment": {
         "MorrisWaterMaze": {
@@ -863,8 +851,7 @@
           "view_mode_scores": {
             "ASCII_2D": 0.95,
             "ASCII_2D_FPV": 0.45,
-            "ASCII_3D": 0.45,
-            "TOPDOWN_2D": 0.45
+            "ASCII_3D": 0.45
           }
         },
         "TMaze": {
@@ -873,8 +860,7 @@
           "view_mode_scores": {
             "ASCII_2D": 0.125,
             "ASCII_2D_FPV": 0.825,
-            "ASCII_3D": 0.275,
-            "TOPDOWN_2D": 0.225
+            "ASCII_3D": 0.275
           }
         },
         "BarnesMaze": {
@@ -883,8 +869,7 @@
           "view_mode_scores": {
             "ASCII_2D": 0.6875,
             "ASCII_2D_FPV": 0.5,
-            "ASCII_3D": 0.4375,
-            "TOPDOWN_2D": 0.3125
+            "ASCII_3D": 0.4375
           }
         },
         "RadialArmMaze": {
@@ -893,8 +878,7 @@
           "view_mode_scores": {
             "ASCII_2D": 0.0,
             "ASCII_2D_FPV": 0.0,
-            "ASCII_3D": 0.0,
-            "TOPDOWN_2D": 0.0
+            "ASCII_3D": 0.0
           }
         },
         "OperantChamber": {
@@ -903,8 +887,7 @@
           "view_mode_scores": {
             "ASCII_2D": 0.28,
             "ASCII_2D_FPV": 1.0,
-            "ASCII_3D": 0.76,
-            "TOPDOWN_2D": 0.52
+            "ASCII_3D": 0.76
           }
         },
         "ShuttleBox": {
@@ -913,120 +896,7 @@
           "view_mode_scores": {
             "ASCII_2D": 0.95,
             "ASCII_2D_FPV": 0.825,
-            "ASCII_3D": 0.85,
-            "TOPDOWN_2D": 0.6
-          }
-        },
-        "PlacePreference": {
-          "success_rate": 0.9167,
-          "best_view_mode": "TOPDOWN_2D",
-          "view_mode_scores": {
-            "ASCII_2D": 0.5833,
-            "ASCII_2D_FPV": 0.6667,
-            "ASCII_3D": 0.5,
-            "TOPDOWN_2D": 0.9167
-          }
-        },
-        "StarMaze": {
-          "success_rate": 0.225,
-          "best_view_mode": "ASCII_2D",
-          "view_mode_scores": {
-            "ASCII_2D": 0.225,
-            "ASCII_2D_FPV": 0.15,
-            "ASCII_3D": 0.2,
-            "TOPDOWN_2D": 0.225
-          }
-        },
-        "DNMSTask": {
-          "success_rate": 0.52,
-          "best_view_mode": "ASCII_2D",
-          "view_mode_scores": {
-            "ASCII_2D": 0.52,
-            "ASCII_2D_FPV": 0.4,
-            "ASCII_3D": 0.44,
-            "TOPDOWN_2D": 0.48
-          }
-        }
-      },
-      "total_trials": 1352,
-      "view_modes": [
-        "ASCII_2D",
-        "ASCII_2D_FPV",
-        "ASCII_3D",
-        "TOPDOWN_2D"
-      ]
-    },
-    {
-      "model": "Qwen2.5-VL-72B",
-      "model_id": "qwen2.5vl-72b",
-      "modality": "text (ASCII)",
-      "source": "open-weights/vLLM",
-      "overall": 0.6001888888888889,
-      "overall_by_view": {
-        "ASCII_2D": 0.49342222222222226,
-        "ASCII_2D_FPV": 0.49518888888888885,
-        "ASCII_3D": 0.47213333333333324,
-        "TOPDOWN_2D": 0.5161111111111111
-      },
-      "per_environment": {
-        "MorrisWaterMaze": {
-          "success_rate": 0.85,
-          "best_view_mode": "ASCII_3D",
-          "view_mode_scores": {
-            "ASCII_2D": 0.8,
-            "ASCII_2D_FPV": 0.6,
-            "ASCII_3D": 0.85,
-            "TOPDOWN_2D": 0.7
-          }
-        },
-        "TMaze": {
-          "success_rate": 0.725,
-          "best_view_mode": "ASCII_2D_FPV",
-          "view_mode_scores": {
-            "ASCII_2D": 0.625,
-            "ASCII_2D_FPV": 0.725,
-            "ASCII_3D": 0.425,
-            "TOPDOWN_2D": 0.6
-          }
-        },
-        "BarnesMaze": {
-          "success_rate": 0.5,
-          "best_view_mode": "TOPDOWN_2D",
-          "view_mode_scores": {
-            "ASCII_2D": 0.4375,
-            "ASCII_2D_FPV": 0.375,
-            "ASCII_3D": 0.0625,
-            "TOPDOWN_2D": 0.5
-          }
-        },
-        "RadialArmMaze": {
-          "success_rate": 0.0,
-          "best_view_mode": "ASCII_2D",
-          "view_mode_scores": {
-            "ASCII_2D": 0.0,
-            "ASCII_2D_FPV": 0.0,
-            "ASCII_3D": 0.0,
-            "TOPDOWN_2D": 0.0
-          }
-        },
-        "OperantChamber": {
-          "success_rate": 0.98,
-          "best_view_mode": "ASCII_2D_FPV",
-          "view_mode_scores": {
-            "ASCII_2D": 0.94,
-            "ASCII_2D_FPV": 0.98,
-            "ASCII_3D": 0.92,
-            "TOPDOWN_2D": 0.94
-          }
-        },
-        "ShuttleBox": {
-          "success_rate": 0.775,
-          "best_view_mode": "TOPDOWN_2D",
-          "view_mode_scores": {
-            "ASCII_2D": 0.35,
-            "ASCII_2D_FPV": 0.6,
-            "ASCII_3D": 0.7,
-            "TOPDOWN_2D": 0.775
+            "ASCII_3D": 0.85
           }
         },
         "PlacePreference": {
@@ -1035,8 +905,108 @@
           "view_mode_scores": {
             "ASCII_2D": 0.5833,
             "ASCII_2D_FPV": 0.6667,
-            "ASCII_3D": 0.4167,
-            "TOPDOWN_2D": 0.5
+            "ASCII_3D": 0.5
+          }
+        },
+        "StarMaze": {
+          "success_rate": 0.225,
+          "best_view_mode": "ASCII_2D",
+          "view_mode_scores": {
+            "ASCII_2D": 0.225,
+            "ASCII_2D_FPV": 0.15,
+            "ASCII_3D": 0.2
+          }
+        },
+        "DNMSTask": {
+          "success_rate": 0.52,
+          "best_view_mode": "ASCII_2D",
+          "view_mode_scores": {
+            "ASCII_2D": 0.52,
+            "ASCII_2D_FPV": 0.4,
+            "ASCII_3D": 0.44
+          }
+        }
+      },
+      "total_trials": 1014,
+      "view_modes": [
+        "ASCII_2D",
+        "ASCII_2D_FPV",
+        "ASCII_3D"
+      ]
+    },
+    {
+      "model": "Qwen2.5-VL-72B",
+      "model_id": "qwen2.5vl-72b",
+      "modality": "text (ASCII)",
+      "source": "open-weights/vLLM",
+      "overall": 0.5849111111111109,
+      "overall_by_view": {
+        "ASCII_2D": 0.49342222222222226,
+        "ASCII_2D_FPV": 0.49518888888888885,
+        "ASCII_3D": 0.47213333333333324
+      },
+      "per_environment": {
+        "MorrisWaterMaze": {
+          "success_rate": 0.85,
+          "best_view_mode": "ASCII_3D",
+          "view_mode_scores": {
+            "ASCII_2D": 0.8,
+            "ASCII_2D_FPV": 0.6,
+            "ASCII_3D": 0.85
+          }
+        },
+        "TMaze": {
+          "success_rate": 0.725,
+          "best_view_mode": "ASCII_2D_FPV",
+          "view_mode_scores": {
+            "ASCII_2D": 0.625,
+            "ASCII_2D_FPV": 0.725,
+            "ASCII_3D": 0.425
+          }
+        },
+        "BarnesMaze": {
+          "success_rate": 0.4375,
+          "best_view_mode": "ASCII_2D",
+          "view_mode_scores": {
+            "ASCII_2D": 0.4375,
+            "ASCII_2D_FPV": 0.375,
+            "ASCII_3D": 0.0625
+          }
+        },
+        "RadialArmMaze": {
+          "success_rate": 0.0,
+          "best_view_mode": "ASCII_2D",
+          "view_mode_scores": {
+            "ASCII_2D": 0.0,
+            "ASCII_2D_FPV": 0.0,
+            "ASCII_3D": 0.0
+          }
+        },
+        "OperantChamber": {
+          "success_rate": 0.98,
+          "best_view_mode": "ASCII_2D_FPV",
+          "view_mode_scores": {
+            "ASCII_2D": 0.94,
+            "ASCII_2D_FPV": 0.98,
+            "ASCII_3D": 0.92
+          }
+        },
+        "ShuttleBox": {
+          "success_rate": 0.7,
+          "best_view_mode": "ASCII_3D",
+          "view_mode_scores": {
+            "ASCII_2D": 0.35,
+            "ASCII_2D_FPV": 0.6,
+            "ASCII_3D": 0.7
+          }
+        },
+        "PlacePreference": {
+          "success_rate": 0.6667,
+          "best_view_mode": "ASCII_2D_FPV",
+          "view_mode_scores": {
+            "ASCII_2D": 0.5833,
+            "ASCII_2D_FPV": 0.6667,
+            "ASCII_3D": 0.4167
           }
         },
         "StarMaze": {
@@ -1045,8 +1015,7 @@
           "view_mode_scores": {
             "ASCII_2D": 0.225,
             "ASCII_2D_FPV": 0.05,
-            "ASCII_3D": 0.425,
-            "TOPDOWN_2D": 0.2
+            "ASCII_3D": 0.425
           }
         },
         "DNMSTask": {
@@ -1055,17 +1024,15 @@
           "view_mode_scores": {
             "ASCII_2D": 0.48,
             "ASCII_2D_FPV": 0.46,
-            "ASCII_3D": 0.45,
-            "TOPDOWN_2D": 0.43
+            "ASCII_3D": 0.45
           }
         }
       },
-      "total_trials": 1352,
+      "total_trials": 1014,
       "view_modes": [
         "ASCII_2D",
         "ASCII_2D_FPV",
-        "ASCII_3D",
-        "TOPDOWN_2D"
+        "ASCII_3D"
       ]
     },
     {
@@ -1174,12 +1141,11 @@
       "model_id": "qwen2.5vl-3b",
       "modality": "text (ASCII)",
       "source": "open-weights/vLLM",
-      "overall": 0.5162999999999999,
+      "overall": 0.5151888888888888,
       "overall_by_view": {
         "ASCII_2D": 0.25869999999999993,
         "ASCII_2D_FPV": 0.22425555555555554,
-        "ASCII_3D": 0.4126888888888889,
-        "TOPDOWN_2D": 0.24305555555555555
+        "ASCII_3D": 0.4126888888888889
       },
       "per_environment": {
         "MorrisWaterMaze": {
@@ -1188,8 +1154,7 @@
           "view_mode_scores": {
             "ASCII_2D": 0.45,
             "ASCII_2D_FPV": 0.55,
-            "ASCII_3D": 0.95,
-            "TOPDOWN_2D": 0.95
+            "ASCII_3D": 0.95
           }
         },
         "TMaze": {
@@ -1198,8 +1163,7 @@
           "view_mode_scores": {
             "ASCII_2D": 0.125,
             "ASCII_2D_FPV": 0.1,
-            "ASCII_3D": 1.0,
-            "TOPDOWN_2D": 0.1
+            "ASCII_3D": 1.0
           }
         },
         "BarnesMaze": {
@@ -1208,8 +1172,7 @@
           "view_mode_scores": {
             "ASCII_2D": 0.375,
             "ASCII_2D_FPV": 0.125,
-            "ASCII_3D": 0.0625,
-            "TOPDOWN_2D": 0.0625
+            "ASCII_3D": 0.0625
           }
         },
         "RadialArmMaze": {
@@ -1218,8 +1181,7 @@
           "view_mode_scores": {
             "ASCII_2D": 0.0,
             "ASCII_2D_FPV": 0.0,
-            "ASCII_3D": 0.0,
-            "TOPDOWN_2D": 0.0
+            "ASCII_3D": 0.0
           }
         },
         "OperantChamber": {
@@ -1228,8 +1190,7 @@
           "view_mode_scores": {
             "ASCII_2D": 0.14,
             "ASCII_2D_FPV": 0.54,
-            "ASCII_3D": 0.04,
-            "TOPDOWN_2D": 0.06
+            "ASCII_3D": 0.04
           }
         },
         "ShuttleBox": {
@@ -1238,8 +1199,7 @@
           "view_mode_scores": {
             "ASCII_2D": 0.525,
             "ASCII_2D_FPV": 0.225,
-            "ASCII_3D": 0.675,
-            "TOPDOWN_2D": 0.1
+            "ASCII_3D": 0.675
           }
         },
         "PlacePreference": {
@@ -1248,8 +1208,7 @@
           "view_mode_scores": {
             "ASCII_2D": 0.3333,
             "ASCII_2D_FPV": 0.3333,
-            "ASCII_3D": 0.6667,
-            "TOPDOWN_2D": 0.5
+            "ASCII_3D": 0.6667
           }
         },
         "StarMaze": {
@@ -1258,27 +1217,24 @@
           "view_mode_scores": {
             "ASCII_2D": 0.0,
             "ASCII_2D_FPV": 0.025,
-            "ASCII_3D": 0.05,
-            "TOPDOWN_2D": 0.025
+            "ASCII_3D": 0.05
           }
         },
         "DNMSTask": {
-          "success_rate": 0.39,
-          "best_view_mode": "TOPDOWN_2D",
+          "success_rate": 0.38,
+          "best_view_mode": "ASCII_2D",
           "view_mode_scores": {
             "ASCII_2D": 0.38,
             "ASCII_2D_FPV": 0.12,
-            "ASCII_3D": 0.27,
-            "TOPDOWN_2D": 0.39
+            "ASCII_3D": 0.27
           }
         }
       },
-      "total_trials": 1352,
+      "total_trials": 1014,
       "view_modes": [
         "ASCII_2D",
         "ASCII_2D_FPV",
-        "ASCII_3D",
-        "TOPDOWN_2D"
+        "ASCII_3D"
       ]
     },
     {
@@ -1365,12 +1321,11 @@
       "model_id": "phi-4-mm-14b",
       "modality": "text (ASCII)",
       "source": "open-weights/vLLM",
-      "overall": 0.48869999999999997,
+      "overall": 0.4748111111111111,
       "overall_by_view": {
         "ASCII_2D": 0.37147777777777774,
         "ASCII_2D_FPV": 0.32147777777777775,
-        "ASCII_3D": 0.24286666666666668,
-        "TOPDOWN_2D": 0.09925555555555556
+        "ASCII_3D": 0.24286666666666668
       },
       "per_environment": {
         "MorrisWaterMaze": {
@@ -1379,8 +1334,7 @@
           "view_mode_scores": {
             "ASCII_2D": 0.85,
             "ASCII_2D_FPV": 0.1,
-            "ASCII_3D": 0.15,
-            "TOPDOWN_2D": 0.0
+            "ASCII_3D": 0.15
           }
         },
         "TMaze": {
@@ -1389,18 +1343,16 @@
           "view_mode_scores": {
             "ASCII_2D": 0.575,
             "ASCII_2D_FPV": 0.5,
-            "ASCII_3D": 0.325,
-            "TOPDOWN_2D": 0.0
+            "ASCII_3D": 0.325
           }
         },
         "BarnesMaze": {
-          "success_rate": 0.375,
-          "best_view_mode": "TOPDOWN_2D",
+          "success_rate": 0.25,
+          "best_view_mode": "ASCII_2D",
           "view_mode_scores": {
             "ASCII_2D": 0.25,
             "ASCII_2D_FPV": 0.125,
-            "ASCII_3D": 0.1875,
-            "TOPDOWN_2D": 0.375
+            "ASCII_3D": 0.1875
           }
         },
         "RadialArmMaze": {
@@ -1409,8 +1361,7 @@
           "view_mode_scores": {
             "ASCII_2D": 0.0,
             "ASCII_2D_FPV": 0.0,
-            "ASCII_3D": 0.0,
-            "TOPDOWN_2D": 0.0
+            "ASCII_3D": 0.0
           }
         },
         "OperantChamber": {
@@ -1419,8 +1370,7 @@
           "view_mode_scores": {
             "ASCII_2D": 0.52,
             "ASCII_2D_FPV": 0.42,
-            "ASCII_3D": 0.6,
-            "TOPDOWN_2D": 0.16
+            "ASCII_3D": 0.6
           }
         },
         "ShuttleBox": {
@@ -1429,8 +1379,7 @@
           "view_mode_scores": {
             "ASCII_2D": 0.5,
             "ASCII_2D_FPV": 0.375,
-            "ASCII_3D": 0.3,
-            "TOPDOWN_2D": 0.025
+            "ASCII_3D": 0.3
           }
         },
         "PlacePreference": {
@@ -1439,8 +1388,7 @@
           "view_mode_scores": {
             "ASCII_2D": 0.0833,
             "ASCII_2D_FPV": 0.8333,
-            "ASCII_3D": 0.3333,
-            "TOPDOWN_2D": 0.3333
+            "ASCII_3D": 0.3333
           }
         },
         "StarMaze": {
@@ -1449,8 +1397,7 @@
           "view_mode_scores": {
             "ASCII_2D": 0.125,
             "ASCII_2D_FPV": 0.0,
-            "ASCII_3D": 0.0,
-            "TOPDOWN_2D": 0.0
+            "ASCII_3D": 0.0
           }
         },
         "DNMSTask": {
@@ -1459,129 +1406,15 @@
           "view_mode_scores": {
             "ASCII_2D": 0.44,
             "ASCII_2D_FPV": 0.54,
-            "ASCII_3D": 0.29,
-            "TOPDOWN_2D": 0.0
+            "ASCII_3D": 0.29
           }
         }
       },
-      "total_trials": 1352,
+      "total_trials": 1014,
       "view_modes": [
         "ASCII_2D",
         "ASCII_2D_FPV",
-        "ASCII_3D",
-        "TOPDOWN_2D"
-      ]
-    },
-    {
-      "model": "InternVL2.5-8B",
-      "model_id": "internvl2.5-8b",
-      "modality": "text (ASCII)",
-      "source": "open-weights/vLLM",
-      "overall": 0.4662,
-      "overall_by_view": {
-        "ASCII_2D": 0.2185222222222222,
-        "ASCII_2D_FPV": 0.27342222222222223,
-        "ASCII_3D": 0.2538,
-        "TOPDOWN_2D": 0.2798111111111111
-      },
-      "per_environment": {
-        "MorrisWaterMaze": {
-          "success_rate": 0.6,
-          "best_view_mode": "ASCII_3D",
-          "view_mode_scores": {
-            "ASCII_2D": 0.3,
-            "ASCII_2D_FPV": 0.5,
-            "ASCII_3D": 0.6,
-            "TOPDOWN_2D": 0.55
-          }
-        },
-        "TMaze": {
-          "success_rate": 0.4,
-          "best_view_mode": "ASCII_2D",
-          "view_mode_scores": {
-            "ASCII_2D": 0.4,
-            "ASCII_2D_FPV": 0.05,
-            "ASCII_3D": 0.025,
-            "TOPDOWN_2D": 0.35
-          }
-        },
-        "BarnesMaze": {
-          "success_rate": 0.5625,
-          "best_view_mode": "ASCII_3D",
-          "view_mode_scores": {
-            "ASCII_2D": 0.0,
-            "ASCII_2D_FPV": 0.3125,
-            "ASCII_3D": 0.5625,
-            "TOPDOWN_2D": 0.0
-          }
-        },
-        "RadialArmMaze": {
-          "success_rate": 0.05,
-          "best_view_mode": "ASCII_3D",
-          "view_mode_scores": {
-            "ASCII_2D": 0.0,
-            "ASCII_2D_FPV": 0.0,
-            "ASCII_3D": 0.05,
-            "TOPDOWN_2D": 0.0
-          }
-        },
-        "OperantChamber": {
-          "success_rate": 0.22,
-          "best_view_mode": "ASCII_3D",
-          "view_mode_scores": {
-            "ASCII_2D": 0.02,
-            "ASCII_2D_FPV": 0.06,
-            "ASCII_3D": 0.22,
-            "TOPDOWN_2D": 0.0
-          }
-        },
-        "ShuttleBox": {
-          "success_rate": 0.95,
-          "best_view_mode": "TOPDOWN_2D",
-          "view_mode_scores": {
-            "ASCII_2D": 0.025,
-            "ASCII_2D_FPV": 0.125,
-            "ASCII_3D": 0.225,
-            "TOPDOWN_2D": 0.95
-          }
-        },
-        "PlacePreference": {
-          "success_rate": 0.8333,
-          "best_view_mode": "ASCII_2D_FPV",
-          "view_mode_scores": {
-            "ASCII_2D": 0.6667,
-            "ASCII_2D_FPV": 0.8333,
-            "ASCII_3D": 0.1667,
-            "TOPDOWN_2D": 0.5833
-          }
-        },
-        "StarMaze": {
-          "success_rate": 0.1,
-          "best_view_mode": "ASCII_2D_FPV",
-          "view_mode_scores": {
-            "ASCII_2D": 0.075,
-            "ASCII_2D_FPV": 0.1,
-            "ASCII_3D": 0.025,
-            "TOPDOWN_2D": 0.025
-          }
-        },
-        "DNMSTask": {
-          "success_rate": 0.48,
-          "best_view_mode": "ASCII_2D",
-          "view_mode_scores": {
-            "ASCII_2D": 0.48,
-            "ASCII_2D_FPV": 0.48,
-            "ASCII_3D": 0.41,
-            "TOPDOWN_2D": 0.06
-          }
-        }
-      },
-      "total_trials": 1352,
-      "view_modes": [
-        "ASCII_2D",
-        "ASCII_2D_FPV",
-        "ASCII_3D",
-        "TOPDOWN_2D"
+        "ASCII_3D"
       ]
     },
     {
@@ -1661,6 +1494,107 @@
       "total_trials": 338,
       "view_modes": [
         "TOPDOWN_2D"
+      ]
+    },
+    {
+      "model": "InternVL2.5-8B",
+      "model_id": "internvl2.5-8b",
+      "modality": "text (ASCII)",
+      "source": "open-weights/vLLM",
+      "overall": 0.38564444444444446,
+      "overall_by_view": {
+        "ASCII_2D": 0.2185222222222222,
+        "ASCII_2D_FPV": 0.27342222222222223,
+        "ASCII_3D": 0.2538
+      },
+      "per_environment": {
+        "MorrisWaterMaze": {
+          "success_rate": 0.6,
+          "best_view_mode": "ASCII_3D",
+          "view_mode_scores": {
+            "ASCII_2D": 0.3,
+            "ASCII_2D_FPV": 0.5,
+            "ASCII_3D": 0.6
+          }
+        },
+        "TMaze": {
+          "success_rate": 0.4,
+          "best_view_mode": "ASCII_2D",
+          "view_mode_scores": {
+            "ASCII_2D": 0.4,
+            "ASCII_2D_FPV": 0.05,
+            "ASCII_3D": 0.025
+          }
+        },
+        "BarnesMaze": {
+          "success_rate": 0.5625,
+          "best_view_mode": "ASCII_3D",
+          "view_mode_scores": {
+            "ASCII_2D": 0.0,
+            "ASCII_2D_FPV": 0.3125,
+            "ASCII_3D": 0.5625
+          }
+        },
+        "RadialArmMaze": {
+          "success_rate": 0.05,
+          "best_view_mode": "ASCII_3D",
+          "view_mode_scores": {
+            "ASCII_2D": 0.0,
+            "ASCII_2D_FPV": 0.0,
+            "ASCII_3D": 0.05
+          }
+        },
+        "OperantChamber": {
+          "success_rate": 0.22,
+          "best_view_mode": "ASCII_3D",
+          "view_mode_scores": {
+            "ASCII_2D": 0.02,
+            "ASCII_2D_FPV": 0.06,
+            "ASCII_3D": 0.22
+          }
+        },
+        "ShuttleBox": {
+          "success_rate": 0.225,
+          "best_view_mode": "ASCII_3D",
+          "view_mode_scores": {
+            "ASCII_2D": 0.025,
+            "ASCII_2D_FPV": 0.125,
+            "ASCII_3D": 0.225
+          }
+        },
+        "PlacePreference": {
+          "success_rate": 0.8333,
+          "best_view_mode": "ASCII_2D_FPV",
+          "view_mode_scores": {
+            "ASCII_2D": 0.6667,
+            "ASCII_2D_FPV": 0.8333,
+            "ASCII_3D": 0.1667
+          }
+        },
+        "StarMaze": {
+          "success_rate": 0.1,
+          "best_view_mode": "ASCII_2D_FPV",
+          "view_mode_scores": {
+            "ASCII_2D": 0.075,
+            "ASCII_2D_FPV": 0.1,
+            "ASCII_3D": 0.025
+          }
+        },
+        "DNMSTask": {
+          "success_rate": 0.48,
+          "best_view_mode": "ASCII_2D",
+          "view_mode_scores": {
+            "ASCII_2D": 0.48,
+            "ASCII_2D_FPV": 0.48,
+            "ASCII_3D": 0.41
+          }
+        }
+      },
+      "total_trials": 1014,
+      "view_modes": [
+        "ASCII_2D",
+        "ASCII_2D_FPV",
+        "ASCII_3D"
       ]
     },
     {

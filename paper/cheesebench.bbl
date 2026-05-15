@@ -5,6 +5,11 @@ Abdin, M., Awan, A.~A., Baldassini, L., et~al. (2025).
 \newblock Phi-4-multimodal technical report.
 \newblock {\em arXiv preprint arXiv:2503.01743}.
 
+\bibitem[{Anthropic}, 2026]{anthropic2026claude}
+{Anthropic} (2026).
+\newblock The claude 4 model family.
+\newblock \url{https://www.anthropic.com/claude}.
+
 \bibitem[Antol et~al., 2015]{antol2015vqa}
 Antol, S., Agrawal, A., Lu, J., Mitchell, M., Batra, D., Zitnick, C.~L., and
   Parikh, D. (2015).
@@ -52,6 +57,14 @@ Hendrycks, D., Burns, C., Basart, S., Zou, A., Mazeika, M., Song, D., and
 \newblock {\em Proceedings of the International Conference on Learning
   Representations}.
 
+\bibitem[Horner et~al., 2013]{horner2013touchscreen}
+Horner, A.~E., Heath, C.~J., Hvoslef-Eide, M., Kent, B.~A., Kim, C.~H.,
+  Nilsson, S. R.~O., Alsi{\"o}, J., Oomen, C.~A., Holmes, A., Saksida, L.~M.,
+  and Bussey, T.~J. (2013).
+\newblock The touchscreen operant platform for testing learning and memory in
+  rats and mice.
+\newblock {\em Nature Protocols}, 8(10):1961--1984.
+
 \bibitem[Kosinski, 2023]{kosinski2023theory}
 Kosinski, M. (2023).
 \newblock Theory of mind may have spontaneously emerged in large language
@@ -81,6 +94,11 @@ Olton, D.~S. and Samuelson, R.~J. (1976).
 \newblock Remembrance of places passed: Spatial memory in rats.
 \newblock {\em Journal of Experimental Psychology: Animal Behavior Processes},
   2(2):97--116.
+
+\bibitem[{OpenAI}, 2026]{openai2026gpt52}
+{OpenAI} (2026).
+\newblock Gpt-5.2 and gpt-5.2-codex.
+\newblock \url{https://openai.com/research}.
 
 \bibitem[Shoji et~al., 2012]{shoji2012t}
 Shoji, H., Hagihara, H., Takao, K., Hattori, S., and Miyakawa, T. (2012).

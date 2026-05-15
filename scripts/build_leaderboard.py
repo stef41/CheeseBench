@@ -15,6 +15,16 @@ RESULTS_ROOT = ROOT / "results"
 TASKS = ROOT / "task_definitions.json"
 OUT = ROOT / "leaderboard" / "leaderboard.json"
 
+# View modes that count toward each tier's success rate.
+# The text (ASCII) tier must exclude TOPDOWN_2D, which is an image view mode
+# (cf. benchmark.IMAGE_VIEW_MODES). Without this filter, multi_model runs that
+# happened to include TOPDOWN_2D rows would silently inject image-mode wins
+# into the headline ASCII numbers.
+ALLOWED_VIEW_MODES = {
+    "text (ASCII)": {"ASCII_2D", "ASCII_2D_FPV", "ASCII_3D"},
+    "vision": {"TOPDOWN_2D", "FPV_3D"},
+}
+
 ENV_ORDER = [
     "MorrisWaterMaze", "TMaze", "BarnesMaze", "RadialArmMaze",
     "OperantChamber", "ShuttleBox", "PlacePreference", "StarMaze", "DNMSTask",
@@ -49,16 +59,18 @@ def short(name: str) -> str:
     return DISPLAY.get(name, name)
 
 
-def _aggregate(results_path: Path) -> dict | None:
+def _aggregate(results_path: Path, modality: str) -> dict | None:
     """Return aggregated row from a benchmark_results.json, or None if empty.
 
     Overall = mean of per-env best-view-mode success rates (matches the
-    metric used in the CheeseBench paper / analysis pipeline).
+    metric used in the CheeseBench paper / analysis pipeline). Only view
+    modes in ALLOWED_VIEW_MODES[modality] are considered.
     """
     try:
         data = json.loads(results_path.read_text())
     except Exception:
         return None
+    allowed = ALLOWED_VIEW_MODES.get(modality)
     # per_env_by_view[env][view_mode] = result row
     per_env_by_view: dict[str, dict[str, dict]] = defaultdict(dict)
     total_trials = 0
@@ -66,9 +78,9 @@ def _aggregate(results_path: Path) -> dict | None:
     for r in data.get("results", []):
         if r.get("agent_type") != "LLM":
             continue
-        # Restrict to the ASCII view modes that define the benchmark metric;
-        # ignore TOPDOWN_2D (image-mode only) so it doesn't leak into ASCII rows.
         vm = r["view_mode"]
+        if allowed is not None and vm not in allowed:
+            continue
         total_trials += r["total_trials"]
         n_views.add(vm)
         per_env_by_view[r["env_name"]][vm] = r
@@ -125,7 +137,7 @@ def _scan_source(subdir: str, modality: str, source: str) -> list[dict]:
         res = sub / "benchmark_results.json"
         if not res.is_file():
             continue
-        agg = _aggregate(res)
+        agg = _aggregate(res, modality)
         if not agg:
             continue
         rows.append({

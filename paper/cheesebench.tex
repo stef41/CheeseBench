@@ -32,7 +32,7 @@ We introduce \textsc{CheeseBench}, a benchmark that evaluates large language mod
 Each task is grounded in peer-reviewed rodent protocols with approximate animal baselines.
 The agent receives a unified system prompt with no task-specific instructions and must discover goals purely from ASCII text observations and reward signals, much like a rodent placed into an unfamiliar apparatus.
 We evaluate thirteen LLMs spanning six open-weight models (3B--72B parameters) and seven frontier proprietary models (Claude Haiku~4.5, Sonnet~4.6, Opus~4.6--4.7, GPT-4.1, GPT-5.2, GPT-5.2-Codex) and compare against both a random baseline and a graph-based reinforcement learning agent.
-The best open-weight model (Qwen2.5-VL-7B) reaches 68.0\% average success on ASCII input versus 32.1\% for random agents and 78.9\% for approximate rodent baselines, while the best frontier model (Claude Opus~4.7) reaches 86.7\%, the first configuration in our evaluation to match or exceed the rodent reference.
+The best open-weight model (Qwen2.5-VL-7B) reaches 68.0\% average success on ASCII input versus 38.0\% for random agents and 78.9\% for approximate rodent baselines, while the best frontier model (Claude Opus~4.7) reaches 86.7\%, the first configuration in our evaluation to match or exceed the rodent reference.
 We find that (1)~scaling beyond 7B yields diminishing returns within the open-weight Qwen2.5-VL family, (2)~longer context history degrades performance, (3)~chain-of-thought prompting hurts rather than helps, (4)~a vision-language architecture provides an advantage at 7B but hurts at 32B, and (5)~the working-memory bottleneck (Radial Arm Maze) that is nearly unsolved by open-weight models is largely closed by frontier models.
 Because the same model's performance ranges from 20\% to 57\% depending on interface parameters alone, these results characterize the agent-plus-interface system, not the model in isolation.
 Under this unified zero-shot ASCII protocol, open-weight LLM agents remain well below approximate rodent reference values, while frontier proprietary models close the gap, suggesting that the deficit is closable with sufficient scale and post-training rather than being a fundamental architectural limit.
@@ -210,13 +210,13 @@ Using Qwen2.5-VL-7B as the reference model, we ablate:
 \subsection{Open-Weight Multi-Model Comparison}
 
 \Cref{fig:main_results} shows per-environment success rates for the six open-weight models on ASCII text input (best of three view modes per environment).
-The best overall open-weight model is Qwen2.5-VL-7B (68.0\%), followed by Qwen2.5-VL-32B (67.5\%) and Qwen2.5-VL-72B (60.0\%).
-The random baseline averages 32.1\% and the Tabular-QL agent averages 31.2\%, but they succeed on very different tasks: Tabular-QL reaches 98\% on OperantChamber and 100\% on ShuttleBox through Q-learning, while scoring 0\% on all maze-based spatial environments.
+The best overall open-weight model is Qwen2.5-VL-7B (68.0\%), followed by Qwen2.5-VL-32B (64.7\%) and Qwen2.5-VL-72B (58.5\%).
+The random baseline averages 38.0\% and the Tabular-QL agent averages 31.2\%, but they succeed on very different tasks: Tabular-QL reaches 98\% on OperantChamber and 100\% on ShuttleBox through Q-learning, while scoring 0\% on all maze-based spatial environments.
 All open-weight LLMs fall well below the approximate rodent reference values (70--90\%), shown as diamond markers; we revisit this gap for frontier models in the \nameref{sec:frontier} subsection below.
 
 Performance varies widely across environments.
 On \textbf{OperantChamber} (instrumental conditioning), Qwen2.5-VL-32B reaches 100\%, matching the approximate rodent reference value, which suggests that simple stimulus-response associations are within reach of in-context learning.
-On \textbf{ShuttleBox}, Qwen2.5-VL-32B reaches 95\% and InternVL2.5-8B also reaches 95\%.
+On \textbf{ShuttleBox}, Qwen2.5-VL-32B reaches 95\% --- the strongest open-weight result on this task.
 But \textbf{RadialArmMaze} (working memory) is nearly unsolved by open-weight models: the best (Qwen2.5-VL-7B) manages 10.0\%, compared to 70\% for rodents.
 This task requires keeping track of which arms have been visited across 20+ steps within a single trial, which is very difficult for autoregressive models at this scale.
 
@@ -232,7 +232,7 @@ This task requires keeping track of which arms have been visited across 20+ step
 
 \Cref{fig:radar} shows the cognitive profile of the largest open-weight Qwen model (Qwen2.5-VL-72B) compared to rodent reference values, as it displays the clearest contrast across cognitive dimensions among open-weight models.
 It reaches 98\% on instrumental conditioning, where simple reward associations suffice, but collapses to 0\% on the working-memory task RAM (vs.\ 70\% for rodents).
-Spatial learning (averaging across MWM, Barnes, Star and T-maze: $\sim$63\%) and avoidance learning ($\sim$78\%) fall in between.
+Spatial learning (averaging across MWM, Barnes and Star: $\sim$57\%) and avoidance learning (Shuttle: 70\%) fall in between.
 The pattern suggests that open-weight LLMs in the 3B--72B range can learn reactive associations through in-context learning but struggle with tasks requiring sustained state tracking; the \nameref{sec:frontier} subsection shows that frontier models substantially close the working-memory gap.
 
 \begin{figure}[t]
@@ -246,9 +246,9 @@ The pattern suggests that open-weight LLMs in the 3B--72B range can learn reacti
 \subsection{Scaling Behavior (Open-Weight)}
 
 \Cref{fig:scaling} shows overall success rate vs.\ model size within the Qwen2.5-VL family.
-There is a large jump from 3B (51.6\%) to 7B (68.0\%), but performance plateaus beyond 7B, with 32B (67.5\%) and 72B (60.0\%) performing similarly or slightly worse; differences between the 7B, 32B, and 72B models are within Wilson 95\% confidence intervals.
+There is a large jump from 3B (51.5\%) to 7B (68.0\%), but performance plateaus beyond 7B, with 32B (64.7\%) and 72B (58.5\%) performing similarly or slightly worse; differences between the 7B, 32B, and 72B models are within Wilson 95\% confidence intervals.
 This saturation contrasts with typical benchmark scaling laws.
-InternVL2.5-8B (46.6\%) and Phi-4-MM-14B (48.9\%) underperform the comparable-sized Qwen models, so model family and training data clearly matter too.
+InternVL2.5-8B (38.6\%) and Phi-4-MM-14B (47.5\%) underperform the comparable-sized Qwen models, so model family and training data clearly matter too.
 Frontier proprietary models break out of this plateau (see \nameref{sec:frontier} below), suggesting the saturation reflects post-training and RL-with-tools recipes rather than parameter count alone.
 
 \begin{figure}[t]
@@ -340,7 +340,7 @@ Rodent reference (approx.) & 78.9 \\
 \subsection{Image-Based Rendering}
 
 We also evaluated the pixel-based \texttt{TOPDOWN\_2D} rendering on the same six open-weight VLMs.
-Qwen2.5-VL-32B (vision) reached 50.2\% overall and Qwen2.5-VL-7B (vision) reached 43.0\%, both below their text-input counterparts (67.5\% and 68.0\% respectively). Smaller open-weight VLMs (Qwen2.5-VL-3B, Phi-4-MM-14B, InternVL2.5-8B) score 24--31\% in vision mode, well below their text scores.
+Qwen2.5-VL-32B (vision) reached 50.2\% overall and Qwen2.5-VL-7B (vision) reached 43.0\%, both below their text-input counterparts (64.7\% and 68.0\% respectively). Smaller open-weight VLMs (Qwen2.5-VL-3B, Phi-4-MM-14B, InternVL2.5-8B) score 24--31\% in vision mode, well below their text scores.
 We attribute the gap to image-renderer artefacts (the current renderer produces noisy thumbnails) rather than a fundamental modality limit; full per-environment vision-mode numbers are on the live leaderboard.
 
 \begin{table}[t]
@@ -353,16 +353,16 @@ We attribute the gap to image-renderer artefacts (the current renderer produces 
 \textbf{Open-weight / baselines} & \textbf{\%} & \textbf{Ablation} & \textbf{\%} \\
 \midrule
 Qwen2.5-VL-7B  & 68.0 & History $h{=}1$   & 57.0 \\
-Qwen2.5-VL-32B & 67.5 & History $h{=}3$   & 46.7 \\
-Qwen2.5-VL-72B & 60.0 & History $h{=}5$   & 31.1 \\
-Qwen2.5-VL-3B  & 51.6 & History $h{=}10$  & 26.7 \\
-Phi-4-MM-14B   & 48.9 & Actions $k{=}4$   & 51.9 \\
-InternVL2.5-8B & 46.6 & Actions $k{=}8$   & 45.9 \\
-Random         & 32.1 & Prompt: default    & 46.7 \\
+Qwen2.5-VL-32B & 64.7 & History $h{=}3$   & 46.7 \\
+Qwen2.5-VL-72B & 58.5 & History $h{=}5$   & 31.1 \\
+Qwen2.5-VL-3B  & 51.5 & History $h{=}10$  & 26.7 \\
+Phi-4-MM-14B   & 47.5 & Actions $k{=}4$   & 51.9 \\
+InternVL2.5-8B & 38.6 & Actions $k{=}8$   & 45.9 \\
+Random         & 38.0 & Prompt: default    & 46.7 \\
 Tabular-QL     & 31.2 & Prompt: CoT        & 31.9 \\
 \cmidrule(r){1-2}
-\textbf{Frontier} & & VLM-7B / Text-7B  & 41.5 / 21.5 \\
-Claude Opus~4.7 & \textbf{86.7} & VLM-32B / Text-32B & 32.6 / 43.0 \\
+\textbf{Frontier} & & LLM-7B / Text-7B  & 41.5 / 21.5 \\
+Claude Opus~4.7 & \textbf{86.7} & LLM-32B / Text-32B & 32.6 / 43.0 \\
 GPT-5.2-Codex  & 82.2 & & \\
 Claude Opus~4.6 & 82.2 & & \\
 Claude Sonnet~4.6 & 81.1 & & \\

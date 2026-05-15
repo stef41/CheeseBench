@@ -18,16 +18,16 @@ ENV_SHORT = ['Barnes', 'DNMS', 'MWM', 'Operant', 'CPP', 'RAM', 'Shuttle', 'Star'
 MODELS = {
     # Per-env best across the three ASCII view modes, from leaderboard.json (schema v3).
     # Order: Barnes, DNMS, MWM, Operant, CPP, RAM, Shuttle, Star, T-Maze
-    'Qwen2.5-VL-3B':  [37.5, 39.0,  95.0,  54.0, 66.7, 0.0,  67.5,  5.0, 100.0],
+    'Qwen2.5-VL-3B':  [37.5, 38.0,  95.0,  54.0, 66.7, 0.0,  67.5,  5.0, 100.0],
     'Qwen2.5-VL-7B':  [75.0, 54.0,  95.0,  84.0, 91.7, 10.0, 80.0, 35.0,  87.5],
-    'Qwen2.5-VL-32B': [68.8, 52.0,  95.0, 100.0, 91.7, 0.0,  95.0, 22.5,  82.5],
-    'Qwen2.5-VL-72B': [50.0, 48.0,  85.0,  98.0, 66.7, 0.0,  77.5, 42.5,  72.5],
-    'InternVL2.5-8B': [56.2, 48.0,  60.0,  22.0, 83.3, 5.0,  95.0, 10.0,  40.0],
-    'Phi-4-MM-14B':   [37.5, 54.0,  85.0,  60.0, 83.3, 0.0,  50.0, 12.5,  57.5],
+    'Qwen2.5-VL-32B': [68.8, 52.0,  95.0, 100.0, 66.7, 0.0,  95.0, 22.5,  82.5],
+    'Qwen2.5-VL-72B': [43.8, 48.0,  85.0,  98.0, 66.7, 0.0,  70.0, 42.5,  72.5],
+    'InternVL2.5-8B': [56.2, 48.0,  60.0,  22.0, 83.3, 5.0,  22.5, 10.0,  40.0],
+    'Phi-4-MM-14B':   [25.0, 54.0,  85.0,  60.0, 83.3, 0.0,  50.0, 12.5,  57.5],
 }
 
-# Random baseline averaged across all 6 model runs
-RANDOM = [29.2, 52.5, 35.0, 35.0, 63.9, 0.0, 24.2, 6.2, 42.5]
+# Random baseline averaged across all 6 model runs (best of 3 ASCII view modes per env)
+RANDOM = [43.8, 53.2, 46.7, 38.3, 76.4, 0.0, 32.9, 7.1, 43.3]
 
 # Tabular-QL: simple RL agent (Q-learning + state hashing)
 CSCG = [0.0, 58.0, 0.0, 98.0, 25.0, 0.0, 100.0, 0.0, 0.0]
@@ -44,7 +44,7 @@ COG_DIM = ['Spatial', 'WM', 'Spatial', 'Instr.Cond.', 'Assoc.', 'WM', 'Avoidance
 HISTORY = {'1': 57.0, '3': 46.7, '5': 31.1, '10': 26.7}
 PROMPT = {'Default': 46.7, 'Minimal': 35.6, 'CoT': 31.9, 'Few-shot': 29.6}
 ACTIONS = {'1': 28.9, '4': 51.9, '8': 45.9, '16': 20.0}
-VISION = {'VLM-7B': 41.5, 'Text-7B': 21.5, 'VLM-32B': 32.6, 'Text-32B': 43.0}
+VISION = {'LLM-7B': 41.5, 'Text-7B': 21.5, 'LLM-32B': 32.6, 'Text-32B': 43.0}
 
 plt.rcParams.update({
     'font.size': 9,
@@ -257,7 +257,7 @@ def fig3_ablations():
     
     # Vision
     ax = axes[1, 1]
-    labels = ['VLM\n7B', 'Text\n7B', 'VLM\n32B', 'Text\n32B']
+    labels = ['LLM\n7B', 'Text\n7B', 'LLM\n32B', 'Text\n32B']
     vs = list(VISION.values())
     colors = ['#d62728', '#999999', '#d62728', '#999999']
     bars = ax.bar(labels, vs, color=colors, edgecolor='white', width=0.5)
