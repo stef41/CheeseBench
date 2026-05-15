@@ -93,7 +93,7 @@ We complement this by using the nonverbal, reward-driven paradigms standard in c
 
 \begin{enumerate}
 \item \textbf{Unified protocol.} A single system prompt for all nine tasks. No task-specific instructions, reward explanations, or goal descriptions. The agent must discover task structure through exploration and reward feedback.
-\item \textbf{Approximate biological references.} Each environment corresponds to a real rodent experiment. We derive reference success rates from published learning curves by mapping the original outcome metric to our binary criterion (see the Rodent Baseline Construction appendix). These are constructed reference anchors, not direct competitive baselines.
+\item \textbf{Approximate biological references.} Each environment corresponds to a real rodent experiment. We derive reference success rates from published learning curves by mapping the original outcome metric to our binary criterion (see the \emph{\nameref{app:baselines}} appendix). These are constructed reference anchors, not direct competitive baselines.
 \item \textbf{Cognitive taxonomy.} Environments span six cognitive dimensions, enabling profiling across distinct neural substrates.
 \item \textbf{Multi-action episodes.} The agent outputs up to $k$ actions per API call along with free-text ``learnings'' that serve as an explicit working memory, mimicking the episodic structure of animal experiments.
 \end{enumerate}
@@ -179,21 +179,21 @@ It also includes generic strategy guidance (attend to reward signals, track spat
 
 \paragraph{Models.}
 We evaluate two complementary tiers of LLMs.
-\textbf{Open-weight tier:} six models from three families served locally via vLLM on 8$\times$H100 80GB GPUs --- \textbf{Qwen2.5-VL} at 3B, 7B, 32B, and 72B parameters \citep{bai2025qwen25}, \textbf{InternVL2.5-8B} \citep{chen2024internvl}, and \textbf{Phi-4-Multimodal-14B} \citep{abdin2024phi4}. Although these are vision-language models by architecture, the main experiments use \texttt{ASCII\_2D} text rendering, so the models receive only text input.
-\textbf{Frontier tier:} seven proprietary models accessed through a uniform OpenAI-compatible interface --- \textbf{Claude Haiku~4.5, Sonnet~4.6, Opus~4.6, Opus~4.7} \citep{anthropic2026claude}, and \textbf{GPT-4.1, GPT-5.2, GPT-5.2-Codex} \citep{openai2026gpt52}. The frontier evaluations use the identical unified system prompt and the same three view modes as the open-weight tier, but a smaller per-environment trial count (10 trials/env $\times$ 9 envs $\times$ 3 view modes = 270 trials per model; GPT-4.1 is run at 3 trials/env due to its pathologically high call rate, see Appendix).
+\textbf{Open-weight tier:} six models from three families served locally via vLLM on 8$\times$H100 80GB GPUs --- \textbf{Qwen2.5-VL} at 3B, 7B, 32B, and 72B parameters \citep{bai2025qwen25}, \textbf{InternVL2.5-8B} \citep{chen2024internvl}, and \textbf{Phi-4-Multimodal-14B} (abbreviated Phi-4-MM-14B) \citep{abdin2024phi4}. Although these are vision-language models by architecture, the main experiments use \texttt{ASCII\_2D} text rendering, so the models receive only text input.
+\textbf{Frontier tier:} seven proprietary models accessed through a uniform OpenAI-compatible interface --- \textbf{Claude Haiku~4.5, Sonnet~4.6, Opus~4.6, Opus~4.7} \citep{anthropic2026claude}, and \textbf{GPT-4.1, GPT-5.2, GPT-5.2-Codex} \citep{openai2026gpt52}. The frontier evaluations use the identical unified system prompt and the same three view modes as the open-weight tier, but a smaller per-environment trial count (10 trials/env $\times$ 9 envs $\times$ 3 view modes = 270 trials per model; GPT-4.1 is run at 3 trials/env due to its pathologically high call rate).
 For the ablation analyses we use the open-weight reference model (Qwen2.5-VL-7B) for cost reasons.
 
 \paragraph{Protocol.}
 Each model runs all 9 environments across the three ASCII view modes (\texttt{ASCII\_2D}, \texttt{ASCII\_2D\_FPV}, \texttt{ASCII\_3D}) with default interface settings: history length $h{=}5$ observation-action pairs, action batch size $k{=}8$, default prompt variant.
 The environment state is rendered as an ASCII character grid and sent as a text message; no images are involved.
 Unless otherwise noted, the per-model ``overall'' success rate we report is the mean across environments of the best per-environment view mode (i.e., for each environment we take the best of the three ASCII view modes for that model, then average over environments).
-This matches the metric used on the public CheeseBench leaderboard. ASCII\_2D-only numbers are tabulated in Appendix~\ref{app:ascii2d}.
+This matches the metric used on the public CheeseBench leaderboard. ASCII\_2D-only numbers are tabulated in the \emph{\nameref{app:ascii2d}} appendix.
 We compare against two non-LLM baselines: a uniformly random agent and Tabular-QL, a reinforcement learning agent that hashes observations into discrete states, learns via tabular Q-learning, and builds a transition graph for BFS planning to previously discovered goals.
 We also test a BFS oracle that parses the ASCII grid and navigates to any visible goal marker; this agent reaches 100\% success on tasks where the goal is visible in the grid (e.g., Morris Water Maze, where the hidden platform is rendered as a symbol visible to any text parser but requires spatial learning for the LLM agent to exploit).
 We report success rates across all trials per environment; error bars in \Cref{fig:main_results} show Wilson 95\% binomial confidence intervals computed from the per-environment trial counts in \Cref{tab:environments} (12--100 trials depending on the task).
 All runs use temperature~0.7 sampling with fixed environment seeds; stochastic environment dynamics and sampling are the sources of run-to-run randomness.
 Each model--environment condition is a single run; we do not average over multiple seeds, so per-environment estimates carry non-trivial sampling uncertainty.
-The approximate rodent values shown as diamond markers in figures are not measured in our environments; they are reference anchors derived from published learning curves under different protocols and outcome metrics (see the Rodent Baseline Construction appendix).
+The approximate rodent values shown as diamond markers in figures are not measured in our environments; they are reference anchors derived from published learning curves under different protocols and outcome metrics (see the \emph{\nameref{app:baselines}} appendix).
 
 \paragraph{Ablations.}
 Using Qwen2.5-VL-7B as the reference model, we ablate:
@@ -264,7 +264,7 @@ Frontier proprietary models break out of this plateau (see \nameref{sec:frontier
 \Cref{fig:ablations} summarizes the four ablation dimensions.
 
 \emph{Note on ablation protocol:} to manage compute, ablation runs use a flat 15 trials per environment rather than the per-environment protocol in \Cref{tab:environments}, and each condition is a separate run.
-With only 15 trials, per-condition estimates carry substantial sampling noise (binomial 95\% CI of $\pm$25pp at $p{=}0.5$), so the ``default'' ablation baseline ($h{=}5$, $k{=}8$, default prompt) need not exactly match the 52.6\% multi-model result for the same model.
+With only 15 trials, per-condition estimates carry substantial sampling noise (binomial 95\% CI of $\pm$25pp at $p{=}0.5$), so the ``default'' ablation baseline ($h{=}5$, $k{=}8$, default prompt) need not exactly match the 68.0\% multi-model result for the same model.
 Trends should be interpreted directionally; individual effect sizes are approximate.
 
 \paragraph{History length (\Cref{fig:ablations}a).}
@@ -340,7 +340,7 @@ Rodent reference (approx.) & 78.9 \\
 \subsection{Image-Based Rendering}
 
 We also evaluated the pixel-based \texttt{TOPDOWN\_2D} rendering on the same six open-weight VLMs.
-Qwen2.5-VL-32B (vision) reached 50.2\% overall and Qwen2.5-VL-7B (vision) reached 43.0\%, both below their text-input counterparts (67.5\% and 68.0\% respectively). Smaller open-weight VLMs (Qwen2.5-VL-3B, Phi-4-MM, InternVL2.5-8B) score 24--31\% in vision mode, well below their text scores.
+Qwen2.5-VL-32B (vision) reached 50.2\% overall and Qwen2.5-VL-7B (vision) reached 43.0\%, both below their text-input counterparts (67.5\% and 68.0\% respectively). Smaller open-weight VLMs (Qwen2.5-VL-3B, Phi-4-MM-14B, InternVL2.5-8B) score 24--31\% in vision mode, well below their text scores.
 We attribute the gap to image-renderer artefacts (the current renderer produces noisy thumbnails) rather than a fundamental modality limit; full per-environment vision-mode numbers are on the live leaderboard.
 
 \begin{table}[t]
@@ -387,7 +387,7 @@ We first summarize the empirical findings, then discuss possible interpretations
 (3)~Shorter history ($h{=}1$) outperforms longer history ($h{=}10$) by roughly 30 percentage points in the ablation, though estimates are noisy (15 trials/env).
 (4)~Chain-of-thought prompting hurts.
 (5)~$k{=}4$ actions per call is the sweet spot; extreme values degrade performance.
-(6)~The avoidance-learning task (ShuttleBox) shows a surprising regression in the frontier tier (10--40\%) relative to the open-weight Qwen-VL models ($\sim$95\%), a candidate failure mode worth dedicated study.
+(6)~The avoidance-learning task (ShuttleBox) shows a surprising regression in the frontier tier (10--40\% for most models, 60\% for Claude Haiku~4.5) relative to the open-weight Qwen-VL models ($\sim$95\%), a candidate failure mode worth dedicated study.
 These patterns are robust across models within each tier.
 
 \paragraph{Interpretations.}
@@ -417,7 +417,7 @@ This framing does not weaken the benchmark; it sharpens the question from ``how 
 \paragraph{Limitations.}
 The comparison between LLM and rodent performance is not fully symmetric: animal baselines are approximate values derived from published learning curves and represent asymptotic performance after multiple training sessions, while our LLM agents are evaluated zero-shot within a single benchmark run under a specific prompting protocol and interface.
 The gap we report is therefore specific to this protocol; a different interface (e.g., longer scratchpad, per-step memory updates, or a fine-tuned policy) could narrow it.
-The environments are simplified gridworlds that lack the sensory richness of real rodent arenas; we discuss what is preserved and what is lost in Appendix~A.
+The environments are simplified gridworlds that lack the sensory richness of real rodent arenas; we discuss what is preserved and what is lost in the \emph{\nameref{app:fidelity}} appendix.
 Additionally, in the Morris Water Maze implementation, the hidden platform is rendered as a visible symbol in the ASCII grid; the BFS oracle exploits this, and the 100\% BFS score on MWM reflects symbol-parsing ability rather than spatial search.
 LLM agents also occasionally produce unparseable outputs (e.g., invalid action strings), which are counted as wasted steps; the rate varies across models (from near-zero for larger models to $\sim$0.5 per trial for 3B models) and represents a confound separate from cognitive ability.
 We evaluate open-weight models only; proprietary models may perform differently.
