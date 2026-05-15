@@ -16,12 +16,14 @@ ENVS = ['BarnesMaze', 'DNMSTask', 'MorrisWaterMaze', 'OperantChamber',
 ENV_SHORT = ['Barnes', 'DNMS', 'MWM', 'Operant', 'CPP', 'RAM', 'Shuttle', 'Star', 'T-Maze']
 
 MODELS = {
-    'Qwen2.5-VL-3B': [37.5, 38.0, 45.0, 14.0, 33.3, 0.0, 52.5, 0.0, 12.5],
-    'Qwen2.5-VL-7B': [75.0, 54.0, 30.0, 84.0, 58.3, 5.0, 62.5, 35.0, 70.0],
-    'Qwen2.5-VL-32B': [68.8, 52.0, 95.0, 28.0, 58.3, 0.0, 95.0, 22.5, 12.5],
-    'Qwen2.5-VL-72B': [43.8, 48.0, 80.0, 94.0, 58.3, 0.0, 35.0, 22.5, 62.5],
-    'InternVL2.5-8B': [0.0, 48.0, 30.0, 2.0, 66.7, 0.0, 2.5, 7.5, 40.0],
-    'Phi-4-MM-14B': [25.0, 44.0, 85.0, 52.0, 8.3, 0.0, 50.0, 12.5, 57.5],
+    # Per-env best across the three ASCII view modes, from leaderboard.json (schema v3).
+    # Order: Barnes, DNMS, MWM, Operant, CPP, RAM, Shuttle, Star, T-Maze
+    'Qwen2.5-VL-3B':  [37.5, 39.0,  95.0,  54.0, 66.7, 0.0,  67.5,  5.0, 100.0],
+    'Qwen2.5-VL-7B':  [75.0, 54.0,  95.0,  84.0, 91.7, 10.0, 80.0, 35.0,  87.5],
+    'Qwen2.5-VL-32B': [68.8, 52.0,  95.0, 100.0, 91.7, 0.0,  95.0, 22.5,  82.5],
+    'Qwen2.5-VL-72B': [50.0, 48.0,  85.0,  98.0, 66.7, 0.0,  77.5, 42.5,  72.5],
+    'InternVL2.5-8B': [56.2, 48.0,  60.0,  22.0, 83.3, 5.0,  95.0, 10.0,  40.0],
+    'Phi-4-MM-14B':   [37.5, 54.0,  85.0,  60.0, 83.3, 0.0,  50.0, 12.5,  57.5],
 }
 
 # Random baseline averaged across all 6 model runs

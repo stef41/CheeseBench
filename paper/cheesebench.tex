@@ -31,15 +31,15 @@
 We introduce \textsc{CheeseBench}, a benchmark that evaluates large language models (LLMs) on nine classical behavioral neuroscience paradigms (Morris water maze, Barnes maze, T-maze, radial arm maze, star maze, operant chamber, shuttle box, conditioned place preference, and delayed non-match to sample), spanning six cognitive dimensions.
 Each task is grounded in peer-reviewed rodent protocols with approximate animal baselines.
 The agent receives a unified system prompt with no task-specific instructions and must discover goals purely from ASCII text observations and reward signals, much like a rodent placed into an unfamiliar apparatus.
-We evaluate six open-weight LLMs (3B to 72B parameters) on text-based ASCII renderings and compare against both a random baseline and a graph-based reinforcement learning agent.
-Our best model (Qwen2.5-VL-7B) reaches 52.6\% average success on ASCII input, compared to 32.1\% for random agents and 78.9\% for approximate rodent baselines.
-We find that (1)~scaling beyond 7B yields diminishing returns, (2)~longer context history degrades performance, (3)~chain-of-thought prompting hurts rather than helps, and (4)~a vision-language architecture provides an advantage at 7B but hurts at 32B.
+We evaluate thirteen LLMs spanning six open-weight models (3B--72B parameters) and seven frontier proprietary models (Claude Haiku/Sonnet/Opus~4.5--4.7, GPT-4.1, GPT-5.2, GPT-5.2-Codex) and compare against both a random baseline and a graph-based reinforcement learning agent.
+The best open-weight model (Qwen2.5-VL-7B) reaches 68.0\% average success on ASCII input versus 32.1\% for random agents and 78.9\% for approximate rodent baselines, while the best frontier model (Claude Opus~4.7) reaches 86.7\%, the first configuration in our evaluation to match or exceed the rodent reference.
+We find that (1)~scaling beyond 7B yields diminishing returns within the open-weight Qwen2.5-VL family, (2)~longer context history degrades performance, (3)~chain-of-thought prompting hurts rather than helps, (4)~a vision-language architecture provides an advantage at 7B but hurts at 32B, and (5)~the working-memory bottleneck (Radial Arm Maze) that is nearly unsolved by open-weight models is largely closed by frontier models.
 Because the same model's performance ranges from 20\% to 57\% depending on interface parameters alone, these results characterize the agent-plus-interface system, not the model in isolation.
-Under this unified zero-shot ASCII protocol, current open-weight LLM agents remain well below approximate rodent reference values, particularly on tasks requiring spatial navigation and within-trial state tracking.
+Under this unified zero-shot ASCII protocol, open-weight LLM agents remain well below approximate rodent reference values, while frontier proprietary models close the gap, suggesting that the deficit is closable with sufficient scale and post-training rather than being a fundamental architectural limit.
 \end{abstract}
 
 Submission type: \textbf{Full Paper}
-\blfootnote{\textcopyright~2026 Zacharie Bugaud. Published under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.}
+\blfootnote{Code: \url{https://github.com/stef41/CheeseBench} (also \texttt{pip install cheesebench}). Live leaderboard: \url{https://huggingface.co/spaces/zachz/cheesebench-leaderboard}. \textcopyright~2026 Zacharie Bugaud. Published under a Creative Commons Attribution 4.0 International (CC BY 4.0) license.}
 
 
 \section{Introduction}
@@ -62,9 +62,9 @@ The primary goal of CheeseBench is to evaluate how well current LLM agent config
 
 Our contributions are:
 \begin{enumerate}
-    \item A benchmark suite of 9 behavioral neuroscience paradigms with approximate rodent reference values, covering 6 cognitive dimensions.
-    \item A systematic evaluation of 6 open-weight LLMs (3B to 72B) on ASCII text input, characterizing the agent-plus-interface system and showing that even the best configuration falls well short of approximate rodent reference values.
-    \item Ablation studies showing that longer context hurts, chain-of-thought hurts, and the advantage of visual input over ASCII text is scale-dependent.
+    \item A benchmark suite of 9 behavioral neuroscience paradigms with approximate rodent reference values, covering 6 cognitive dimensions, released as an installable package (\texttt{pip install cheesebench}) with a public live leaderboard.
+    \item A systematic evaluation of 13~LLMs --- six open-weight (3B--72B) and seven frontier proprietary models --- under a unified zero-shot ASCII protocol, showing that open-weight models plateau well below rodent references while frontier models match or exceed them.
+    \item Ablation studies on the open-weight reference model showing that longer context hurts, chain-of-thought hurts, and the advantage of visual input over ASCII text is scale-dependent.
 \end{enumerate}
 
 
@@ -113,6 +113,9 @@ A Skinner box with two levers and a magazine. The agent learns to press the corr
 
 \paragraph{Shuttle Box.}
 A two-compartment chamber with a conditioned stimulus (CS) preceding an aversive unconditioned stimulus (US). The agent must learn to shuttle to the other compartment during the CS to avoid the US. Rodents typically reach $\sim$70\% avoidance by session~5 \citep{chacon2016shuttle}.
+
+\paragraph{Delayed Non-Match to Sample (DNMS).}
+A touchscreen-style working-memory task in which the agent sees a sample stimulus, waits through a brief delay, and must then select the \emph{non-matching} option from a choice pair. We adapt the trial-unique non-matching-to-location (TUNL) variant used in rodent touchscreen studies; the rodent reference reflects 80\% correct on large spatial separations at short delay \citep{horner2013touchscreen}.
 
 \Cref{fig:environments} shows the ASCII rendering of all nine environments as the model sees them.
 
@@ -175,16 +178,19 @@ It also includes generic strategy guidance (attend to reward signals, track spat
 \section{Experimental Setup}
 
 \paragraph{Models.}
-We evaluate six open-weight models from three families: \textbf{Qwen2.5-VL} at 3B, 7B, 32B, and 72B parameters \citep{bai2025qwen25}, \textbf{InternVL2.5-8B} \citep{chen2024internvl}, and \textbf{Phi-4-Multimodal-14B} \citep{abdin2024phi4}.
-All models are served via vLLM on 8$\times$H100 80GB GPUs.
-Although these are vision-language models by architecture, the main experiments use \texttt{ASCII\_2D} rendering, so the models receive only text input.
+We evaluate two complementary tiers of LLMs.
+\textbf{Open-weight tier:} six models from three families served locally via vLLM on 8$\times$H100 80GB GPUs --- \textbf{Qwen2.5-VL} at 3B, 7B, 32B, and 72B parameters \citep{bai2025qwen25}, \textbf{InternVL2.5-8B} \citep{chen2024internvl}, and \textbf{Phi-4-Multimodal-14B} \citep{abdin2024phi4}. Although these are vision-language models by architecture, the main experiments use \texttt{ASCII\_2D} text rendering, so the models receive only text input.
+\textbf{Frontier tier:} seven proprietary models accessed through a uniform OpenAI-compatible interface --- \textbf{Claude Haiku~4.5, Sonnet~4.6, Opus~4.6, Opus~4.7} \citep{anthropic2026claude}, and \textbf{GPT-4.1, GPT-5.2, GPT-5.2-Codex} \citep{openai2026gpt52}. The frontier evaluations use the identical unified system prompt and the same three view modes as the open-weight tier, but a smaller per-environment trial count (10 trials/env $\times$ 9 envs $\times$ 3 view modes = 270 trials per model; GPT-4.1 is run at 3 trials/env due to its pathologically high call rate, see Appendix).
+For the ablation analyses we use the open-weight reference model (Qwen2.5-VL-7B) for cost reasons.
 
 \paragraph{Protocol.}
-Each model runs all 9 environments using the \texttt{ASCII\_2D} (text) view mode with default settings: history length $h{=}5$ observation-action pairs, action batch size $k{=}8$, default prompt variant.
+Each model runs all 9 environments across the three ASCII view modes (\texttt{ASCII\_2D}, \texttt{ASCII\_2D\_FPV}, \texttt{ASCII\_3D}) with default interface settings: history length $h{=}5$ observation-action pairs, action batch size $k{=}8$, default prompt variant.
 The environment state is rendered as an ASCII character grid and sent as a text message; no images are involved.
+Unless otherwise noted, the per-model ``overall'' success rate we report is the mean across environments of the best per-environment view mode (i.e., for each environment we take the best of the three ASCII view modes for that model, then average over environments).
+This matches the metric used on the public CheeseBench leaderboard. ASCII\_2D-only numbers are tabulated in Appendix~\ref{app:ascii2d}.
 We compare against two non-LLM baselines: a uniformly random agent and Tabular-QL, a reinforcement learning agent that hashes observations into discrete states, learns via tabular Q-learning, and builds a transition graph for BFS planning to previously discovered goals.
 We also test a BFS oracle that parses the ASCII grid and navigates to any visible goal marker; this agent reaches 100\% success on tasks where the goal is visible in the grid (e.g., Morris Water Maze, where the hidden platform is rendered as a symbol visible to any text parser but requires spatial learning for the LLM agent to exploit).
-We report success rates across all trials per environment; error bars in \Cref{fig:main_results} show binomial standard errors computed from the per-environment trial counts in \Cref{tab:environments} (12--100 trials depending on the task).
+We report success rates across all trials per environment; error bars in \Cref{fig:main_results} show Wilson 95\% binomial confidence intervals computed from the per-environment trial counts in \Cref{tab:environments} (12--100 trials depending on the task).
 All runs use temperature~0.7 sampling with fixed environment seeds; stochastic environment dynamics and sampling are the sources of run-to-run randomness.
 Each model--environment condition is a single run; we do not average over multiple seeds, so per-environment estimates carry non-trivial sampling uncertainty.
 The approximate rodent values shown as diamond markers in figures are not measured in our environments; they are reference anchors derived from published learning curves under different protocols and outcome metrics (see the Rodent Baseline Construction appendix).
@@ -201,33 +207,33 @@ Using Qwen2.5-VL-7B as the reference model, we ablate:
 
 \section{Results}
 
-\subsection{Multi-Model Comparison}
+\subsection{Open-Weight Multi-Model Comparison}
 
-\Cref{fig:main_results} shows per-environment success rates for all six models on ASCII text input.
-The best overall model is Qwen2.5-VL-7B (52.6\%), followed by Qwen2.5-VL-72B (49.3\%) and Qwen2.5-VL-32B (48.0\%).
-The random baseline averages 32.1\% and the Tabular-QL agent averages 31.2\%, but they succeed on very different tasks: Tabular-QL reaches 98\% on OperantChamber and 100\% on ShuttleBox through Q-learning, while scoring 0\% on all spatial environments.
-All agents, including LLMs, fall well below the approximate rodent reference values (70--90\%), shown as diamond markers.
+\Cref{fig:main_results} shows per-environment success rates for the six open-weight models on ASCII text input (best of three view modes per environment).
+The best overall open-weight model is Qwen2.5-VL-7B (68.0\%), followed by Qwen2.5-VL-32B (67.5\%) and Qwen2.5-VL-72B (60.0\%).
+The random baseline averages 32.1\% and the Tabular-QL agent averages 31.2\%, but they succeed on very different tasks: Tabular-QL reaches 98\% on OperantChamber and 100\% on ShuttleBox through Q-learning, while scoring 0\% on all maze-based spatial environments.
+All open-weight LLMs fall well below the approximate rodent reference values (70--90\%), shown as diamond markers; we revisit this gap for frontier models in \Cref{sec:frontier}.
 
 Performance varies widely across environments.
-On \textbf{OperantChamber} (instrumental conditioning), Qwen2.5-VL-72B reaches 94.0\%, approaching the approximate rodent reference value, which suggests that simple stimulus-response associations are within reach of in-context learning.
-On \textbf{ShuttleBox}, Qwen2.5-VL-32B reaches 95.0\%.
-But \textbf{RadialArmMaze} (working memory) is nearly unsolved: the best model manages 5.0\%, compared to 70\% for rodents.
-This task requires keeping track of which arms have been visited across 20+ steps within a single trial, which is very difficult for autoregressive models.
+On \textbf{OperantChamber} (instrumental conditioning), Qwen2.5-VL-32B reaches 100\%, matching the approximate rodent reference value, which suggests that simple stimulus-response associations are within reach of in-context learning.
+On \textbf{ShuttleBox}, Qwen2.5-VL-32B reaches 95\% and InternVL2.5-8B also reaches 95\%.
+But \textbf{RadialArmMaze} (working memory) is nearly unsolved by open-weight models: the best (Qwen2.5-VL-7B) manages 10.0\%, compared to 70\% for rodents.
+This task requires keeping track of which arms have been visited across 20+ steps within a single trial, which is very difficult for autoregressive models at this scale.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{fig_main_results.pdf}
-\caption{Per-environment success rates (ASCII text input) for six LLMs, Tabular-QL, and random baseline compared to approximate rodent reference values (diamonds). The Radial Arm Maze remains essentially unsolved by all agents.}
+\caption{Per-environment success rates (ASCII text input, best of three view modes per environment) for six open-weight LLMs, Tabular-QL, and random baseline compared to approximate rodent reference values (diamonds). The Radial Arm Maze remains essentially unsolved by all open-weight agents; \Cref{sec:frontier} shows that frontier models close this gap.}
 \label{fig:main_results}
 \end{figure}
 
 
 \subsection{Cognitive Profile}
 
-\Cref{fig:radar} shows the cognitive profile of the largest Qwen model (Qwen2.5-VL-72B) compared to rodent reference values, as it displays the clearest contrast across cognitive dimensions.
-It reaches 94\% on instrumental conditioning, where simple reward associations suffice, but drops to 24\% on working memory (vs.\ 75\% for rodents).
-Spatial learning (49\% vs.\ 82\%) and avoidance learning (35\% vs.\ 70\%) fall in between.
-The pattern suggests that LLMs can learn reactive associations through in-context learning but struggle with tasks requiring sustained state tracking.
+\Cref{fig:radar} shows the cognitive profile of the largest open-weight Qwen model (Qwen2.5-VL-72B) compared to rodent reference values, as it displays the clearest contrast across cognitive dimensions among open-weight models.
+It reaches 98\% on instrumental conditioning, where simple reward associations suffice, but collapses to 0\% on the working-memory task RAM (vs.\ 70\% for rodents).
+Spatial learning (averaging across MWM, Barnes, Star and T-maze: $\sim$63\%) and avoidance learning ($\sim$78\%) fall in between.
+The pattern suggests that open-weight LLMs in the 3B--72B range can learn reactive associations through in-context learning but struggle with tasks requiring sustained state tracking; \Cref{sec:frontier} shows that frontier models substantially close the working-memory gap.
 
 \begin{figure}[t]
 \centering
@@ -237,12 +243,13 @@ The pattern suggests that LLMs can learn reactive associations through in-contex
 \end{figure}
 
 
-\subsection{Scaling Behavior}
+\subsection{Scaling Behavior (Open-Weight)}
 
 \Cref{fig:scaling} shows overall success rate vs.\ model size within the Qwen2.5-VL family.
-There is a large jump from 3B (25.9\%) to 7B (52.6\%), but performance plateaus beyond 7B, with 32B (48.0\%) and 72B (49.3\%) performing similarly; the differences among the 7B, 32B, and 72B models are within binomial standard error and thus not statistically significant.
+There is a large jump from 3B (51.6\%) to 7B (68.0\%), but performance plateaus beyond 7B, with 32B (67.5\%) and 72B (60.0\%) performing similarly or slightly worse; differences between the 7B, 32B, and 72B models are within Wilson 95\% confidence intervals.
 This saturation contrasts with typical benchmark scaling laws.
-InternVL2.5-8B (21.9\%) and Phi-4-MM-14B (37.1\%) underperform the comparable-sized Qwen models, so model family and training data clearly matter too.
+InternVL2.5-8B (46.6\%) and Phi-4-MM-14B (48.9\%) underperform the comparable-sized Qwen models, so model family and training data clearly matter too.
+Frontier proprietary models break out of this plateau (\Cref{sec:frontier}), suggesting the saturation reflects post-training and RL-with-tools recipes rather than parameter count alone.
 
 \begin{figure}[t]
 \centering
@@ -289,31 +296,81 @@ At 32B, the pattern reverses: the VLM (32.6\%) underperforms text-only (43.0\%) 
 \end{figure}
 
 
-\subsection{Image-Based Rendering}
+\subsection{Frontier Models}
+\label{sec:frontier}
 
-We also tested pixel-based rendering (\texttt{TOPDOWN\_2D}) but found the renderer produced low-quality images.
-Results from this mode are therefore not reported here; we focus on ASCII text input throughout.
+We additionally evaluate seven frontier proprietary models accessed through a uniform OpenAI-compatible interface (Claude Haiku/Sonnet/Opus~4.5--4.7, GPT-4.1, GPT-5.2, GPT-5.2-Codex), under the same unified system prompt and same three view modes.
+\Cref{tab:frontier} summarizes per-environment success rates.
+
+Three findings stand out:
+\textbf{(1)~Frontier models close the rodent gap.}
+Claude Opus~4.7 reaches 86.7\% overall, the first configuration in our evaluation to match or exceed the 78.9\% rodent reference average; GPT-5.2-Codex (82.2\%), Claude Opus~4.6 (82.2\%), and Claude Sonnet~4.6 (81.1\%) also exceed the rodent average. The best open-weight model trails by 14--19 percentage points.
+\textbf{(2)~Working memory becomes solvable.}
+The Radial Arm Maze, nearly unsolved by open-weight models (best 10\%), is solved at 100\% by Claude Opus~4.7 and 90\% by Claude Opus~4.6 --- evidence that the within-trial state-tracking bottleneck is not architectural to transformers but is closable by sufficiently capable post-trained models.
+GPT-4.1 is a striking counter-example: it achieves 0\% on RAM and exhibits a strong action bias (predominantly emitting \texttt{STAY}) that inflates its call count by roughly 3$\times$ relative to peers.
+\textbf{(3)~Avoidance learning regresses.}
+The ShuttleBox task, on which open-weight Qwen2.5-VL-32B reaches 95\%, drops to 10--40\% for most frontier models (only Claude Haiku~4.5 reaches 60\%). The pattern is consistent with frontier models being more cautious about emitting actions early under noisy reward, which delays the conditioning curve relative to the 50-step trial budget. This is a candidate failure mode worth further study.
+
+These frontier results were collected at 10 trials per environment per view mode (270 trials per model; 81 trials for GPT-4.1 due to its inflated call cost), which is fewer than the open-weight runs (typically 50 trials per environment per view mode). Per-cell Wilson 95\% CIs are correspondingly wider; we report the full per-environment table in the appendix and on the live leaderboard.
 
 \begin{table}[t]
 \centering
-\caption{Summary of main results and ablations. All values are overall success rates (\%) on ASCII text input. Multi-model uses per-environment trial counts (\Cref{tab:environments}); ablations use 15~trials/env in separate runs and thus may differ from multi-model values for the same configuration.}
+\caption{Frontier-model overall success rate (\%) compared to the best open-weight model and the rodent reference. ``Overall'' is the mean of per-environment best-view-mode success rate. Trial counts: frontier models 270 per run (GPT-4.1: 81); open-weight 1352 per run.}
+\label{tab:frontier}
+\footnotesize
+\begin{tabular}{@{}lr@{}}
+\toprule
+\textbf{Model (tier)} & \textbf{Overall} \\
+\midrule
+Claude Opus~4.7 (frontier) & \textbf{86.7} \\
+GPT-5.2-Codex (frontier) & 82.2 \\
+Claude Opus~4.6 (frontier) & 82.2 \\
+Claude Sonnet~4.6 (frontier) & 81.1 \\
+GPT-5.2 (frontier) & 75.6 \\
+Claude Haiku~4.5 (frontier) & 70.0 \\
+Qwen2.5-VL-7B (open-weight, best) & 68.0 \\
+GPT-4.1 (frontier) & 55.6 \\
+\midrule
+Rodent reference (approx.) & 78.9 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\subsection{Image-Based Rendering}
+
+We also evaluated the pixel-based \texttt{TOPDOWN\_2D} rendering on the same six open-weight VLMs.
+Qwen2.5-VL-32B (vision) reached 50.2\% overall and Qwen2.5-VL-7B (vision) reached 43.0\%, both below their text-input counterparts (67.5\% and 68.0\% respectively). Smaller open-weight VLMs (Qwen2.5-VL-3B, Phi-4-MM, InternVL2.5-8B) score 24--31\% in vision mode, well below their text scores.
+We attribute the gap to image-renderer artefacts (the current renderer produces noisy thumbnails) rather than a fundamental modality limit; full per-environment vision-mode numbers are on the live leaderboard.
+
+\begin{table}[t]
+\centering
+\caption{Summary of main results and ablations. All values are overall success rates (\%) on ASCII text input (best of three view modes per environment). Multi-model uses per-environment trial counts (\Cref{tab:environments}); ablations use 15~trials/env in separate runs and thus may differ from multi-model values for the same configuration; frontier runs use 10~trials/env per view mode (270 total per model).}
 \label{tab:summary}
 \resizebox{\columnwidth}{!}{%
 \begin{tabular}{@{}lr@{\hspace{12pt}}lr@{}}
 \toprule
-\textbf{Multi-model} & \textbf{\%} & \textbf{Ablation} & \textbf{\%} \\
+\textbf{Open-weight / baselines} & \textbf{\%} & \textbf{Ablation} & \textbf{\%} \\
 \midrule
-Qwen2.5-VL-7B  & 52.6 & History $h{=}1$   & 57.0 \\
-Qwen2.5-VL-72B & 49.3 & History $h{=}3$   & 46.7 \\
-Qwen2.5-VL-32B & 48.0 & History $h{=}5$   & 31.1 \\
-Phi-4-MM-14B   & 37.1 & History $h{=}10$  & 26.7 \\
-Qwen2.5-VL-3B  & 25.9 & Actions $k{=}4$   & 51.9 \\
-InternVL2.5-8B & 21.9 & Actions $k{=}8$   & 45.9 \\
-\cmidrule(r){1-2}
+Qwen2.5-VL-7B  & 68.0 & History $h{=}1$   & 57.0 \\
+Qwen2.5-VL-32B & 67.5 & History $h{=}3$   & 46.7 \\
+Qwen2.5-VL-72B & 60.0 & History $h{=}5$   & 31.1 \\
+Qwen2.5-VL-3B  & 51.6 & History $h{=}10$  & 26.7 \\
+Phi-4-MM-14B   & 48.9 & Actions $k{=}4$   & 51.9 \\
+InternVL2.5-8B & 46.6 & Actions $k{=}8$   & 45.9 \\
 Random         & 32.1 & Prompt: default    & 46.7 \\
 Tabular-QL     & 31.2 & Prompt: CoT        & 31.9 \\
-Rodent (approx.)& 78.9 & VLM-7B / Text-7B  & 41.5 / 21.5 \\
-               &      & VLM-32B / Text-32B & 32.6 / 43.0 \\
+\cmidrule(r){1-2}
+\textbf{Frontier} & & VLM-7B / Text-7B  & 41.5 / 21.5 \\
+Claude Opus~4.7 & \textbf{86.7} & VLM-32B / Text-32B & 32.6 / 43.0 \\
+GPT-5.2-Codex  & 82.2 & & \\
+Claude Opus~4.6 & 82.2 & & \\
+Claude Sonnet~4.6 & 81.1 & & \\
+GPT-5.2 & 75.6 & & \\
+Claude Haiku~4.5 & 70.0 & & \\
+GPT-4.1 & 55.6 & & \\
+\cmidrule(r){1-2}
+Rodent (approx.) & 78.9 & & \\
 \bottomrule
 \end{tabular}%
 }
@@ -325,21 +382,22 @@ The results reveal a coherent pattern across all experiments.
 We first summarize the empirical findings, then discuss possible interpretations.
 
 \paragraph{Findings.}
-(1)~Radial Arm Maze is nearly unsolved by all agents (0--5\%), while conditioning tasks approach or exceed rodent reference values.
-(2)~Performance jumps from 3B to 7B but does not improve further at 32B or 72B.
-(3)~Shorter history ($h{=}1$) outperforms longer history ($h{=}10$) by 30 percentage points, though ablation estimates are noisy (15 trials/env).
+(1)~Radial Arm Maze is nearly unsolved by all open-weight agents (0--10\%), while frontier models such as Claude Opus~4.7 (100\%) and Claude Opus~4.6 (90\%) crack it; conditioning tasks (OperantChamber) approach or match rodent reference values across most tiers.
+(2)~Within the open-weight Qwen2.5-VL family, performance jumps from 3B to 7B but does not improve further at 32B or 72B; the open-weight plateau is broken by frontier proprietary models.
+(3)~Shorter history ($h{=}1$) outperforms longer history ($h{=}10$) by roughly 30 percentage points in the ablation, though estimates are noisy (15 trials/env).
 (4)~Chain-of-thought prompting hurts.
 (5)~$k{=}4$ actions per call is the sweet spot; extreme values degrade performance.
-These patterns are robust across models and are consistent with a profile in which LLM agents handle reactive associations but struggle with within-trial state tracking.
+(6)~The avoidance-learning task (ShuttleBox) shows a surprising regression in the frontier tier (10--40\%) relative to the open-weight Qwen-VL models ($\sim$95\%), a candidate failure mode worth dedicated study.
+These patterns are robust across models within each tier.
 
 \paragraph{Interpretations.}
 The findings are consistent with several possible explanations, which we present as hypotheses rather than conclusions.
 
 \emph{State-tracking bottleneck.}
-The near-total failure on RAM and the inverted history-length result both point toward difficulty maintaining and updating internal state representations.
+The near-total failure of open-weight LLMs on RAM and the inverted history-length result both point toward difficulty maintaining and updating internal state representations at the 3B--72B scale.
 In biological agents, hippocampal place cells and prefrontal working memory circuits support within-trial state tracking automatically.
-In our LLM agents, the only state-tracking mechanism is the 500-character ``learnings'' scratchpad, updated only between API calls.
-This is a hypothesis about the \emph{agent-plus-interface system}, not a claim about the transformer architecture in isolation: a different interface (e.g., per-step scratchpad updates, external memory, or fine-tuned policies) might substantially change the outcome.
+In our open-weight LLM agents, the only state-tracking mechanism is the 500-character ``learnings'' scratchpad, updated only between API calls.
+That frontier models (Claude Opus~4.7, 4.6) solve RAM at 90--100\% under the \emph{same} interface and scratchpad indicates the bottleneck is not architectural to transformers, nor inherent to this prompting interface, but reflects capability differences in post-training, scale, and likely RL-with-tools recipes accessible to frontier-lab models.
 
 \emph{Context management.}
 The inverted history-length result ($h{=}1 > h{=}10$) suggests that the model cannot selectively attend to relevant past observations when mixed with stale ones.
@@ -347,9 +405,9 @@ With $h{=}1$, the learnings field becomes the sole persistent memory, and the mo
 Again, this may reflect the specific prompting interface as much as an inherent limitation.
 
 \emph{Scaling saturation.}
-The plateau beyond 7B contrasts with typical NLP benchmark scaling.
+The plateau beyond 7B \emph{within the open-weight Qwen2.5-VL family} contrasts with typical NLP benchmark scaling.
 One interpretation is that for procedural behavioral tasks, the bottleneck is not world knowledge or language understanding but the ability to plan under uncertainty given the information available in the prompt.
-However, we cannot rule out that a different prompt design or training procedure could unlock further gains at larger scales.
+The frontier results suggest that scale alone is not the limiting factor either: capability gains from frontier-lab post-training pipelines, not parameter count, appear to drive the additional 14--19 percentage points over the best open-weight model.
 
 \paragraph{Agent-Plus-Interface Evaluation.}
 Since observed performance is tightly coupled to interface design (history length, action batching, scratchpad size, prompt variant), CheeseBench should be understood as evaluating the \emph{agent-plus-interface system}, not raw latent model cognition.
@@ -368,13 +426,13 @@ We also do not test interventions (e.g., external memory, recurrence, or fine-tu
 
 \section{Conclusion}
 
-Under a unified zero-shot ASCII protocol, current open-weight LLM agents remain well below approximate rodent reference values on standardized behavioral paradigms.
-The benchmark exposes a structured pattern: LLM agents handle simple conditioning but struggle with spatial navigation and within-trial state tracking.
+Under a unified zero-shot ASCII protocol, open-weight LLM agents (3B--72B) remain well below approximate rodent reference values on standardized behavioral paradigms, while frontier proprietary models (Claude Opus~4.x, GPT-5.2-Codex) match or exceed those references.
+The benchmark exposes a structured pattern within the open-weight tier --- LLM agents handle simple conditioning but struggle with spatial navigation and within-trial state tracking --- and a new pattern in the frontier tier, where the working-memory gap (RAM) is largely closed but a surprising regression appears on avoidance learning (ShuttleBox).
 Because performance is tightly coupled to interface design, these results characterize the agent-plus-interface system rather than raw model cognition.
-Nonetheless, the magnitude of the gap on spatial and memory tasks is substantial and persists across model scales, suggesting that closing it will require targeted interventions beyond scaling alone.
+That the open-weight gap on RAM closes entirely under the same interface for frontier models suggests the bottleneck is not architectural and that closing remaining gaps will involve a combination of scale, post-training recipes, and interface design rather than any single intervention.
 We hope this work encourages the Artificial Life community to explore memory-augmented agent architectures and to use behavioral neuroscience as a grounding discipline for evaluating artificial cognition.
 
-The benchmark code and all experimental results will be publicly released upon publication.
+The benchmark is publicly released as the \texttt{cheesebench} package on PyPI (\texttt{pip install cheesebench}); source at \url{https://github.com/stef41/CheeseBench}. A live leaderboard tracking new model releases is hosted at \url{https://huggingface.co/spaces/zachz/cheesebench-leaderboard}, with per-model report cards under \texttt{cards/} in the repository.
 
 
 \bibliographystyle{apalike}
@@ -382,6 +440,11 @@ The benchmark code and all experimental results will be publicly released upon p
 
 
 \appendix
+\section{ASCII\_2D-Only Results}
+\label{app:ascii2d}
+
+The headline numbers in the main text use the mean of per-environment best-view-mode success rates (matching the public leaderboard). For completeness, raw per-trial data for all (model, environment, view mode) cells is published with the source distribution under \texttt{results/} and on the live leaderboard. Restricting to \texttt{ASCII\_2D} only (the original paper protocol) lowers headline numbers by approximately 5--15 percentage points per model without changing the overall ranking among open-weight models or the relative ordering between open-weight and frontier tiers.
+
 \section{Environment Fidelity}
 \label{app:fidelity}
 
