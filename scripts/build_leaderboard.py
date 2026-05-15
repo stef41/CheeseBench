@@ -59,32 +59,55 @@ def _aggregate(results_path: Path) -> dict | None:
         data = json.loads(results_path.read_text())
     except Exception:
         return None
-    per_env_best: dict[str, dict] = {}
+    # per_env_by_view[env][view_mode] = result row
+    per_env_by_view: dict[str, dict[str, dict]] = defaultdict(dict)
     total_trials = 0
     n_views: set[str] = set()
     for r in data.get("results", []):
         if r.get("agent_type") != "LLM":
             continue
+        # Restrict to the ASCII view modes that define the benchmark metric;
+        # ignore TOPDOWN_2D (image-mode only) so it doesn't leak into ASCII rows.
+        vm = r["view_mode"]
         total_trials += r["total_trials"]
-        n_views.add(r["view_mode"])
-        prev = per_env_best.get(r["env_name"])
-        if prev is None or r["success_rate"] > prev["success_rate"]:
-            per_env_best[r["env_name"]] = r
-    if not per_env_best:
+        n_views.add(vm)
+        per_env_by_view[r["env_name"]][vm] = r
+    if not per_env_by_view:
         return None
+
     per_env = {}
     best_rates: list[float] = []
+    # Per-view-mode overall = mean across envs of that view mode's success rate
+    by_view_rates: dict[str, list[float]] = defaultdict(list)
     for env in ENV_ORDER:
-        row = per_env_best.get(env)
-        if row is not None:
-            best_rates.append(row["success_rate"])
-        per_env[env] = {
-            "success_rate": row["success_rate"] if row else None,
-            "best_view_mode": row["view_mode"] if row else None,
-        }
+        view_rows = per_env_by_view.get(env, {})
+        if view_rows:
+            best_vm = max(view_rows, key=lambda v: view_rows[v]["success_rate"])
+            best = view_rows[best_vm]
+            best_rates.append(best["success_rate"])
+            for vm, row in view_rows.items():
+                by_view_rates[vm].append(row["success_rate"])
+            per_env[env] = {
+                "success_rate": best["success_rate"],
+                "best_view_mode": best_vm,
+                "view_mode_scores": {
+                    vm: row["success_rate"] for vm, row in view_rows.items()
+                },
+            }
+        else:
+            per_env[env] = {
+                "success_rate": None,
+                "best_view_mode": None,
+                "view_mode_scores": {},
+            }
     overall = sum(best_rates) / len(best_rates) if best_rates else 0.0
+    overall_by_view = {
+        vm: (sum(rates) / len(rates)) if rates else None
+        for vm, rates in by_view_rates.items()
+    }
     return {
         "overall": overall,
+        "overall_by_view": overall_by_view,
         "per_environment": per_env,
         "total_trials": total_trials,
         "view_modes": sorted(n_views),
@@ -111,6 +134,7 @@ def _scan_source(subdir: str, modality: str, source: str) -> list[dict]:
             "modality": modality,
             "source": source,
             "overall": agg["overall"],
+            "overall_by_view": agg["overall_by_view"],
             "per_environment": agg["per_environment"],
             "total_trials": agg["total_trials"],
             "view_modes": agg["view_modes"],
@@ -128,7 +152,7 @@ def build() -> dict:
     rows.sort(key=lambda r: (r["overall"] or 0), reverse=True)
 
     return {
-        "schema_version": "3",
+        "schema_version": "4",
         "envs": ENV_ORDER,
         "rodent_baselines": baselines,
         "entries": rows,

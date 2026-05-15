@@ -50,6 +50,66 @@ def baseline_row() -> pd.DataFrame:
     }])
 
 
+VIEW_MODES = ["ASCII_2D", "ASCII_2D_FPV", "ASCII_3D"]
+VIEW_LABELS = {
+    "ASCII_2D": "ASCII 2D (top-down)",
+    "ASCII_2D_FPV": "ASCII 2D FPV (egocentric)",
+    "ASCII_3D": "ASCII pseudo-3D",
+}
+
+
+def per_view_overall_table() -> pd.DataFrame:
+    """Per-model overall success rate (%) broken down by view mode."""
+    rows = []
+    for e in ENTRIES:
+        by_view = e.get("overall_by_view") or {}
+        row = {
+            "Model": e["model"],
+            "Modality": e["modality"],
+            "Best-of-3 Overall": round((e["overall"] or 0) * 100, 1),
+        }
+        for vm in VIEW_MODES:
+            v = by_view.get(vm)
+            row[VIEW_LABELS[vm]] = round(v * 100, 1) if v is not None else "—"
+        rows.append(row)
+    df = pd.DataFrame(rows)
+    df = df.sort_values("Best-of-3 Overall", ascending=False).reset_index(drop=True)
+    df.index = df.index + 1
+    df.index.name = "Rank"
+    return df.reset_index()
+
+
+def per_view_env_table(view_mode: str) -> pd.DataFrame:
+    """Per-environment success rate (%) for a single view mode, per model."""
+    rows = []
+    for e in ENTRIES:
+        per_env = e["per_environment"]
+        row = {"Model": e["model"], "Modality": e["modality"]}
+        scores: list[float] = []
+        for env in ENVS:
+            vm_scores = (per_env.get(env) or {}).get("view_mode_scores") or {}
+            v = vm_scores.get(view_mode)
+            if v is not None:
+                scores.append(v)
+                row[env] = round(v * 100, 1)
+            else:
+                row[env] = "—"
+        row = {
+            "Model": row["Model"],
+            "Modality": row["Modality"],
+            "Overall": round(sum(scores) / len(scores) * 100, 1) if scores else "—",
+            **{k: v for k, v in row.items() if k not in ("Model", "Modality")},
+        }
+        rows.append(row)
+    df = pd.DataFrame(rows)
+    # Sort by Overall (string "—" sorts to bottom)
+    df["_sort"] = df["Overall"].apply(lambda x: x if isinstance(x, (int, float)) else -1)
+    df = df.sort_values("_sort", ascending=False).drop(columns=["_sort"]).reset_index(drop=True)
+    df.index = df.index + 1
+    df.index.name = "Rank"
+    return df.reset_index()
+
+
 with gr.Blocks(title="CheeseBench Leaderboard", theme=gr.themes.Soft()) as demo:
     gr.Markdown(
         """
@@ -73,6 +133,30 @@ with gr.Blocks(title="CheeseBench Leaderboard", theme=gr.themes.Soft()) as demo:
         )
         gr.Markdown("### Reference: rodent baselines from the original protocols")
         gr.Dataframe(value=baseline_row(), interactive=False, wrap=True)
+
+    with gr.Tab("Per view mode"):
+        gr.Markdown(
+            "Per-model overall success rate broken down by view mode. "
+            "The headline **Best-of-3 Overall** column takes, for each "
+            "environment, the model's best of the three view modes and then "
+            "averages over environments (this is the metric used on the main "
+            "Leaderboard tab and in the paper). The three view-mode columns "
+            "show the average success rate when the model is restricted to "
+            "that single view mode for every environment."
+        )
+        gr.Dataframe(
+            value=per_view_overall_table(),
+            interactive=False,
+            wrap=True,
+        )
+        gr.Markdown("### Per-environment breakdown by view mode")
+        for vm in VIEW_MODES:
+            gr.Markdown(f"**{VIEW_LABELS[vm]}**")
+            gr.Dataframe(
+                value=per_view_env_table(vm),
+                interactive=False,
+                wrap=True,
+            )
 
     with gr.Tab("Submit a model"):
         gr.Markdown(
