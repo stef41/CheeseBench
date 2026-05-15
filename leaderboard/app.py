@@ -54,11 +54,12 @@ with gr.Blocks(title="CheeseBench Leaderboard", theme=gr.themes.Soft()) as demo:
     gr.Markdown(
         """
         # 🧀 CheeseBench Leaderboard
-        Vision-Language Models evaluated on 9 classical rodent behavioral
-        neuroscience paradigms. Higher is better. Each cell is the per-environment
-        success rate (%) at the model's best view mode.
+        Large Language Models (and Vision-Language Models in image mode)
+        evaluated on 9 classical rodent behavioral neuroscience paradigms.
+        Higher is better. Each cell is the per-environment success rate (%)
+        at the model's best view mode.
 
-        - **Paper:** *CheeseBench: Do Vision-Language Models Exhibit Rodent-Level Cognition?*
+        - **Paper:** *CheeseBench: Evaluating Large Language Models on Rodent-Level Cognition*
         - **Code:** https://github.com/stef41/CheeseBench
         - **PyPI:** `pip install cheesebench`
         """
@@ -100,7 +101,7 @@ with gr.Blocks(title="CheeseBench Leaderboard", theme=gr.themes.Soft()) as demo:
         gr.Code(
             value=(
                 "@inproceedings{cheesebench2025,\n"
-                "  title={CheeseBench: Do Vision-Language Models Exhibit Rodent-Level Cognition?},\n"
+                "  title={CheeseBench: Evaluating Large Language Models on Rodent-Level Cognition},\n"
                 "  author={CheeseBench Contributors},\n"
                 "  booktitle={NeurIPS Datasets and Benchmarks Track},\n"
                 "  year={2025}\n"

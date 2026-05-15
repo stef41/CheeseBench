@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "cheesebench"
 version = "0.1.1"
-description = "CheeseBench: A VLM benchmark over 9 rodent behavioral neuroscience paradigms"
+description = "CheeseBench: An LLM benchmark over 9 rodent behavioral neuroscience paradigms"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
@@ -14,6 +14,8 @@ keywords = [
     "benchmark",
     "vision-language-model",
     "vlm",
+    "large-language-model",
+    "llm",
     "llm",
     "evaluation",
     "neuroscience",

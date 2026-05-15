@@ -1,13 +1,13 @@
-# CheeseBench: Do Vision-Language Models Exhibit Rodent-Level Cognition?
+# CheeseBench: Evaluating Large Language Models on Rodent Behavioral Neuroscience Paradigms
 
-A benchmark for evaluating Vision-Language Models (VLMs) on 9 classical behavioral neuroscience paradigms, each grounded in published rodent protocols with quantitative animal baselines.
+A benchmark for evaluating Large Language Models (LLMs) — and Vision-Language Models (VLMs) when run with image observations — on 9 classical behavioral neuroscience paradigms, each grounded in published rodent protocols with quantitative animal baselines. The default protocol is text-only (ASCII renderings of the environment), so any chat-completion model can be evaluated; vision is supported as an optional input mode.
 
 ## Key Design Principles
 
 1. **Unified Protocol**: Identical system prompt for ALL tasks — no task-specific hints
 2. **Published Baselines**: Every environment maps to a real rodent experiment with peer-reviewed success rates
 3. **Cognitive Taxonomy**: 6 cognitive dimensions (spatial learning, navigation, working memory, instrumental conditioning, avoidance learning, associative learning) mapped to neural circuits
-4. **Multi-Action**: VLM outputs up to 8 actions per call with explicit learnings/working memory
+4. **Multi-Action**: The model outputs up to 8 actions per call with explicit learnings/working memory
 
 ## Quick Start
 
@@ -88,7 +88,7 @@ cheesebench/
 
 ## System Prompt (Unified — Identical for ALL Tasks)
 
-The VLM receives **no task-specific instructions**. It must discover the goal from observation and reward feedback alone:
+The model receives **no task-specific instructions**. It must discover the goal from observation and reward feedback alone:
 
 ```
 You are an embodied agent placed in a behavioral experiment.
@@ -114,7 +114,7 @@ The analysis module computes:
 - **Learning curves** — rolling-window and block-based success rates
 - **Strategy metrics** — action entropy, forward ratio, rotation ratio, repetition rate
 - **Wilson score CIs** — 95% confidence intervals on all success rates
-- **Animal comparison** — VLM profiles overlaid with rodent baselines
+- **Animal comparison** — model profiles overlaid with rodent baselines
 
 ```bash
 python analysis.py results/benchmark_results.json
@@ -133,7 +133,7 @@ export CHEESEBENCH_TIMEOUT=120
 
 | Parameter | Default | Description |
 |---|---|---|
-| `--model` | `gpt-oss:120b` | VLM model name |
+| `--model` | `gpt-oss:120b` | Model name (LLM or VLM) |
 | `--num-trials` | 20 | Trials per environment |
 | `--max-steps` | 200 | Max steps per trial |
 | `--seed` | 42 | Random seed |
@@ -146,7 +146,7 @@ If you use CheeseBench in your research, please cite:
 
 ```bibtex
 @inproceedings{cheesebench2025,
-  title={CheeseBench: Do Vision-Language Models Exhibit Rodent-Level Cognition?},
+  title={CheeseBench: Evaluating Large Language Models on Rodent Behavioral Neuroscience Paradigms},
   author={},
   booktitle={NeurIPS Datasets and Benchmarks Track},
   year={2025}
