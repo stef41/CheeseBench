@@ -317,7 +317,7 @@ def fig4_scaling():
             lbl.set_ha('right')
         elif lbl.get_text() == '8B':
             lbl.set_ha('left')
-    ax.set_ylim(0, 65)
+    ax.set_ylim(0, 80)
     ax.legend(frameon=False, fontsize=7)
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)

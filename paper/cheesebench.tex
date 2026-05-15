@@ -212,7 +212,7 @@ Using Qwen2.5-VL-7B as the reference model, we ablate:
 \Cref{fig:main_results} shows per-environment success rates for the six open-weight models on ASCII text input (best of three view modes per environment).
 The best overall open-weight model is Qwen2.5-VL-7B (68.0\%), followed by Qwen2.5-VL-32B (67.5\%) and Qwen2.5-VL-72B (60.0\%).
 The random baseline averages 32.1\% and the Tabular-QL agent averages 31.2\%, but they succeed on very different tasks: Tabular-QL reaches 98\% on OperantChamber and 100\% on ShuttleBox through Q-learning, while scoring 0\% on all maze-based spatial environments.
-All open-weight LLMs fall well below the approximate rodent reference values (70--90\%), shown as diamond markers; we revisit this gap for frontier models in \Cref{sec:frontier}.
+All open-weight LLMs fall well below the approximate rodent reference values (70--90\%), shown as diamond markers; we revisit this gap for frontier models in the \nameref{sec:frontier} subsection below.
 
 Performance varies widely across environments.
 On \textbf{OperantChamber} (instrumental conditioning), Qwen2.5-VL-32B reaches 100\%, matching the approximate rodent reference value, which suggests that simple stimulus-response associations are within reach of in-context learning.
@@ -223,7 +223,7 @@ This task requires keeping track of which arms have been visited across 20+ step
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{fig_main_results.pdf}
-\caption{Per-environment success rates (ASCII text input, best of three view modes per environment) for six open-weight LLMs, Tabular-QL, and random baseline compared to approximate rodent reference values (diamonds). The Radial Arm Maze remains essentially unsolved by all open-weight agents; \Cref{sec:frontier} shows that frontier models close this gap.}
+\caption{Per-environment success rates (ASCII text input, best of three view modes per environment) for six open-weight LLMs, Tabular-QL, and random baseline compared to approximate rodent reference values (diamonds). The Radial Arm Maze remains essentially unsolved by all open-weight agents; the \emph{Frontier Models} subsection shows that frontier models close this gap.}
 \label{fig:main_results}
 \end{figure}
 
@@ -233,7 +233,7 @@ This task requires keeping track of which arms have been visited across 20+ step
 \Cref{fig:radar} shows the cognitive profile of the largest open-weight Qwen model (Qwen2.5-VL-72B) compared to rodent reference values, as it displays the clearest contrast across cognitive dimensions among open-weight models.
 It reaches 98\% on instrumental conditioning, where simple reward associations suffice, but collapses to 0\% on the working-memory task RAM (vs.\ 70\% for rodents).
 Spatial learning (averaging across MWM, Barnes, Star and T-maze: $\sim$63\%) and avoidance learning ($\sim$78\%) fall in between.
-The pattern suggests that open-weight LLMs in the 3B--72B range can learn reactive associations through in-context learning but struggle with tasks requiring sustained state tracking; \Cref{sec:frontier} shows that frontier models substantially close the working-memory gap.
+The pattern suggests that open-weight LLMs in the 3B--72B range can learn reactive associations through in-context learning but struggle with tasks requiring sustained state tracking; the \nameref{sec:frontier} subsection shows that frontier models substantially close the working-memory gap.
 
 \begin{figure}[t]
 \centering
@@ -249,7 +249,7 @@ The pattern suggests that open-weight LLMs in the 3B--72B range can learn reacti
 There is a large jump from 3B (51.6\%) to 7B (68.0\%), but performance plateaus beyond 7B, with 32B (67.5\%) and 72B (60.0\%) performing similarly or slightly worse; differences between the 7B, 32B, and 72B models are within Wilson 95\% confidence intervals.
 This saturation contrasts with typical benchmark scaling laws.
 InternVL2.5-8B (46.6\%) and Phi-4-MM-14B (48.9\%) underperform the comparable-sized Qwen models, so model family and training data clearly matter too.
-Frontier proprietary models break out of this plateau (\Cref{sec:frontier}), suggesting the saturation reflects post-training and RL-with-tools recipes rather than parameter count alone.
+Frontier proprietary models break out of this plateau (see \nameref{sec:frontier} below), suggesting the saturation reflects post-training and RL-with-tools recipes rather than parameter count alone.
 
 \begin{figure}[t]
 \centering
