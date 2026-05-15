@@ -111,6 +111,75 @@ with gr.Blocks(title="CheeseBench Leaderboard", theme=gr.themes.Soft()) as demo:
             label="BibTeX",
         )
 
+    gr.Markdown("---")
+    gr.Markdown("## How CheeseBench works")
+
+    with gr.Row():
+        with gr.Column():
+            gr.Markdown(
+                "**9 environments × 1 unified protocol.** Each environment "
+                "implements a classical rodent paradigm (Morris Water Maze, "
+                "Barnes Maze, T-Maze, Radial Arm Maze, Operant Chamber, "
+                "Shuttle Box, Conditioned Place Preference, Star Maze, DNMS). "
+                "The model receives no task-specific hint — it must discover "
+                "the goal from observation and reward alone."
+            )
+            gr.Image(
+                value="fig_environments.png",
+                label="The 9 environments",
+                show_label=True,
+                interactive=False,
+            )
+
+        with gr.Column():
+            gr.Markdown(
+                "**3 view modes per environment.** ASCII top-down (full map), "
+                "ASCII first-person (egocentric partial view), and pseudo-3D "
+                "ASCII (depth cues, narrow FOV). The headline score is each "
+                "model's *best* per-environment view-mode success rate."
+            )
+            gr.Image(
+                value="fig_viewmodes.png",
+                label="View modes (top-down / FPV / pseudo-3D)",
+                show_label=True,
+                interactive=False,
+            )
+
+    with gr.Row():
+        with gr.Column():
+            gr.Markdown(
+                "**Animated example.** All 9 environments running in their "
+                "top-down ASCII mode — the agent's position is shown by an "
+                "arrow; walls (`#`) block movement."
+            )
+            gr.Image(
+                value="all_envs_top_down.gif",
+                label="All environments — top-down ASCII",
+                show_label=True,
+                interactive=False,
+            )
+
+        with gr.Column():
+            gr.Markdown(
+                "**Cognitive profile.** Per-cognitive-dimension success rates "
+                "for the best open-weight model, overlaid on rodent reference "
+                "baselines from the original published protocols."
+            )
+            gr.Image(
+                value="fig_cognitive_radar.png",
+                label="Model vs rodent baselines",
+                show_label=True,
+                interactive=False,
+            )
+
+    gr.Markdown(
+        "Each environment is grounded in a peer-reviewed rodent study with "
+        "quantitative animal baselines (see [task_definitions.json]"
+        "(https://github.com/stef41/CheeseBench/blob/main/task_definitions.json)). "
+        "Full methodology in the [paper]"
+        "(https://github.com/stef41/CheeseBench/blob/main/paper/cheesebench.pdf)."
+    )
+
 
 if __name__ == "__main__":
     demo.launch()
