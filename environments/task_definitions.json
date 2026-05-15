@@ -53,7 +53,7 @@
         "trials_to_criterion": 20,
         "sessions_to_criterion": 4,
         "trials_per_session": 5,
-        "species": "NMRI mouse",
+        "species": "C57BL/6J mouse",
         "n_papers": 12
       },
       "source": {
@@ -68,7 +68,7 @@
         "journal": "Psychological Review"
       },
       "animal_baseline": {
-        "species": "NMRI mice",
+        "species": "C57BL/6J mice",
         "learning_curve": [0.50, 0.60, 0.72, 0.80],
         "trials_to_criterion": 20,
         "notes": "Forced alternation, 10 trials/session over 4 days"
